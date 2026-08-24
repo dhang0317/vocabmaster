@@ -145,14 +145,13 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
               <button
                 onClick={handleToggleMaster}
                 title={currentWord.isMastered ? 'Marked as mastered' : 'Mark as mastered'}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition border ${
+                className={`p-2 rounded-xl transition border ${
                   currentWord.isMastered
                     ? 'bg-emerald-100 text-emerald-800 border-emerald-600'
                     : 'bg-white text-slate-600 hover:text-emerald-700 border-[#0a192f]/30'
                 }`}
               >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>{currentWord.isMastered ? 'Mastered' : 'Mark mastered'}</span>
+                <CheckCircle2 className="w-5 h-5" />
               </button>
             </div>
 
@@ -177,7 +176,7 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
                 <button
                   onClick={handlePlayAudio}
                   title="Listen to pronunciation (press A)"
-                  className="p-2 rounded-full bg-slate-100 hover:bg-[#0a192f] text-[#0a192f] hover:text-white transition border border-[#0a192f]/40 shadow-sm"
+                  className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-black transition border border-[#0a192f]/40 shadow-sm"
                 >
                   <Volume2 className={`w-4 h-4 ${isPlayingAudio ? 'animate-pulse' : ''}`} />
                 </button>
@@ -197,14 +196,13 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
             <div className="flex items-center justify-end">
               <button
                 onClick={handleToggleMaster}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition border ${
+                className={`p-2 rounded-xl transition border ${
                   currentWord.isMastered
                     ? 'bg-emerald-100 text-emerald-800 border-emerald-600'
                     : 'bg-white text-slate-600 hover:text-emerald-700 border-[#0a192f]/30'
                 }`}
               >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>{currentWord.isMastered ? 'Mastered' : 'Mark mastered'}</span>
+                <CheckCircle2 className="w-5 h-5" />
               </button>
             </div>
 

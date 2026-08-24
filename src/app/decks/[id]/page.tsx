@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Layers, BookOpen, ListChecks, ArrowLeft, CheckCircle2, Volume2, RefreshCw, Trash2, List } from 'lucide-react';
+import { Layers, BookOpen, Pencil, ArrowLeft, CheckCircle2, Volume2, RefreshCw, Trash2, List } from 'lucide-react';
 import { FlashcardPlayer } from '@/components/flashcard/FlashcardPlayer';
 import { ClozeExercise } from '@/components/cloze/ClozeExercise';
 import { QuizRunner } from '@/components/quiz/QuizRunner';
@@ -181,7 +181,7 @@ export default function DeckStudyPage() {
                 : 'bg-white text-[#0a192f] border-[#0a192f]/30 hover:border-[#0a192f]'
           }`}
         >
-          <ListChecks className="w-4 h-4" />
+          <Pencil className="w-4 h-4" />
           <span>Quiz Questions</span>
         </button>
       )}
