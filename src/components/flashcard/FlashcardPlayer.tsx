@@ -103,23 +103,9 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
   }
 
   const progressPercent = Math.round(((currentIndex + 1) / words.length) * 100);
-  const masteredCount = words.filter(w => w.isMastered).length;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      {/* Top Controls & Status */}
-      <div className="flex items-center justify-between text-sm">
-        <div className="flex items-center gap-3">
-          <span className="font-black text-[#0a192f]">
-            Card {currentIndex + 1} / {words.length}
-          </span>
-          <span className="px-3 py-1 rounded-full text-xs font-bold bg-white text-[#0a192f] border border-[#0a192f]">
-            Mastered: {masteredCount}/{words.length}
-          </span>
-        </div>
-
-      </div>
-
       {/* Progress Bar */}
       <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden border border-[#0a192f]/20">
         <div
@@ -251,14 +237,6 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
         >
           <ChevronLeft className="w-5 h-5" />
           <span>Previous (←)</span>
-        </button>
-
-        <button
-          onClick={handleFlip}
-          className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white hover:bg-slate-100 text-[#0a192f] border-2 border-[#0a192f] font-bold text-sm transition shadow-sm"
-        >
-          <RotateCw className="w-4 h-4" />
-          <span>Flip card (Space)</span>
         </button>
 
         <button
