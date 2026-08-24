@@ -217,11 +217,12 @@ export default function DeckStudyPage() {
         {activeTab === 'wordlist' && (
           <div className="rounded-3xl border-2 border-[#0a192f] bg-white overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-[#0a192f]">
+              <table className="w-full text-left text-sm text-[#0a192f] [&>tbody>tr>td]:align-middle [&>thead>tr>th]:align-middle">
                 <thead className="bg-slate-100 text-xs font-black text-[#0a192f] uppercase tracking-wider border-b-2 border-[#0a192f]">
                   <tr>
                     <th className="px-6 py-4">Word</th>
-                    <th className="px-4 py-4">Pronunciation / POS</th>
+                    <th className="px-4 py-4">Pronunciation</th>
+                    <th className="px-4 py-4">POS</th>
                     <th className="px-6 py-4">Definition</th>
                     <th className="px-6 py-4">Example</th>
                     <th className="px-4 py-4 text-center">Status</th>
@@ -230,15 +231,17 @@ export default function DeckStudyPage() {
                 <tbody className="divide-y divide-[#0a192f]/10">
                   {deck.words.map((w, idx) => (
                     <tr key={idx} className="hover:bg-slate-50 transition">
-                      <td className="px-6 py-4 font-black text-[#0a192f] flex items-center gap-2">
-                        <span>{w.word}</span>
-                        <button
-                          onClick={() => handlePlayAudio(w.word)}
-                          title="發音"
-                          className="p-1 rounded text-slate-500 hover:text-[#0a192f] hover:bg-slate-200"
-                        >
-                          <Volume2 className="w-4 h-4" />
-                        </button>
+                      <td className="px-6 py-4 font-black text-[#0a192f]">
+                        <div className="flex items-center gap-2">
+                          <span>{w.word}</span>
+                          <button
+                            onClick={() => handlePlayAudio(w.word)}
+                            title="發音"
+                            className="p-1 rounded text-slate-500 hover:text-[#0a192f] hover:bg-slate-200"
+                          >
+                            <Volume2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                       <td className="px-4 py-4">
                         {w.phonetic ? (
