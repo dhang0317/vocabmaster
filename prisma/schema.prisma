@@ -1,0 +1,73 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Deck {
+  id          String         @id @default(uuid())
+  title       String
+  description String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  words       Word[]
+  articles    ClozeArticle[]
+  quizzes     QuizQuestion[]
+  results     QuizResult[]
+}
+
+model Word {
+  id          String   @id @default(uuid())
+  deckId      String
+  word        String
+  phonetic    String?
+  pos         String?  // part of speech (n., v., adj., etc.)
+  translation String   // Traditional Chinese translation
+  definition  String?  // English definition
+  example     String?  // Example sentence
+  exampleZh   String?  // Example sentence translation
+  isMastered  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  deck Deck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+}
+
+model ClozeArticle {
+  id          String   @id @default(uuid())
+  deckId      String
+  title       String
+  content     String   // Story text with [blank_1], [blank_2] or [word] markers
+  contentZh   String?  // Full Chinese translation
+  blanksJson  String   // JSON array of blanks: [{ id: 1, word: "ephemeral", hint: "lasting very short time", options: [...] }]
+  createdAt   DateTime @default(now())
+
+  deck Deck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+}
+
+model QuizQuestion {
+  id          String   @id @default(uuid())
+  deckId      String
+  question    String   // The question sentence or stem
+  questionZh  String?  // Question translation
+  targetWord  String   // The vocabulary being tested
+  optionsJson String   // JSON array of options: ["option A", "option B", "option C", "option D"]
+  correctIdx  Int      // Index of correct option (0-3)
+  explanation String?  // Explanation why this is correct and why others are wrong
+  createdAt   DateTime @default(now())
+
+  deck Deck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+}
+
+model QuizResult {
+  id         String   @id @default(uuid())
+  deckId     String
+  score      Int
+  total      Int
+  answersJson String  // JSON array of user responses & correctness
+  createdAt  DateTime @default(now())
+
+  deck Deck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+}

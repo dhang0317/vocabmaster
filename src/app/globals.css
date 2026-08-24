@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Baskervville Fontiko";
+  src: url('./fonts/Baskervville-fontiko/Baskervville-Regular.ttf') format('truetype');
+  font-weight: 200 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Baskervville Fontiko";
+  src: url('./fonts/Baskervville-fontiko/Baskervville-Italic.ttf') format('truetype');
+  font-weight: 200 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #000000;
+  }
+}
+
+body {
+  color: #000000;
+  background: var(--background);
+  font-family: "Baskervville Fontiko", "PMingLiU", "MingLiU", "Noto Serif CJK TC", Georgia, "Times New Roman", serif;
+  font-weight: 200;
+  min-height: 100vh;
+}
+
+/* Use Canela Arabic when installed, with a serif fallback. */
+body, body * {
+  font-family: "Baskervville Fontiko", "PMingLiU", "MingLiU", "Noto Serif CJK TC", Georgia, "Times New Roman", serif !important;
+  font-weight: 200 !important;
+}
+
+.font-cjk {
+  font-family: "PMingLiU", "MingLiU", "Noto Serif CJK TC", serif !important;
+  font-weight: 200 !important;
+}
+
+/* Tailwind's explicit white text utility must win over the global black-text rule. */
+body .text-white,
+body [class~="text-white"] {
+  color: #ffffff !important;
+}
+
+body :where(p, span, label, li, td, th, button, a, input, textarea, select, option, h1, h2, h3, h4, h5, h6) {
+  color: #000000;
+  font-weight: 200;
+}
+
+/* Keep labels and icons readable on dark action controls. */
+body [class*="bg-black"],
+body [class*="bg-[#0a192f]"],
+body [class*="bg-[#0f2a59]"],
+body [class*="bg-slate-800"],
+body [class*="bg-slate-900"] {
+  color: #ffffff !important;
+}
+
+button[class*="bg-[#0a192f]"],
+a[class*="bg-[#0a192f]"],
+button[class*="bg-black"],
+ a[class*="bg-black"],
+button[class*="bg-[#132c5b]"],
+a[class*="bg-[#132c5b]"],
+button[class*="bg-slate-800"],
+a[class*="bg-slate-800"],
+button[class*="bg-slate-900"],
+a[class*="bg-slate-900"] {
+  color: #ffffff !important;
+}
+
+button[class*="bg-[#0a192f]"] *,
+a[class*="bg-[#0a192f]"] *,
+button[class*="bg-black"] *,
+a[class*="bg-black"] *,
+button[class*="bg-[#132c5b]"] *,
+a[class*="bg-[#132c5b]"] *,
+button[class*="bg-slate-800"] *,
+a[class*="bg-slate-800"] *,
+button[class*="bg-slate-900"] *,
+a[class*="bg-slate-900"] * {
+  color: #ffffff !important;
+}
+
+/* 3D Flip Card Effect */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* Print Styles */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .print-page-break {
+    page-break-after: always;
+  }
+}
