@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getCurrentUserId } from '@/lib/session';
 import { GeneratedWord, GeneratedCloze, GeneratedQuiz } from '@/types';
 
-// GET all decks with summary counts
+// GET all decks (scoped to the signed-in user) with summary counts
 export async function GET() {
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    return NextResponse.json({ error: '尚未登入' }, { status: 401 });
+  }
   try {
     const decks = await prisma.deck.findMany({
+      where: { userId },
       orderBy: { createdAt: 'desc' },
       include: {
         _count: {
@@ -44,8 +50,12 @@ export async function GET() {
   }
 }
 
-// POST create new deck with words, article, and quizzes
+// POST create new deck with words, article, and quizzes (scoped to the signed-in user)
 export async function POST(req: NextRequest) {
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    return NextResponse.json({ error: '尚未登入' }, { status: 401 });
+  }
   try {
     const body = await req.json();
     const { title, description, words, article, quizzes } = body as {
@@ -64,6 +74,7 @@ export async function POST(req: NextRequest) {
       data: {
         title,
         description: description || '',
+        userId,
         words: {
           create: words.map(w => ({
             word: w.word,
