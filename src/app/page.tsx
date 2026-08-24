@@ -70,7 +70,7 @@ export default function HomePage() {
       <div className="rounded-3xl bg-white border-2 border-[#0a192f] p-8 sm:p-12 shadow-sm">
         <div className="max-w-2xl space-y-4">
           <h1 className="text-3xl sm:text-5xl text-[#0a192f] tracking-tight leading-tight">
-            <span className="block">vocabulary</span>
+            <span className="block">Vocabulary</span>
           </h1>
 
           <div className="flex flex-wrap items-center gap-4 pt-2">

@@ -31,64 +31,87 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
     setSeconds(0);
   }, [initialQuizzes]);
 
+  // Fetch Chinese translations for distractor options that are not part of the deck.
+  // Uses a cancellation guard so a stale response from a previous (pre-retake)
+  // quiz set cannot overwrite translations for the current quiz set.
   useEffect(() => {
-    const known = new Set(words
-      .filter(word => word.translation?.trim())
-      .map(word => word.word.trim().toLowerCase()));
-    const missing = Array.from(new Set(
-      quizzes.flatMap(quiz => quiz.options).filter(option => !known.has(option.trim().toLowerCase())),
-    ));
-    if (missing.length === 0) return;
+    let cancelled = false;
+
+    const normalize = (value: string) => value.trim().toLowerCase();
+
+    const knownTranslations = new Set(
+      words
+        .filter(word => word.translation?.trim())
+        .map(word => normalize(word.word)),
+    );
+
+    const currentOptions = Array.from(
+      new Set(
+        quizzes
+          .flatMap(quiz => quiz.options)
+          .map(option => option.trim())
+          .filter(Boolean),
+      ),
+    );
+
+    const currentOptionKeys = new Set(currentOptions.map(normalize));
+
+    // Drop translations that no longer belong to the current quiz set.
+    setOptionTranslations(prev =>
+      Object.fromEntries(
+        Object.entries(prev).filter(([key]) => currentOptionKeys.has(key)),
+      ),
+    );
+
+    const missing = currentOptions.filter(option => !knownTranslations.has(normalize(option)));
+    if (missing.length === 0) {
+      setIsTranslatingOptions(false);
+      return () => {
+        cancelled = true;
+      };
+    }
 
     const translateMissingOptions = async () => {
+      const apiKey = typeof window !== 'undefined' ? localStorage.getItem('gemini_api_key') || '' : '';
+      if (!apiKey.trim()) {
+        setIsTranslatingOptions(false);
+        return;
+      }
       setIsTranslatingOptions(true);
       try {
-        const apiKey = typeof window !== 'undefined' ? localStorage.getItem('gemini_api_key') || '' : '';
-        if (!apiKey) return;
         const response = await fetch('/api/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'translate', words: missing.map(word => ({ word })), apiKey }),
+          body: JSON.stringify({
+            action: 'translate',
+            words: missing.map(word => ({ word })),
+            apiKey,
+          }),
         });
         const result = await response.json();
-        if (response.ok && result.success) {
-          setOptionTranslations(result.translations || {});
-        } else {
+        if (!cancelled && response.ok && result.success) {
+          const normalizedTranslations = Object.fromEntries(
+            Object.entries(result.translations || {}).map(([word, translation]) => [
+              normalize(word),
+              String(translation),
+            ]),
+          );
+          setOptionTranslations(prev => ({ ...prev, ...normalizedTranslations }));
+        } else if (!cancelled) {
           console.warn('Translation API failed:', result.error || 'Unknown error');
         }
       } catch (error) {
-        console.warn('Failed to translate quiz options', error);
+        if (!cancelled) console.warn('Failed to translate quiz options', error);
       } finally {
-        setIsTranslatingOptions(false);
+        if (!cancelled) setIsTranslatingOptions(false);
       }
     };
+
     translateMissingOptions();
-  }, [quizzes, words]);
 
-  useEffect(() => {
-    const known = new Set(words.map(word => word.word.trim().toLowerCase()));
-    const missing = Array.from(new Set(
-      quizzes.flatMap(quiz => quiz.options)
-        .filter(option => !known.has(option.trim().toLowerCase())),
-    ));
-    if (missing.length === 0) return;
-
-    const translateMissingOptions = async () => {
-      try {
-        const apiKey = typeof window !== 'undefined' ? localStorage.getItem('gemini_api_key') || '' : '';
-        if (!apiKey) return;
-        const response = await fetch('/api/translate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ words: missing, apiKey }),
-        });
-        const result = await response.json();
-        if (response.ok && result.success) setOptionTranslations(result.translations || {});
-      } catch (error) {
-        console.warn('Failed to translate quiz options', error);
-      }
+    return () => {
+      cancelled = true;
     };
-    translateMissingOptions();
   }, [quizzes, words]);
 
   // Timer
