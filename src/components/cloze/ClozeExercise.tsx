@@ -3,19 +3,22 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { BookOpen, Check, HelpCircle, Eye, EyeOff, RotateCcw, Award } from 'lucide-react';
-import { GeneratedCloze } from '@/types';
+import { GeneratedCloze, GeneratedWord } from '@/types';
 
 interface ClozeExerciseProps {
   article: GeneratedCloze;
+  words: GeneratedWord[];
 }
 
-export function ClozeExercise({ article }: ClozeExerciseProps) {
+export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseProps) {
+  const [article, setArticle] = useState<GeneratedCloze>(initialArticle);
   const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
   const [activeBlankId, setActiveBlankId] = useState<number | null>(null);
   const [showHints, setShowHints] = useState<Record<number, boolean>>({});
   const [showChinese, setShowChinese] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [score, setScore] = useState<{ correct: number; total: number } | null>(null);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   useEffect(() => {
     setUserAnswers({});
@@ -73,6 +76,43 @@ export function ClozeExercise({ article }: ClozeExerciseProps) {
     setActiveBlankId(article.blanks?.[0]?.id || null);
     setIsChecked(false);
     setScore(null);
+  };
+
+  const handleNewArticleRestart = async () => {
+    setIsRegenerating(true);
+    try {
+      const apiKey = typeof window !== 'undefined' ? localStorage.getItem('gemini_api_key') || '' : '';
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          words: words.map(word => ({
+            word: word.word,
+            pos: word.pos,
+            translation: word.translation,
+            phonetic: word.phonetic,
+            definition: word.definition,
+            example: word.example,
+            exampleZh: word.exampleZh,
+          })),
+          level: 'highschool',
+          apiKey,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success || !result.data?.article) {
+        throw new Error(result.error || result.data?.fallbackReason || 'Unable to generate a new article.');
+      }
+      setArticle(result.data.article);
+      setUserAnswers({});
+      setIsChecked(false);
+      setScore(null);
+    } catch (error) {
+      console.error('Failed to generate a new article', error);
+      window.alert(error instanceof Error ? error.message : 'Unable to generate a new article.');
+    } finally {
+      setIsRegenerating(false);
+    }
   };
 
   // Render article text by replacing [blank_X] with input/interactive slot
@@ -238,10 +278,11 @@ export function ClozeExercise({ article }: ClozeExerciseProps) {
               Retake original quiz
             </button>
             <button
-              onClick={handleReset}
-              className="px-4 py-2.5 rounded-xl bg-[#0a192f] hover:bg-[#132c5b] !text-white text-xs font-bold shadow-sm transition border border-[#0a192f]"
+              onClick={handleNewArticleRestart}
+              disabled={isRegenerating}
+              className="px-4 py-2.5 rounded-xl bg-[#0a192f] hover:bg-[#132c5b] disabled:opacity-60 !text-white text-xs font-bold shadow-sm transition border border-[#0a192f]"
             >
-              Retake shuffled quiz
+              {isRegenerating ? 'Generating...' : 'Retake shuffled quiz'}
             </button>
           </div>
         </div>

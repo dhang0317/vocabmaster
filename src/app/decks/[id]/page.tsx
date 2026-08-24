@@ -207,7 +207,7 @@ export default function DeckStudyPage() {
         )}
 
         {activeTab === 'cloze' && deck.articles && deck.articles.length > 0 && (
-          <ClozeExercise article={deck.articles[0]} />
+          <ClozeExercise article={deck.articles[0]} words={deck.words} />
         )}
 
         {activeTab === 'quiz' && deck.quizzes && deck.quizzes.length > 0 && (
