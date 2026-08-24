@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Volume2, RotateCw, ChevronLeft, ChevronRight, CheckCircle2, Shuffle, BookOpen } from 'lucide-react';
+import { Volume2, RotateCw, ChevronLeft, ChevronRight, CheckCircle2, BookOpen } from 'lucide-react';
 import { GeneratedWord } from '@/types';
 
 interface FlashcardPlayerProps {
@@ -14,7 +14,6 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const [isShuffled, setIsShuffled] = useState(false);
 
   useEffect(() => {
     setWords(initialWords);
@@ -94,14 +93,6 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
     }
   };
 
-  const handleShuffle = () => {
-    const shuffled = [...words].sort(() => Math.random() - 0.5);
-    setWords(shuffled);
-    setCurrentIndex(0);
-    setIsFlipped(false);
-    setIsShuffled(true);
-  };
-
   if (!currentWord) {
     return (
       <div className="text-center py-16 text-slate-500">
@@ -127,19 +118,6 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleShuffle}
-            title="Shuffle flashcards"
-            className={`p-2 rounded-xl border-2 transition ${
-              isShuffled
-                ? 'bg-[#0a192f] border-[#0a192f] text-white'
-                : 'bg-white border-[#0a192f] text-[#0a192f] hover:bg-slate-100'
-            }`}
-          >
-            <Shuffle className="w-4 h-4" />
-          </button>
-        </div>
       </div>
 
       {/* Progress Bar */}
@@ -163,11 +141,7 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
           {/* Card Front */}
           <div className="absolute inset-0 w-full h-full backface-hidden rounded-3xl bg-white border-2 border-[#0a192f] p-8 flex flex-col justify-between">
             {/* Front Header */}
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono uppercase tracking-wider text-[#0a192f] bg-slate-100 px-3 py-1 rounded-lg border border-[#0a192f]/40 font-bold">
-                Front • Flashcard
-              </span>
-
+            <div className="flex items-center justify-end">
               <button
                 onClick={handleToggleMaster}
                 title={currentWord.isMastered ? 'Marked as mastered' : 'Mark as mastered'}
@@ -220,11 +194,7 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
           {/* Card Back */}
           <div className="absolute inset-0 w-full h-full backface-hidden rotate-y-180 rounded-3xl bg-white border-2 border-[#0a192f] p-8 flex flex-col justify-between">
             {/* Back Header */}
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono uppercase tracking-wider text-white bg-[#0a192f] px-3 py-1 rounded-lg font-bold">
-                Back • Definition & example
-              </span>
-
+            <div className="flex items-center justify-end">
               <button
                 onClick={handleToggleMaster}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition border ${

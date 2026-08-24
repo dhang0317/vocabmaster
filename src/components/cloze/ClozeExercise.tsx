@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { BookOpen, Check, HelpCircle, Eye, EyeOff, RotateCcw, Award } from 'lucide-react';
+import { BookOpen, Check, HelpCircle, Eye, EyeOff, Award } from 'lucide-react';
 import { GeneratedCloze, GeneratedWord } from '@/types';
 
 interface ClozeExerciseProps {
@@ -212,16 +212,6 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
             {showChinese ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
             <span>{showChinese ? '隱藏中文對照' : '顯示中文對照'}</span>
           </button>
-
-          {isChecked && (
-            <button
-              onClick={handleReset}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-xs font-bold text-[#0a192f] border-2 border-[#0a192f] transition shadow-sm"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Try again</span>
-            </button>
-          )}
         </div>
       </div>
 
