@@ -149,7 +149,7 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
 
               <div className="flex items-center justify-center gap-3">
                 {currentWord.phonetic && (
-                  <span className="text-sm font-mono text-[#0a192f] bg-slate-100 px-3 py-1 rounded-md border border-[#0a192f]/30 font-semibold">
+                  <span className="text-sm font-ipa text-[#0a192f] bg-slate-100 px-3 py-1 rounded-md border border-[#0a192f]/30 font-semibold">
                     {currentWord.phonetic}
                   </span>
                 )}
@@ -248,11 +248,6 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
           <ChevronRight className="w-5 h-5" />
         </button>
       </div>
-
-      {/* Keyboard guide tip */}
-      <p className="text-center text-xs text-slate-500 font-medium">
-        Keyboard shortcuts: [Space] flip • [←/→] change word • [A] pronunciation
-      </p>
     </div>
   );
 }

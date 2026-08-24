@@ -240,8 +240,19 @@ export default function DeckStudyPage() {
                           <Volume2 className="w-4 h-4" />
                         </button>
                       </td>
-                      <td className="px-4 py-4 font-mono text-xs text-[#0a192f] font-bold">
-                        {w.phonetic} <span className="italic text-[#1e3a8a]">{w.pos}</span>
+                      <td className="px-4 py-4">
+                        {w.phonetic ? (
+                          <span className="font-ipa text-sm text-[#0a192f]">{w.phonetic}</span>
+                        ) : (
+                          <span className="text-xs text-slate-400">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-4">
+                        {w.pos ? (
+                          <span className="text-xs italic text-[#1e3a8a] bg-blue-50 px-2 py-0.5 rounded-md border border-[#0a192f]/30 font-bold">{w.pos}</span>
+                        ) : (
+                          <span className="text-xs text-slate-400">—</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 font-bold text-[#0a192f]">{w.translation}</td>
                       <td className="px-6 py-4 text-xs text-slate-600 max-w-xs">

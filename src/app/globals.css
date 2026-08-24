@@ -44,6 +44,14 @@ body, body * {
   font-weight: 200 !important;
 }
 
+/* Phonetic / IPA rendering. Uses a serif with full IPA glyph coverage at a
+   readable weight, overriding the thin global body font (which falls back to
+   CJK fonts for IPA and renders poorly). */
+.font-ipa {
+  font-family: "Times New Roman", Georgia, "DejaVu Serif", serif !important;
+  font-weight: 400 !important;
+}
+
 /* Tailwind's explicit white text utility must win over the global black-text rule. */
 body .text-white,
 body [class~="text-white"] {
