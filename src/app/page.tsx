@@ -196,21 +196,21 @@ export default function HomePage() {
 
                   <div className="flex flex-wrap gap-2 pt-1">
                     {deck.isPublic && (
-                      <span className="text-[11px] px-2.5 py-1 rounded-lg bg-emerald-50/80 text-emerald-800 border border-emerald-200 font-bold inline-flex items-center gap-1">
+                      <span className="text-[11px] px-2.5 py-1 rounded-lg bg-emerald-50/80 !text-emerald-900 border border-emerald-200 font-bold inline-flex items-center gap-1">
                         <Globe className="w-3 h-3" /> Public
                       </span>
                     )}
-                    <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white/50 text-[#0a192f] border border-white/40 font-bold">
+                    <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white/50 !text-black border border-white/40 font-bold">
                       {deck.wordCount} words
                     </span>
                     {deck.articleCount > 0 && (
-                      <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white/50 text-[#0a192f] border border-white/40 font-bold">
+                      <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white/50 !text-black border border-white/40 font-bold">
                         Cloze article
                       </span>
                     )}
                     {deck.quizCount > 0 && (
-                      <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white/50 text-[#0a192f] border border-white/40 font-bold">
-                        <span className="text-[#0a192f]">{deck.quizCount} quiz questions</span>
+                      <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white/50 !text-black border border-white/40 font-bold">
+                        {deck.quizCount} quiz questions
                       </span>
                     )}
                   </div>
