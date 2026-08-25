@@ -96,10 +96,10 @@ export function Navbar() {
           <div
             ref={menuRef}
             role="menu"
-            className="liquid-glass fixed z-[100] w-64 rounded-2xl py-2"
+            className="liquid-glass-menu fixed z-[100] w-64 rounded-2xl py-2"
             style={{ top: menuPos.top, right: menuPos.right }}
           >
-            <div className="px-4 py-3 border-b border-black/10">
+            <div className="px-4 py-3 border-b border-white/20">
               <p className="text-sm font-bold text-[#0a192f] truncate">
                 {session?.user?.name || 'User'}
               </p>
@@ -116,7 +116,7 @@ export function Navbar() {
                   setMenuOpen(false);
                   setIsKeyModalOpen(true);
                 }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#0a192f] hover:bg-white/50 transition text-left"
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#0a192f] hover:bg-white/35 transition text-left"
               >
                 <Key className="w-4 h-4 shrink-0" />
                 <span>API Key settings</span>
@@ -126,7 +126,7 @@ export function Navbar() {
                 type="button"
                 role="menuitem"
                 onClick={toggleTheme}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#0a192f] hover:bg-white/50 transition text-left"
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#0a192f] hover:bg-white/35 transition text-left"
               >
                 {theme === 'light' ? (
                   <Moon className="w-4 h-4 shrink-0" />
@@ -140,7 +140,7 @@ export function Navbar() {
                 href="/feedback"
                 role="menuitem"
                 onClick={() => setMenuOpen(false)}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#0a192f] hover:bg-white/50 transition text-left"
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#0a192f] hover:bg-white/35 transition text-left"
               >
                 <MessageSquare className="w-4 h-4 shrink-0" />
                 <span>Feedback</span>
@@ -150,19 +150,19 @@ export function Navbar() {
                 type="button"
                 role="menuitem"
                 onClick={handleSwitchAccount}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#0a192f] hover:bg-white/50 transition text-left"
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#0a192f] hover:bg-white/35 transition text-left"
               >
                 <RefreshCw className="w-4 h-4 shrink-0" />
                 <span>Switch account</span>
               </button>
             </div>
 
-            <div className="border-t border-black/10 pt-1">
+            <div className="border-t border-white/20 pt-1">
               <button
                 type="button"
                 role="menuitem"
                 onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50/60 transition text-left"
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50/40 transition text-left"
               >
                 <LogOut className="w-4 h-4 shrink-0" />
                 <span>Log out</span>
