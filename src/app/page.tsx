@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, BookOpen, Layers, CheckCircle2, Award, Trash2, ArrowRight, Search } from 'lucide-react';
+import { Plus, BookOpen, Layers, CheckCircle2, Award, Trash2, ArrowRight, Search, Globe } from 'lucide-react';
 
 interface DeckSummary {
   id: string;
   title: string;
   description: string | null;
+  isPublic?: boolean;
   createdAt: string;
   wordCount: number;
   masteredCount: number;
@@ -66,14 +67,13 @@ export default function HomePage() {
 
   return (
     <div className="relative space-y-10">
-      {/* Hero Banner */}
       <div className="liquid-glass liquid-glass-hover rounded-3xl p-8 sm:p-12">
         <div className="max-w-2xl space-y-4">
           <h1 className="text-3xl sm:text-5xl text-[#0a192f] tracking-tight leading-tight">
             <span className="block">Vocabulary</span>
           </h1>
 
-          <div className="flex flex-wrap items-center gap-4 pt-2">
+          <div className="flex flex-wrap items-center gap-3 pt-2">
             <Link
               href="/create"
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] text-white font-bold text-sm shadow-md transition transform hover:-translate-y-0.5"
@@ -82,11 +82,17 @@ export default function HomePage() {
               <Plus className="w-5 h-5" />
               <span>Add words</span>
             </Link>
+            <Link
+              href="/explore"
+              className="liquid-glass liquid-glass-hover inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl text-[#0a192f] font-bold text-sm"
+            >
+              <Globe className="w-5 h-5" />
+              <span>Public library</span>
+            </Link>
           </div>
         </div>
       </div>
 
-      {/* Stats Section */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="liquid-glass liquid-glass-hover p-5 rounded-2xl space-y-1">
           <div className="flex items-center justify-between text-slate-600">
@@ -121,12 +127,9 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Decks Management Header */}
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-black text-[#0a192f]">Vocabulary</h2>
-          </div>
+          <h2 className="text-2xl font-black text-[#0a192f]">Vocabulary</h2>
 
           <div className="relative w-full sm:w-72">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -192,6 +195,11 @@ export default function HomePage() {
                   )}
 
                   <div className="flex flex-wrap gap-2 pt-1">
+                    {deck.isPublic && (
+                      <span className="text-[11px] px-2.5 py-1 rounded-lg bg-emerald-50/80 text-emerald-800 border border-emerald-200 font-bold inline-flex items-center gap-1">
+                        <Globe className="w-3 h-3" /> Public
+                      </span>
+                    )}
                     <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white/50 text-[#0a192f] border border-white/40 font-bold">
                       {deck.wordCount} words
                     </span>
