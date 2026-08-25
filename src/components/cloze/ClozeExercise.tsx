@@ -23,14 +23,6 @@ interface TranslatePopup {
   placeAbove: boolean;
 }
 
-function articlePlainText(content: string, blanks: GeneratedCloze['blanks']): string {
-  return content.replace(/\[blank_(\d+)\]/g, (_, idStr: string) => {
-    const id = parseInt(idStr, 10);
-    const blank = blanks.find(b => b.id === id);
-    return blank?.word || '____';
-  });
-}
-
 function buildGlossaryMap(
   article: GeneratedCloze,
   words: GeneratedWord[]
@@ -56,7 +48,6 @@ function buildGlossaryMap(
   return map;
 }
 
-/** Instant local lookup: exact → lowercase → strip punctuation → single tokens */
 function lookupGlossary(
   map: Map<string, GlossaryEntry>,
   selected: string
@@ -76,11 +67,9 @@ function lookupGlossary(
     if (hit) return hit;
   }
 
-  // Multi-word: try joining without extra spaces
   const collapsed = raw.toLowerCase().replace(/\s+/g, ' ');
   if (map.has(collapsed)) return map.get(collapsed)!;
 
-  // Single longest token match
   const tokens = raw.split(/\s+/).filter(Boolean);
   if (tokens.length === 1) {
     const t = tokens[0].replace(/^["'“”‘’(\[]+|["'“”‘’)\],.!;:?]+$/g, '').toLowerCase();
@@ -166,7 +155,6 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
     }
   }, [popup]);
 
-  /** Fallback only when glossary misses — free Google path, no Gemini to save quota */
   const fetchTranslationFallback = useCallback(
     async (text: string, x: number, y: number, placeAbove: boolean) => {
       if (translateAbortRef.current) {
@@ -268,7 +256,6 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
     const placeAbove = spaceAbove >= 110 || spaceAbove >= spaceBelow;
     const y = placeAbove ? rect.top - 6 : rect.bottom + 6;
 
-    // 1) Instant local glossary (generated with the article)
     const hit = lookupGlossary(glossaryMap, text);
     if (hit) {
       setPopup({
@@ -286,7 +273,6 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
       return;
     }
 
-    // 2) Soft fallback for words not in precomputed glossary
     fetchTranslationFallback(text, x, y, placeAbove);
   }, [glossaryMap, article.contentZh, fetchTranslationFallback]);
 
@@ -388,21 +374,37 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
           userVal.trim().toLowerCase() !== blankData.word.trim().toLowerCase();
         const isActive = activeBlankId === blankId;
 
+        // Solid white chip + black text (survives dark mode)
+        let bg = '#ffffff';
+        let border = '1px solid rgba(10, 25, 47, 0.35)';
+        if (isCorrect) {
+          bg = '#d1fae5';
+          border = '1px solid #059669';
+        } else if (isWrong) {
+          bg = '#fee2e2';
+          border = '1px solid #ef4444';
+        } else if (isActive) {
+          border = '2px solid #0a192f';
+        }
+
         return (
           <span key={index} className="inline-block mx-1 my-1">
             <span
               onClick={() => setActiveBlankId(blankId)}
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border font-bold text-sm transition ${
-                isCorrect
-                  ? 'bg-emerald-100 border-emerald-600 !text-black'
-                  : isWrong
-                  ? 'bg-red-100 border-red-500 !text-black'
-                  : isActive
-                  ? 'bg-white/50 border-white/80 !text-black ring-2 ring-[#0a192f]/15'
-                  : 'bg-white/30 border-white/50 !text-black hover:bg-white/45'
-              }`}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl font-bold text-sm transition"
+              style={{
+                backgroundColor: bg,
+                border,
+                color: '#000000',
+                WebkitTextFillColor: '#000000',
+              }}
             >
-              <span className="text-[11px] font-mono !text-black/50">({blankId})</span>
+              <span
+                className="text-[11px] font-mono"
+                style={{ color: 'rgba(0,0,0,0.45)', WebkitTextFillColor: 'rgba(0,0,0,0.45)' }}
+              >
+                ({blankId})
+              </span>
               <input
                 type="text"
                 value={userVal}
@@ -410,7 +412,12 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
                 onChange={e => handleInputChange(blankId, e.target.value)}
                 placeholder="____"
                 disabled={isChecked}
-                className="bg-transparent border-none outline-none text-center font-bold text-sm !text-black placeholder-slate-400 w-24"
+                className="bg-transparent border-none outline-none text-center font-bold text-sm w-24"
+                style={{
+                  color: '#000000',
+                  WebkitTextFillColor: '#000000',
+                  caretColor: '#000000',
+                }}
               />
               {blankData && (
                 <button
@@ -420,7 +427,8 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
                     handleToggleHint(blankId);
                   }}
                   title="Show/hide hint"
-                  className="!text-black/40 hover:!text-black p-0.5 rounded"
+                  className="p-0.5 rounded"
+                  style={{ color: 'rgba(0,0,0,0.4)' }}
                 >
                   <HelpCircle className="w-3.5 h-3.5" />
                 </button>
@@ -428,13 +436,24 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
             </span>
 
             {showHints[blankId] && blankData && (
-              <span className="block text-[11px] !text-black bg-amber-50 border border-amber-300 rounded px-1.5 py-0.5 mt-0.5 font-medium">
+              <span
+                className="block text-[11px] rounded px-1.5 py-0.5 mt-0.5 font-medium"
+                style={{
+                  color: '#000000',
+                  WebkitTextFillColor: '#000000',
+                  backgroundColor: '#fffbeb',
+                  border: '1px solid #fcd34d',
+                }}
+              >
                 💡 {blankData.hint}
               </span>
             )}
 
             {isWrong && blankData && (
-              <span className="block text-[11px] text-emerald-800 font-bold mt-0.5">
+              <span
+                className="block text-[11px] font-bold mt-0.5"
+                style={{ color: '#065f46', WebkitTextFillColor: '#065f46' }}
+              >
                 ✓ Correct: {blankData.word}
               </span>
             )}
@@ -455,10 +474,6 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
             <BookOpen className="w-5 h-5 text-[#0a192f]" />
             {article.title || 'Context cloze exercise'}
           </h3>
-          <p className="text-xs text-slate-600">
-            Choose or type the correct word from the word bank for each blank.
-            <span className="ml-1 text-slate-500">· 反白查詞（預載詞庫，幾乎不耗 API）</span>
-          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -475,9 +490,7 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
       {!isChecked && (
         <div className="liquid-glass p-4 rounded-2xl space-y-2">
           <div className="flex items-center justify-between text-xs text-slate-600">
-            <span className="font-bold text-[#0a192f]">
-              Word Bank - click a word to fill the active blank:
-            </span>
+            <span className="font-bold text-[#0a192f]">Word Bank</span>
           </div>
           <div className="flex flex-wrap gap-2 pt-1">
             {wordBank.map((word, idx) => {
