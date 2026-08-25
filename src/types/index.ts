@@ -6,6 +6,8 @@ export interface RawWordInput {
   definition?: string;
   example?: string;
   exampleZh?: string;
+  /** Optional user-selected semantic tags for better cloze slot matching */
+  semanticTags?: string[];
 }
 
 export interface GeneratedWord {
@@ -18,6 +20,7 @@ export interface GeneratedWord {
   example: string;
   exampleZh: string;
   isMastered?: boolean;
+  semanticTags?: string[];
 }
 
 export interface ClozeBlank {
