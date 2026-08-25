@@ -266,7 +266,7 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
 
                 <input
                   type="text"
-grade                  value={item.pos || ''}
+                  value={item.pos || ''}
                   onChange={(e) => handleWordChange(idx, 'pos', e.target.value)}
                   placeholder="POS"
                   className={`${fieldClass} w-16 text-xs text-center px-2`}
