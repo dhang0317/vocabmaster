@@ -6,7 +6,6 @@ import {
   XCircle,
   RotateCcw,
   ArrowRight,
-  HelpCircle,
   BookOpen,
   Clock,
   Languages,
@@ -607,10 +606,13 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
                 </div>
 
                 {q.explanation && (
-                  <div className="mt-3 p-3.5 bg-white/60 rounded-xl border border-[#0a192f]/15 text-xs text-[#0a192f] leading-relaxed">
-                    <strong className="text-[#0a192f]">Explanation:</strong> {q.explanation}
+                  <div
+                    className="mt-3 p-3.5 rounded-xl border border-[#0a192f]/15 text-xs leading-relaxed"
+                    style={{ backgroundColor: '#ffffff', color: '#000000' }}
+                  >
+                    <strong style={{ color: '#000000' }}>Explanation:</strong> {q.explanation}
                     <br />
-                    <strong className="text-[#0a192f]">選項翻譯：</strong> {getOtherOptionTranslations(q)}
+                    <strong style={{ color: '#000000' }}>選項翻譯：</strong> {getOtherOptionTranslations(q)}
                   </div>
                 )}
               </div>
@@ -694,10 +696,9 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
         {showExplanation && (
           <div
             className="p-5 rounded-2xl border border-[#0a192f]/20 space-y-3 animate-in fade-in duration-200"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{ backgroundColor: '#ffffff', color: '#000000' }}
           >
-            <div className="flex items-center gap-2 text-xs font-black text-[#0a192f]">
-              <HelpCircle className="w-4 h-4" />
+            <div className="text-xs font-black text-[#0a192f]">
               <span>Translation & explanation</span>
             </div>
 
