@@ -66,18 +66,8 @@ export default function HomePage() {
 
   return (
     <div className="relative space-y-10">
-      {/* Soft backdrop so glass blur is visible */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
-      >
-        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-sky-200/50 blur-3xl" />
-        <div className="absolute top-1/3 -right-20 w-80 h-80 rounded-full bg-indigo-200/40 blur-3xl" />
-        <div className="absolute bottom-10 left-1/3 w-72 h-72 rounded-full bg-emerald-100/50 blur-3xl" />
-      </div>
-
       {/* Hero Banner */}
-      <div className="liquid-glass rounded-3xl p-8 sm:p-12 transition-transform hover:-translate-y-0.5">
+      <div className="liquid-glass liquid-glass-hover rounded-3xl p-8 sm:p-12">
         <div className="max-w-2xl space-y-4">
           <h1 className="text-3xl sm:text-5xl text-[#0a192f] tracking-tight leading-tight">
             <span className="block">Vocabulary</span>
@@ -98,7 +88,7 @@ export default function HomePage() {
 
       {/* Stats Section */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="liquid-glass p-5 rounded-2xl space-y-1 transition-transform hover:-translate-y-0.5">
+        <div className="liquid-glass liquid-glass-hover p-5 rounded-2xl space-y-1">
           <div className="flex items-center justify-between text-slate-600">
             <span className="text-xs font-bold">Total decks</span>
             <Layers className="w-4 h-4 text-[#0a192f]" />
@@ -106,7 +96,7 @@ export default function HomePage() {
           <span className="text-2xl sm:text-3xl font-black text-[#0a192f]">{decks.length}</span>
         </div>
 
-        <div className="liquid-glass p-5 rounded-2xl space-y-1 transition-transform hover:-translate-y-0.5">
+        <div className="liquid-glass liquid-glass-hover p-5 rounded-2xl space-y-1">
           <div className="flex items-center justify-between text-slate-600">
             <span className="text-xs font-bold">Total words</span>
             <BookOpen className="w-4 h-4 text-[#0a192f]" />
@@ -114,7 +104,7 @@ export default function HomePage() {
           <span className="text-2xl sm:text-3xl font-black text-[#0a192f]">{totalWords}</span>
         </div>
 
-        <div className="liquid-glass p-5 rounded-2xl space-y-1 transition-transform hover:-translate-y-0.5">
+        <div className="liquid-glass liquid-glass-hover p-5 rounded-2xl space-y-1">
           <div className="flex items-center justify-between text-slate-600">
             <span className="text-xs font-bold">Mastered words</span>
             <CheckCircle2 className="w-4 h-4 text-emerald-700" />
@@ -122,7 +112,7 @@ export default function HomePage() {
           <span className="text-2xl sm:text-3xl font-black text-emerald-700">{totalMastered}</span>
         </div>
 
-        <div className="liquid-glass p-5 rounded-2xl space-y-1 transition-transform hover:-translate-y-0.5">
+        <div className="liquid-glass liquid-glass-hover p-5 rounded-2xl space-y-1">
           <div className="flex items-center justify-between text-slate-600">
             <span className="text-xs font-bold">Quizzes completed</span>
             <Award className="w-4 h-4 text-[#0a192f]" />
@@ -151,7 +141,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Decks List */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map(i => (
@@ -159,7 +148,7 @@ export default function HomePage() {
             ))}
           </div>
         ) : filteredDecks.length === 0 ? (
-          <div className="liquid-glass p-12 text-center rounded-3xl space-y-4">
+          <div className="liquid-glass liquid-glass-hover p-12 text-center rounded-3xl space-y-4">
             <div className="space-y-1">
               <h3 className="text-lg font-bold text-[#0a192f]">No Voc</h3>
               <p className="text-xs text-slate-600 max-w-sm mx-auto">
@@ -181,7 +170,7 @@ export default function HomePage() {
               <Link
                 key={deck.id}
                 href={`/decks/${deck.id}`}
-                className="liquid-glass group relative rounded-3xl p-6 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1"
+                className="liquid-glass liquid-glass-hover group relative rounded-3xl p-6 flex flex-col justify-between"
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-3">
