@@ -6,6 +6,7 @@ import {
   GeneratedQuiz,
   GenerationLevel,
   GlossaryEntry,
+  ClozeBlank,
 } from '@/types';
 
 interface GenerationResponse {
@@ -47,32 +48,100 @@ function shuffle<T>(items: T[]): T[] {
   return result;
 }
 
+/** Fill [blank_n] with the actual answer words for alignment. */
+function fillBlanks(content: string, blanks: ClozeBlank[]): string {
+  return content.replace(/\[blank_(\d+)\]/g, (_, idStr: string) => {
+    const id = parseInt(idStr, 10);
+    const blank = blanks.find(b => b.id === id);
+    return blank?.word || '____';
+  });
+}
+
 function normalizeGlossary(
   glossary: GlossaryEntry[] | undefined,
   words: GeneratedWord[],
-  blanks: GeneratedCloze['blanks']
+  blanks: ClozeBlank[]
 ): GlossaryEntry[] {
   const map = new Map<string, GlossaryEntry>();
 
-  const add = (en: string, zh: string, sense?: string) => {
+  const add = (en: string, zh: string, sense?: string, overwrite = false) => {
     const key = en.trim().toLowerCase();
     if (!key || !zh?.trim()) return;
-    if (!map.has(key)) {
+    if (overwrite || !map.has(key)) {
       map.set(key, { en: en.trim(), zh: zh.trim(), sense: sense?.trim() || undefined });
     }
   };
 
-  for (const g of glossary || []) {
-    if (g?.en && g?.zh) add(g.en, g.zh, g.sense);
-  }
+  // Card / blank defaults first (lower priority)
   for (const w of words) {
     add(w.word, w.translation, w.pos ? `詞性 ${w.pos}` : undefined);
   }
   for (const b of blanks || []) {
     if (b.word && b.hint) add(b.word, b.hint.replace(/\s*\([^)]*\)\s*$/, '').trim());
   }
+  // Full-article-aligned glossary overwrites with contextual meanings
+  for (const g of glossary || []) {
+    if (g?.en && g?.zh) add(g.en, g.zh, g.sense, true);
+  }
 
   return Array.from(map.values());
+}
+
+/**
+ * Second pass: given complete EN + ZH article text, split into word/phrase glossary
+ * so each entry matches how it was actually translated in the full text.
+ */
+async function buildGlossaryFromFullTranslation(
+  content: string,
+  contentZh: string,
+  blanks: ClozeBlank[],
+  apiKey: string
+): Promise<GlossaryEntry[]> {
+  const englishFull = fillBlanks(content, blanks);
+  if (!englishFull.trim() || !contentZh?.trim()) return [];
+
+  const model = new GoogleGenerativeAI(apiKey.trim()).getGenerativeModel({
+    model: 'gemini-3.6-flash',
+    generationConfig: {
+      responseMimeType: 'application/json',
+      temperature: 0.15,
+    },
+  });
+
+  const prompt = `你是英中對照與詞彙教學專家。任務：已有「完整英文文章」與「完整繁體中文翻譯」，請依全文對照拆出詞彙表。
+
+【必須遵守的步驟】
+1. 先完整閱讀英文全文與中文全文（不要先拆單字）。
+2. 以中文全文為準，回推每個英文詞／片語在「這篇文章裡」實際對應的中文意思。
+3. 再輸出 glossary。禁止使用與全文翻譯矛盾的字典義。
+
+【英文全文】
+${englishFull}
+
+【繁體中文全文】
+${contentZh}
+
+【輸出】只回傳 JSON：
+{
+  "glossary": [
+    {
+      "en": "文中出現的英文詞或片語（可保留文中型態，如 wasted / looking for）",
+      "zh": "在這篇中文翻譯裡對應的意思（必須與全文一致）",
+      "sense": "可選；一句話說明此處用法或語氣"
+    }
+  ]
+}
+
+規則：
+- 涵蓋所有目標填空單字，以及學生可能反白查詢的實義詞、片語、固定搭配。
+- 跳過純虛詞（a, the, is, of, to…），除非在片語中。
+- 同一英文若全文多處意思相同只列一次；若意思明顯不同可分列（en 可加簡短註記）。
+- zh 必須能在中文全文中對得起來，不要憑空字典翻譯。
+- 約 30–80 筆，繁體中文（台灣用法）。`;
+
+  const result = await model.generateContent(prompt);
+  const parsed = JSON.parse(result.response.text()) as { glossary?: GlossaryEntry[] };
+  return Array.isArray(parsed.glossary) ? parsed.glossary : [];
 }
 
 function normalizeQuizzes(quizzes: GeneratedQuiz[], rawWords: RawWordInput[]): GeneratedQuiz[] {
@@ -157,69 +226,61 @@ export async function generateLearningMaterials(
         })
         .join(', ');
 
+      // Pass 1: story + full Chinese translation + quizzes (glossary comes from pass 2)
       const prompt = `
 You are an expert English vocabulary teacher. Return valid JSON only.
-Create one unique multiple-choice question for each target word. Mix two question styles: meaning questions and sentence-completion questions.
-Use each target word naturally according to its meaning, part of speech, and common collocations.
-Never use a word in a grammatically incorrect phrase: for example, use "comply with a rule/request", but use "acknowledge an achievement".
-The blank must have exactly one correct answer. Make distractors plausible but incorrect.
-Set correctIdx to the correct option's zero-based index and include a concise explanation with the word meaning.
 
-你是一位頂尖的英語教學專家與命題大師。請針對以下提供的英文單字清單，根據難度等級「${level}」，生成完整的學習資料（含單字卡資訊、填空短文、單選測驗題）。
+你是一位頂尖的英語教學專家。請針對單字清單，難度「${level}」，生成學習資料。
 
 目標單字清單: [${wordListStr}]
 
-請輸出符合以下 JSON Schema 格式的純 JSON 資料（不要加入額外 Markdown 註解）：
+【文章寫作順序——必須遵守】
+1. 先寫完整、通順的英文故事 content（目標單字處用 [blank_1]… 標記）。
+2. 再把「填入答案後的完整英文故事」完整翻譯成自然、道地的繁體中文 contentZh（台灣用法）。contentZh 必須是完整篇章翻譯，不是逐詞硬翻。
+3. 不要在此步驟拆單字詞庫。
+
+請輸出純 JSON（不要 Markdown）：
 {
   "words": [
     {
-      "word": "目標單字（正確大小寫拼寫）",
-      "phonetic": "/IPA 音標/",
-      "pos": "詞性簡稱 (如: n., v., adj., adv.)",
-      "translation": "精確且道地的繁體中文翻譯",
-      "definition": "簡明清楚的英文定義",
-      "example": "包含該單字的生動自然英文例句（難度符合 ${level}）",
-      "exampleZh": "例句的流暢繁體中文翻譯"
+      "word": "目標單字",
+      "phonetic": "/IPA/",
+      "pos": "n./v./adj./adv.",
+      "translation": "繁體中文",
+      "definition": "英文定義",
+      "example": "英文例句",
+      "exampleZh": "例句中文"
     }
   ],
   "article": {
-    "title": "一篇有趣且具情境的故事短文標題（英文）",
-    "content": "故事英文短文。必須巧妙且自然地將所有目標單字融入文章中。文章中出現目標單字的地方，請替換為標籤 [blank_1], [blank_2], ... 對應 blanks 陣列中的 id。字數約 120-250 字。",
-    "contentZh": "完整故事短文的對照繁體中文翻譯（包含答案處的中文）",
+    "title": "英文標題",
+    "content": "英文短文 120–250 字，目標單字以 [blank_1],[blank_2]… 標記",
+    "contentZh": "上述故事的完整繁體中文翻譯（含空白處應有的中文意思）",
     "blanks": [
       {
         "id": 1,
-        "word": "該空格正確填入的英文單字",
-        "hint": "該空格的繁體中文提示或語境提示",
-        "options": ["正確單字", "干擾單字1", "干擾單字2", "干擾單字3"]
-      }
-    ],
-    "glossary": [
-      {
-        "en": "文章中出現的實義詞或片語（英文原形或文中形式皆可）",
-        "zh": "此文語境下的繁體中文意思",
-        "sense": "一句話補充用法或語氣（可省略）"
+        "word": "正確英文單字",
+        "hint": "繁中提示",
+        "options": ["正確", "干擾1", "干擾2", "干擾3"]
       }
     ]
   },
   "quizzes": [
     {
-      "question": "包含空格 _____ 的情境測驗題目（英文句子，難度符合 ${level}）",
-      "questionZh": "題目的繁體中文翻譯",
-      "targetWord": "被測驗的目標單字",
-      "options": ["正確單字", "具備文法或形似干擾性的單字1", "干擾單字2", "干擾單字3"],
+      "question": "英文題目（可含 _____）",
+      "questionZh": "題目中文",
+      "targetWord": "目標單字",
+      "options": ["A", "B", "C", "D"],
       "correctIdx": 0,
-      "explanation": "詳細的解析（繁體中文），說明為什麼正確答案適合，以及其他干擾選項的意思與排除原因。"
+      "explanation": "繁中解析"
     }
   ]
 }
 
-注意事項：
-1. 確保繁體中文譯名道地，符合台灣常用語法。
-2. quizzes 陣列中，請為清單中的每一個（或至少大部分）重要單字各設計 1 題高品質的單選測驗題。
-3. options 陣列的 correctIdx 必須正確對應到 options 中的正確答案索引 (0 到 3)，請隨機將正確答案置於 0, 1, 2, 3 的位置。
-4. blanks 陣列必須與 content 中的 [blank_1], [blank_2]... 完全一致。
-5. glossary 必須涵蓋：所有目標單字 + 文章中其他可能被學生查詢的實義詞／片語（跳過 a/the/is 等虛詞）。每個 en 對應此文語境的 zh。glossary 約 25–60 筆即可。
+注意：
+1. blanks 與 content 的 [blank_n] 必須一致。
+2. contentZh 必須對應整篇英文（含答案詞義），語氣自然。
+3. 每個重要目標單字至少一題 quiz；correctIdx 正確。
 `;
 
       const result = await model.generateContent(prompt);
@@ -227,11 +288,23 @@ Set correctIdx to the correct option's zero-based index and include a concise ex
       const parsed = JSON.parse(text) as GenerationResponse;
 
       const article = parsed.article || ({} as GeneratedCloze);
-      article.glossary = normalizeGlossary(
-        article.glossary,
-        parsed.words || [],
-        article.blanks || []
-      );
+      const blanks = article.blanks || [];
+      const genWords = parsed.words || [];
+
+      // Pass 2: read full EN+ZH, then split glossary (contextual, aligned)
+      let alignedGlossary: GlossaryEntry[] = [];
+      try {
+        alignedGlossary = await buildGlossaryFromFullTranslation(
+          article.content || '',
+          article.contentZh || '',
+          blanks,
+          effectiveKey.trim()
+        );
+      } catch (glossaryError) {
+        console.warn('Glossary alignment pass failed, using word-card fallback:', glossaryError);
+      }
+
+      article.glossary = normalizeGlossary(alignedGlossary, genWords, blanks);
 
       return {
         ...parsed,
@@ -292,31 +365,32 @@ function generateOfflineFallback(
   }
   storyText += `With continuous practice, mastering these vocabularies becomes natural and rewarding.`;
 
+  const contentZh =
+    '在當今快節奏的世界中，理解新概念至關重要。許多人發現學習這些詞彙可以極大地改善溝通，並透過持續練習強化長期記憶與實際運用。精通這些詞彙會變得自然且有成就感。';
+
   const fillerGlossary: GlossaryEntry[] = [
-    { en: 'fast-paced', zh: '快節奏的', sense: '形容步調很快' },
-    { en: 'understanding', zh: '理解', sense: '名詞用法' },
+    { en: 'fast-paced', zh: '快節奏的', sense: '對應「快節奏的世界」' },
+    { en: 'understanding', zh: '理解' },
     { en: 'concepts', zh: '概念' },
-    { en: 'essential', zh: '不可或缺的' },
-    { en: 'studying', zh: '研讀／學習' },
+    { en: 'essential', zh: '至關重要' },
+    { en: 'studying', zh: '學習' },
     { en: 'improve', zh: '改善' },
     { en: 'communication', zh: '溝通' },
     { en: 'applying', zh: '運用' },
     { en: 'reinforce', zh: '強化' },
-    { en: 'memory', zh: '記憶' },
-    { en: 'practical', zh: '實用的' },
-    { en: 'usage', zh: '用法／使用' },
+    { en: 'long-term memory', zh: '長期記憶' },
+    { en: 'practical usage', zh: '實際運用' },
     { en: 'practice', zh: '練習' },
     { en: 'mastering', zh: '精通' },
     { en: 'vocabularies', zh: '詞彙' },
-    { en: 'natural', zh: '自然的' },
-    { en: 'rewarding', zh: '有成就感的' },
+    { en: 'natural', zh: '自然' },
+    { en: 'rewarding', zh: '有成就感' },
   ].filter(g => !STOP_WORDS.has(g.en.toLowerCase()));
 
   const article: GeneratedCloze = {
     title: 'A Journey of Learning and Discovery',
     content: storyText,
-    contentZh:
-      '在當今快節奏的世界中，理解新概念至關重要。許多人發現學習這些詞彙可以極大地改善溝通，並在持續練習中獲得長期的成果。',
+    contentZh,
     blanks,
     glossary: normalizeGlossary(fillerGlossary, words, blanks),
   };
