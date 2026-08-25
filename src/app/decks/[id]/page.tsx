@@ -193,23 +193,15 @@ export default function DeckStudyPage() {
             onClick={handleTogglePublic}
             disabled={publishing}
             title={deck.isPublic ? 'Remove from public library' : 'Share to public library'}
-            className="p-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 transition border border-black/10"
-            style={
+            className={
               deck.isPublic
-                ? { backgroundColor: '#ffffff', color: '#000000' }
-                : undefined
+                ? 'p-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 transition border border-black/10'
+                : 'liquid-glass liquid-glass-hover p-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 transition text-slate-600'
             }
+            style={deck.isPublic ? { backgroundColor: '#ffffff', color: '#000000' } : undefined}
           >
-            {!deck.isPublic && (
-              <span className="liquid-glass liquid-glass-hover absolute inset-0 rounded-xl -z-10" />
-            )}
-            <Globe
-              className="w-4 h-4"
-              style={{ color: deck.isPublic ? '#000000' : undefined }}
-            />
-            <span className={deck.isPublic ? '' : 'text-slate-600'}>
-              {publishing ? '…' : deck.isPublic ? 'Public' : 'Share'}
-            </span>
+            <Globe className="w-4 h-4" style={deck.isPublic ? { color: '#000000' } : undefined} />
+            <span>{publishing ? '…' : deck.isPublic ? 'Public' : 'Share'}</span>
           </button>
           <button
             type="button"
