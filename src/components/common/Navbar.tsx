@@ -51,14 +51,6 @@ export function Navbar() {
     document.documentElement.setAttribute('data-theme', next);
   };
 
-  const handleFeedback = () => {
-    setMenuOpen(false);
-    window.open(
-      'mailto:jeffery0990317@gmail.com?subject=Vocabulum%20Feedback',
-      '_blank'
-    );
-  };
-
   const handleSwitchAccount = async () => {
     setMenuOpen(false);
     await signOut({ callbackUrl: '/login' });
@@ -144,15 +136,15 @@ export function Navbar() {
                         <span>{theme === 'light' ? 'Dark mode' : 'Light mode'}</span>
                       </button>
 
-                      <button
-                        type="button"
+                      <Link
+                        href="/feedback"
                         role="menuitem"
-                        onClick={handleFeedback}
+                        onClick={() => setMenuOpen(false)}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#0a192f] hover:bg-slate-100 transition text-left"
                       >
                         <MessageSquare className="w-4 h-4 shrink-0" />
                         <span>Feedback</span>
-                      </button>
+                      </Link>
 
                       <button
                         type="button"
