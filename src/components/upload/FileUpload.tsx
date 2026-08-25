@@ -126,6 +126,7 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
                 ? 'bg-[#0a192f] text-white border-[#0a192f]'
                 : 'bg-white text-[#0a192f] border-[#0a192f]/30 hover:border-[#0a192f]'
             }`}
+            style={activeTab === 'file' ? { color: '#ffffff' } : { color: '#0a192f' }}
           >
             <Upload className="w-4 h-4" />
             Upload file (CSV / Excel / TXT)
@@ -138,6 +139,7 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
                 ? 'bg-[#0a192f] text-white border-[#0a192f]'
                 : 'bg-white text-[#0a192f] border-[#0a192f]/30 hover:border-[#0a192f]'
             }`}
+            style={activeTab === 'text' ? { color: '#ffffff' } : { color: '#0a192f' }}
           >
             <FileText className="w-4 h-4" />
             Paste text
@@ -147,7 +149,8 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
         <button
           type="button"
           onClick={handleLoadSample}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-white text-[#0a192f] border-2 border-[#0a192f] hover:bg-slate-100 transition shadow-sm"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-white border-2 border-[#0a192f] hover:bg-slate-100 transition shadow-sm"
+          style={{ color: '#0a192f' }}
         >
           Load sample words
         </button>
@@ -187,12 +190,12 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
             }}
           />
           {isProcessing ? (
-            <div className="flex items-center justify-center gap-2 text-[#0a192f]">
+            <div className="flex items-center justify-center gap-2" style={{ color: '#0a192f' }}>
               <RefreshCw className="w-5 h-5 animate-spin" />
               <span className="text-sm font-bold">Processing…</span>
             </div>
           ) : (
-            <h4 className="text-base font-extrabold text-[#0a192f]">
+            <h4 className="text-base font-extrabold" style={{ color: '#0a192f' }}>
               Click here or drag a word file to upload
             </h4>
           )}
@@ -206,13 +209,15 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
             onChange={(e) => setInputText(e.target.value)}
             placeholder={`Enter one word per line, or separate fields with commas or tabs, for example:\nephemeral, short-lived, adj.\nresilient, able to recover quickly\nmeticulous\npragmatic - practical`}
             rows={5}
-            className="w-full rounded-2xl border-2 border-[#0a192f] bg-white px-4 py-3 text-sm font-mono text-[#0a192f] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0a192f]/20"
+            className="w-full rounded-2xl border-2 border-[#0a192f] bg-white px-4 py-3 text-sm font-mono placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0a192f]/20"
+            style={{ color: '#0a192f' }}
           />
           <button
             type="button"
             onClick={handleTextSubmit}
             disabled={!inputText.trim()}
-            className="px-5 py-2.5 rounded-xl text-sm font-bold bg-[#0a192f] hover:bg-[#132c5b] disabled:opacity-50 text-white transition shadow-sm border border-[#0a192f]"
+            className="px-5 py-2.5 rounded-xl text-sm font-bold bg-[#0a192f] hover:bg-[#132c5b] disabled:opacity-50 transition shadow-sm border border-[#0a192f]"
+            style={{ color: '#ffffff' }}
           >
             Add to word list
           </button>
@@ -223,8 +228,13 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
         <div className="word-import-panel rounded-2xl border border-white/10 bg-[#0a192f] overflow-hidden shadow-md">
           <div className="flex items-center justify-between px-5 py-3.5 bg-[#0f2744] border-b border-white/10">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-black text-white">Imported words</span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/15 text-white border border-white/20 font-bold">
+              <span className="text-sm font-black" style={{ color: '#ffffff' }}>
+                Imported words
+              </span>
+              <span
+                className="text-xs px-2.5 py-0.5 rounded-full bg-white/15 border border-white/20 font-bold"
+                style={{ color: '#ffffff' }}
+              >
                 {words.length} words
               </span>
             </div>
@@ -232,18 +242,20 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
               <button
                 type="button"
                 onClick={handleAddNewRow}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-[#0a192f] hover:bg-slate-100 transition"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition border border-white"
+                style={{ backgroundColor: '#ffffff', color: '#0a192f' }}
               >
-                <Plus className="w-3.5 h-3.5" />
-                Add word row
+                <Plus className="w-3.5 h-3.5" style={{ color: '#0a192f' }} />
+                <span style={{ color: '#0a192f' }}>Add word row</span>
               </button>
               <button
                 type="button"
                 onClick={handleClearAll}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-red-300 hover:text-red-200 hover:bg-white/10 transition border border-red-400/40"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition border"
+                style={{ backgroundColor: '#7f1d1d', color: '#ffffff', borderColor: '#f87171' }}
               >
-                <Trash2 className="w-3.5 h-3.5" />
-                Clear
+                <Trash2 className="w-3.5 h-3.5" style={{ color: '#ffffff' }} />
+                <span style={{ color: '#ffffff' }}>Clear</span>
               </button>
             </div>
           </div>
@@ -254,7 +266,9 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
                 key={idx}
                 className="flex items-center gap-3 px-5 py-2.5 bg-[#0a192f] hover:bg-[#0f2744] transition"
               >
-                <span className="text-xs font-mono font-bold text-white/50 w-6">{idx + 1}</span>
+                <span className="text-xs font-mono font-bold w-6" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                  {idx + 1}
+                </span>
 
                 <input
                   type="text"
@@ -262,6 +276,7 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
                   onChange={(e) => handleWordChange(idx, 'word', e.target.value)}
                   placeholder="Word"
                   className={`${fieldClass} w-1/4 font-bold`}
+                  style={{ color: '#ffffff' }}
                 />
 
                 <input
@@ -270,6 +285,7 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
                   onChange={(e) => handleWordChange(idx, 'pos', e.target.value)}
                   placeholder="POS"
                   className={`${fieldClass} w-16 text-xs text-center px-2`}
+                  style={{ color: '#ffffff' }}
                 />
 
                 <input
@@ -278,13 +294,15 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
                   onChange={(e) => handleWordChange(idx, 'translation', e.target.value)}
                   placeholder="Definition (optional)"
                   className={`${fieldClass} flex-1`}
+                  style={{ color: '#ffffff' }}
                 />
 
                 <button
                   type="button"
                   onClick={() => handleRemoveWord(idx)}
-                  className="p-1.5 rounded-lg text-white/40 hover:text-red-300 hover:bg-white/10 transition"
+                  className="p-1.5 rounded-lg hover:bg-white/10 transition"
                   title="Delete"
+                  style={{ color: 'rgba(255,255,255,0.45)' }}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
