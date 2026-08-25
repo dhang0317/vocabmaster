@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import confetti from 'canvas-confetti';
-import { CheckCircle2, XCircle, Award, RotateCcw, ArrowRight, HelpCircle, BookOpen, Clock } from 'lucide-react';
+import { CheckCircle2, XCircle, RotateCcw, ArrowRight, HelpCircle, BookOpen, Clock } from 'lucide-react';
 import { GeneratedQuiz, GeneratedWord } from '@/types';
 
 interface QuizRunnerProps {
@@ -11,15 +11,37 @@ interface QuizRunnerProps {
   deckId?: string;
 }
 
-/** Strip leading "A) " / "B. " style prefixes that models sometimes embed in option text. */
 function cleanOptionLabel(raw: string): string {
   return raw.replace(/^\s*[A-Da-d][).:\-]\s*/, '').trim();
 }
 
-/** Deduplicate options (case-insensitive) while keeping the correct answer once. */
+/** Rewrite flat "meaning match" stems into context-style prompts. */
+function rewriteMeaningQuestion(quiz: GeneratedQuiz): GeneratedQuiz {
+  const isMeaning =
+    /which word best matches this meaning|select the word that means|is best expressed by which word/i.test(
+      quiz.question
+    );
+  if (!isMeaning) return quiz;
+
+  const meaningMatch = quiz.question.match(/["「]([^"」]+)["」]/);
+  const meaning =
+    meaningMatch?.[1] ||
+    quiz.questionZh?.match(/「([^」]+)」/)?.[1] ||
+    quiz.targetWord;
+
+  return {
+    ...quiz,
+    question: `Choose the word that best fits this context: a plan or idea related to "${meaning}".`,
+    questionZh: quiz.questionZh?.includes('_____')
+      ? quiz.questionZh
+      : `請選出最符合「${meaning}」這個概念的單字。`,
+  };
+}
+
 function sanitizeQuizOptions(quiz: GeneratedQuiz): GeneratedQuiz {
-  const cleaned = quiz.options.map(cleanOptionLabel).filter(Boolean);
-  const correctRaw = cleaned[quiz.correctIdx] ?? cleanOptionLabel(quiz.targetWord);
+  const rewritten = rewriteMeaningQuestion(quiz);
+  const cleaned = rewritten.options.map(cleanOptionLabel).filter(Boolean);
+  const correctRaw = cleaned[rewritten.correctIdx] ?? cleanOptionLabel(rewritten.targetWord);
   const correctKey = correctRaw.toLowerCase();
 
   const unique: string[] = [];
@@ -33,7 +55,6 @@ function sanitizeQuizOptions(quiz: GeneratedQuiz): GeneratedQuiz {
     unique.unshift(correctRaw);
   }
 
-  // Prefer exactly 4 options when possible
   while (unique.length < 4) {
     unique.push(`option${unique.length + 1}`);
   }
@@ -44,7 +65,7 @@ function sanitizeQuizOptions(quiz: GeneratedQuiz): GeneratedQuiz {
     options.findIndex(o => o.toLowerCase() === correctKey)
   );
 
-  return { ...quiz, options, correctIdx };
+  return { ...rewritten, options, correctIdx };
 }
 
 export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunnerProps) {
@@ -74,13 +95,10 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
 
   useEffect(() => {
     let cancelled = false;
-
     const normalize = (value: string) => value.trim().toLowerCase();
 
     const knownTranslations = new Set(
-      words
-        .filter(word => word.translation?.trim())
-        .map(word => normalize(word.word)),
+      words.filter(word => word.translation?.trim()).map(word => normalize(word.word))
     );
 
     const currentOptions = Array.from(
@@ -88,16 +106,13 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
         quizzes
           .flatMap(quiz => quiz.options)
           .map(option => option.trim())
-          .filter(Boolean),
-      ),
+          .filter(Boolean)
+      )
     );
-
     const currentOptionKeys = new Set(currentOptions.map(normalize));
 
     setOptionTranslations(prev =>
-      Object.fromEntries(
-        Object.entries(prev).filter(([key]) => currentOptionKeys.has(key)),
-      ),
+      Object.fromEntries(Object.entries(prev).filter(([key]) => currentOptionKeys.has(key)))
     );
 
     const missing = currentOptions.filter(option => !knownTranslations.has(normalize(option)));
@@ -131,11 +146,9 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
             Object.entries(result.translations || {}).map(([word, translation]) => [
               normalize(word),
               String(translation),
-            ]),
+            ])
           );
           setOptionTranslations(prev => ({ ...prev, ...normalizedTranslations }));
-        } else if (!cancelled) {
-          console.warn('Translation API failed:', result.error || 'Unknown error');
         }
       } catch (error) {
         if (!cancelled) console.warn('Failed to translate quiz options', error);
@@ -145,7 +158,6 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
     };
 
     translateMissingOptions();
-
     return () => {
       cancelled = true;
     };
@@ -153,9 +165,7 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
 
   useEffect(() => {
     if (isFinished) return;
-    const interval = setInterval(() => {
-      setSeconds(prev => prev + 1);
-    }, 1000);
+    const interval = setInterval(() => setSeconds(prev => prev + 1), 1000);
     return () => clearInterval(interval);
   }, [isFinished]);
 
@@ -196,11 +206,7 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
     });
 
     if (score / quizzes.length >= 0.8 && quizzes.length > 0) {
-      confetti({
-        particleCount: 120,
-        spread: 80,
-        origin: { y: 0.6 },
-      });
+      confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
     }
 
     if (deckId) {
@@ -296,17 +302,20 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
   });
   const scorePercent = Math.round((correctCount / quizzes.length) * 100);
 
-  const letterBadgeClass =
-    'w-7 h-7 rounded-xl bg-[#0a192f] border border-[#0a192f] flex items-center justify-center text-xs font-mono font-bold text-white shrink-0';
+  // Force white letter on black badge (survives dark-mode overrides)
+  const letterBadge = (letter: string) => (
+    <span
+      className="w-7 h-7 rounded-xl flex items-center justify-center text-xs font-mono font-bold shrink-0 border border-[#0a192f]"
+      style={{ backgroundColor: '#0a192f', color: '#ffffff' }}
+    >
+      {letter}
+    </span>
+  );
 
   if (isFinished) {
     return (
       <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in duration-300">
-        <div className="p-8 rounded-3xl bg-white border-2 border-[#0a192f] text-center shadow-sm space-y-4">
-          <div className="w-20 h-20 mx-auto rounded-3xl bg-slate-100 border-2 border-[#0a192f] flex items-center justify-center text-[#0a192f] shadow-sm">
-            <Award className="w-10 h-10" />
-          </div>
-
+        <div className="liquid-glass liquid-glass-hover rounded-3xl p-8 text-center space-y-4">
           <div>
             <h3 className="text-3xl font-black text-[#0a192f]">Quiz complete!</h3>
             <p className="text-sm text-slate-600 mt-1 font-medium">Time: {formatTime(seconds)}</p>
@@ -314,10 +323,12 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
 
           <div className="flex items-center justify-center gap-6 py-4">
             <div className="text-center">
-              <span className="text-4xl font-black text-[#0a192f]">{correctCount} / {quizzes.length}</span>
+              <span className="text-4xl font-black text-[#0a192f]">
+                {correctCount} / {quizzes.length}
+              </span>
               <p className="text-xs text-slate-600 mt-1 font-bold">Correct answers</p>
             </div>
-            <div className="h-10 w-0.5 bg-slate-200" />
+            <div className="h-10 w-0.5 bg-black/10" />
             <div className="text-center">
               <span className="text-4xl font-black text-[#1e3a8a]">{scorePercent}%</span>
               <p className="text-xs text-slate-600 mt-1 font-bold">Accuracy</p>
@@ -327,24 +338,27 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
           <div className="flex flex-wrap items-center justify-center gap-3">
             <button
               onClick={handleOldQuizRestart}
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-[#0a192f] font-bold text-sm shadow-sm transition border-2 border-[#0a192f]"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] text-white font-bold text-sm shadow-md transition transform hover:-translate-y-0.5"
+              style={{ color: '#ffffff' }}
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-4 h-4" style={{ color: '#ffffff' }} />
               <span>Retake original quiz</span>
             </button>
             <button
               onClick={handleNewQuizRestart}
               disabled={isRegenerating}
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] disabled:opacity-60 text-white font-bold text-sm shadow-md transition border-2 border-[#0a192f]"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] disabled:opacity-60 text-white font-bold text-sm shadow-md transition transform hover:-translate-y-0.5"
+              style={{ color: '#ffffff' }}
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-4 h-4" style={{ color: '#ffffff' }} />
               <span>{isRegenerating ? 'Generating new quiz...' : 'Retake shuffled quiz'}</span>
             </button>
           </div>
         </div>
 
         <div className="space-y-4">
-          <h4 className="text-lg font-black text-[#0a192f]">Review & explanations</h4>
+          {/* Align title with card inner text (p-6), not outer border */}
+          <h4 className="text-lg font-black text-[#0a192f] px-6">Review & explanations</h4>
 
           {quizzes.map((q, idx) => {
             const userChosen = selectedAnswers[idx];
@@ -353,14 +367,11 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
             return (
               <div
                 key={idx}
-                className={`p-6 rounded-2xl border-2 ${
-                  isCorrect ? 'bg-white border-[#0a192f]' : 'bg-red-50/50 border-red-500'
-                } space-y-3 shadow-sm`}
+                className={`liquid-glass liquid-glass-hover rounded-3xl p-6 space-y-3 ${
+                  isCorrect ? '' : 'ring-2 ring-red-400/60'
+                }`}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <span className="text-xs font-mono font-bold text-[#0a192f] bg-slate-100 px-2.5 py-1 rounded border border-[#0a192f]/30">
-                    Question {idx + 1} • Target word: {q.targetWord}
-                  </span>
+                <div className="flex items-start justify-end gap-3">
                   {isCorrect ? (
                     <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-600">
                       <CheckCircle2 className="w-3.5 h-3.5" /> Correct
@@ -387,19 +398,19 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
                         key={optIdx}
                         className={`px-3.5 py-2 rounded-xl text-xs font-bold border-2 flex items-center justify-between gap-2 ${
                           isRightOption
-                            ? 'bg-emerald-100 border-emerald-600 text-black'
+                            ? 'bg-emerald-100 border-emerald-600'
                             : isUserChoice
-                            ? 'bg-red-100 border-red-500 text-black'
-                            : 'bg-white border-[#0a192f]/20 text-[#0a192f]'
+                            ? 'bg-red-100 border-red-500'
+                            : 'bg-white/80 border-[#0a192f]/20'
                         }`}
                       >
-                        <span className="flex items-center gap-2">
-                          <span className={letterBadgeClass}>{String.fromCharCode(65 + optIdx)}</span>
-                          <span className="text-black">{opt}</span>
+                        <span className="flex items-center gap-2 min-w-0">
+                          {letterBadge(String.fromCharCode(65 + optIdx))}
+                          <span className="text-black truncate">{opt}</span>
                         </span>
-                        {isRightOption && <span className="text-[10px] font-black text-black">Correct</span>}
+                        {isRightOption && <span className="text-[10px] font-black text-black shrink-0">Correct</span>}
                         {isUserChoice && !isRightOption && (
-                          <span className="text-[10px] font-black text-black">Your choice</span>
+                          <span className="text-[10px] font-black text-black shrink-0">Your choice</span>
                         )}
                       </div>
                     );
@@ -407,8 +418,8 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
                 </div>
 
                 {q.explanation && (
-                  <div className="mt-3 p-3.5 bg-slate-50 rounded-xl border border-[#0a192f]/20 text-xs text-[#0a192f] leading-relaxed">
-                    💡 <strong className="text-[#0a192f]">Explanation:</strong> {q.explanation}
+                  <div className="mt-3 p-3.5 bg-white/60 rounded-xl border border-[#0a192f]/15 text-xs text-[#0a192f] leading-relaxed">
+                    <strong className="text-[#0a192f]">Explanation:</strong> {q.explanation}
                     <br />
                     <strong className="text-[#0a192f]">選項翻譯：</strong> {getOtherOptionTranslations(q)}
                   </div>
@@ -424,40 +435,33 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center justify-between text-sm">
-        <div className="flex items-center gap-3">
-          <span className="font-black text-[#0a192f]">
-            Question {currentIndex + 1} / {quizzes.length}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1.5 text-xs text-[#0a192f] font-mono font-bold bg-white px-3 py-1.5 rounded-xl border-2 border-[#0a192f]">
+        <span className="font-black text-[#0a192f]">
+          Question {currentIndex + 1} / {quizzes.length}
+        </span>
+        <div className="flex items-center gap-1.5 text-xs text-[#0a192f] font-mono font-bold liquid-glass px-3 py-1.5 rounded-xl">
           <Clock className="w-3.5 h-3.5" />
           <span>{formatTime(seconds)}</span>
         </div>
       </div>
 
-      <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden border border-[#0a192f]/20">
+      <div className="w-full bg-black/10 h-2.5 rounded-full overflow-hidden">
         <div
           className="bg-[#0a192f] h-full transition-all duration-300 rounded-full"
           style={{ width: `${Math.round(((currentIndex + 1) / quizzes.length) * 100)}%` }}
         />
       </div>
 
-      <div className="p-6 sm:p-8 rounded-3xl bg-white border-2 border-[#0a192f] shadow-sm space-y-6">
-        <div className="space-y-2">
-          <h3 className="text-lg sm:text-xl font-bold text-[#0a192f] leading-relaxed pt-2">
-            {currentQ.question}
-          </h3>
-        </div>
+      <div className="liquid-glass liquid-glass-hover p-6 sm:p-8 rounded-3xl space-y-6">
+        <h3 className="text-lg sm:text-xl font-bold text-[#0a192f] leading-relaxed pt-2">
+          {currentQ.question}
+        </h3>
 
         <div className="space-y-3 pt-2">
           {currentQ.options.map((opt, optIdx) => {
             const isSelected = currentSelected === optIdx;
             const isCorrect = optIdx === currentQ.correctIdx;
 
-            // Default: white card, dark text. After answer: green/red with BLACK text; unselected stay readable (no gray fade).
-            let optionStyle =
-              'bg-white border-[#0a192f] text-black hover:bg-slate-50';
+            let optionStyle = 'bg-white/90 border-[#0a192f] text-black hover:bg-white';
 
             if (hasAnswered) {
               if (isCorrect) {
@@ -465,7 +469,7 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
               } else if (isSelected) {
                 optionStyle = 'bg-red-100 border-red-500 text-black ring-2 ring-red-500/30';
               } else {
-                optionStyle = 'bg-white border-[#0a192f]/40 text-black';
+                optionStyle = 'bg-white/90 border-[#0a192f]/40 text-black';
               }
             }
 
@@ -477,7 +481,7 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
                 className={`w-full p-4 rounded-2xl border-2 text-left font-bold text-sm sm:text-base flex items-center justify-between transition ${optionStyle}`}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <span className={letterBadgeClass}>{String.fromCharCode(65 + optIdx)}</span>
+                  {letterBadge(String.fromCharCode(65 + optIdx))}
                   <span className="text-black truncate">{opt}</span>
                 </div>
 
@@ -491,14 +495,14 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
         </div>
 
         {showExplanation && (
-          <div className="p-5 rounded-2xl bg-slate-50 border-2 border-[#0a192f]/30 space-y-3 animate-in fade-in duration-200">
+          <div className="p-5 rounded-2xl bg-white/60 border border-[#0a192f]/20 space-y-3 animate-in fade-in duration-200">
             <div className="flex items-center gap-2 text-xs font-black text-[#0a192f]">
               <HelpCircle className="w-4 h-4" />
               <span>Translation & explanation</span>
             </div>
 
             {currentQ.questionZh && (
-              <div className="p-3 rounded-xl bg-white border border-[#0a192f]/20 text-xs sm:text-sm text-[#0a192f] font-medium leading-relaxed">
+              <div className="p-3 rounded-xl bg-white border border-[#0a192f]/15 text-xs sm:text-sm text-[#0a192f] font-medium leading-relaxed">
                 <span className="font-bold text-[#0a192f]">Translation:</span> {currentQ.questionZh}
               </div>
             )}
@@ -516,10 +520,11 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
         <div className="flex justify-end">
           <button
             onClick={handleNext}
-            className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] text-white font-bold text-sm shadow-md transition transform hover:-translate-y-0.5 border border-[#0a192f]"
+            className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] text-white font-bold text-sm shadow-md transition transform hover:-translate-y-0.5"
+            style={{ color: '#ffffff' }}
           >
             <span>{currentIndex === quizzes.length - 1 ? 'View results' : 'Next question'}</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4" style={{ color: '#ffffff' }} />
           </button>
         </div>
       )}
