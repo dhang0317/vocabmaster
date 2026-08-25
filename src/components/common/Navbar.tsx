@@ -63,7 +63,7 @@ export function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b-2 border-black bg-white/95 backdrop-blur-md shadow-sm nav-header">
+      <header className="sticky top-0 z-40 w-full border-b border-black/10 bg-white/95 backdrop-blur-md shadow-sm nav-header">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center">
             <span className="text-2xl tracking-tight">Vocabulum</span>
@@ -75,7 +75,7 @@ export function Navbar() {
                 <button
                   type="button"
                   onClick={() => setMenuOpen((v) => !v)}
-                  className="rounded-full border border-black/30 hover:border-black transition bg-white p-0.5"
+                  className="rounded-full border border-black/20 hover:border-black/50 transition bg-white p-0.5"
                   aria-expanded={menuOpen}
                   aria-haspopup="menu"
                   title={session.user?.email || 'Account menu'}
@@ -88,7 +88,7 @@ export function Navbar() {
                       className="w-8 h-8 rounded-full object-cover"
                     />
                   ) : (
-                    <span className="w-8 h-8 rounded-full bg-[#0a192f] text-white flex items-center justify-center text-xs font-black border border-black">
+                    <span className="w-8 h-8 rounded-full bg-[#0a192f] text-white flex items-center justify-center text-xs font-black">
                       {initial}
                     </span>
                   )}
@@ -97,9 +97,9 @@ export function Navbar() {
                 {menuOpen && (
                   <div
                     role="menu"
-                    className="absolute right-0 mt-2 w-64 rounded-2xl bg-white border-2 border-[#0a192f] shadow-lg py-2 z-50 overflow-hidden"
+                    className="absolute right-0 mt-2 w-64 rounded-2xl bg-white border border-black/15 shadow-lg py-2 z-50 overflow-hidden"
                   >
-                    <div className="px-4 py-3 border-b border-[#0a192f]/15">
+                    <div className="px-4 py-3 border-b border-black/10">
                       <p className="text-sm font-bold text-[#0a192f] truncate">
                         {session.user?.name || 'User'}
                       </p>
@@ -157,7 +157,7 @@ export function Navbar() {
                       </button>
                     </div>
 
-                    <div className="border-t border-[#0a192f]/15 pt-1">
+                    <div className="border-t border-black/10 pt-1">
                       <button
                         type="button"
                         role="menuitem"
@@ -176,7 +176,7 @@ export function Navbar() {
             ) : (
               <Link
                 href="/login"
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm transition border bg-black text-white border-black hover:bg-slate-800"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm transition border border-black/20 hover:border-black/50 bg-black text-white hover:bg-slate-800"
               >
                 <LogIn className="w-4 h-4" />
                 <span>Log in</span>
