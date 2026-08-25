@@ -18,9 +18,9 @@ const SAMPLE_WORDS: RawWordInput[] = [
   { word: 'eloquent', translation: 'fluent and persuasive', pos: 'adj.', example: 'She made an eloquent speech in defense of human rights.' },
 ];
 
-/** Solid light field — beats dark-mode global white text overrides */
+/** Dark field: navy surface, white text */
 const fieldClass =
-  'rounded-lg border border-black/25 bg-white px-3 py-1.5 text-sm text-black placeholder:text-slate-400 focus:outline-none focus:border-black/50 focus:ring-1 focus:ring-black/20';
+  'rounded-lg border border-white/20 bg-[#0f172a] px-3 py-1.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-white/45 focus:ring-1 focus:ring-white/20';
 
 export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps) {
   const [words, setWords] = useState<RawWordInput[]>(initialWords);
@@ -116,7 +116,6 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
 
   return (
     <div className="space-y-6">
-      {/* Upload Tabs */}
       <div className="flex items-center justify-between border-b-2 border-[#0a192f]/10 pb-3">
         <div className="flex items-center gap-2">
           <button
@@ -161,7 +160,6 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
         </div>
       )}
 
-      {/* File Dropzone — title only */}
       {activeTab === 'file' && (
         <div
           onDragOver={(e) => {
@@ -201,7 +199,6 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
         </div>
       )}
 
-      {/* Direct Text Input */}
       {activeTab === 'text' && (
         <div className="space-y-3">
           <textarea
@@ -209,7 +206,7 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
             onChange={(e) => setInputText(e.target.value)}
             placeholder={`Enter one word per line, or separate fields with commas or tabs, for example:\nephemeral, short-lived, adj.\nresilient, able to recover quickly\nmeticulous\npragmatic - practical`}
             rows={5}
-            className={`${fieldClass} w-full font-mono`}
+            className="w-full rounded-2xl border-2 border-[#0a192f] bg-white px-4 py-3 text-sm font-mono text-[#0a192f] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0a192f]/20"
           />
           <button
             type="button"
@@ -222,13 +219,12 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
         </div>
       )}
 
-      {/* Vocabulary Table Preview — always light surface for readable fields */}
       {words.length > 0 && (
-        <div className="word-import-panel rounded-2xl border border-black/15 bg-white overflow-hidden shadow-sm">
-          <div className="flex items-center justify-between px-5 py-3.5 bg-slate-100 border-b border-black/10">
+        <div className="word-import-panel rounded-2xl border border-white/10 bg-[#0a192f] overflow-hidden shadow-md">
+          <div className="flex items-center justify-between px-5 py-3.5 bg-[#0f2744] border-b border-white/10">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-black text-black">Imported words</span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#0a192f] text-white font-bold">
+              <span className="text-sm font-black text-white">Imported words</span>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/15 text-white border border-white/20 font-bold">
                 {words.length} words
               </span>
             </div>
@@ -236,7 +232,7 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
               <button
                 type="button"
                 onClick={handleAddNewRow}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#0a192f] text-white hover:bg-[#132c5b] transition"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-[#0a192f] hover:bg-slate-100 transition"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Add word row
@@ -244,7 +240,7 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
               <button
                 type="button"
                 onClick={handleClearAll}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-red-700 bg-white hover:bg-red-50 transition border border-red-300"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-red-300 hover:text-red-200 hover:bg-white/10 transition border border-red-400/40"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Clear
@@ -252,13 +248,13 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
             </div>
           </div>
 
-          <div className="max-h-80 overflow-y-auto divide-y divide-black/8 bg-white">
+          <div className="max-h-80 overflow-y-auto divide-y divide-white/10 bg-[#0a192f]">
             {words.map((item, idx) => (
               <div
                 key={idx}
-                className="flex items-center gap-3 px-5 py-2.5 bg-white hover:bg-slate-50 transition"
+                className="flex items-center gap-3 px-5 py-2.5 bg-[#0a192f] hover:bg-[#0f2744] transition"
               >
-                <span className="text-xs font-mono font-bold text-slate-600 w-6">{idx + 1}</span>
+                <span className="text-xs font-mono font-bold text-white/50 w-6">{idx + 1}</span>
 
                 <input
                   type="text"
@@ -270,7 +266,7 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
 
                 <input
                   type="text"
-                  value={item.pos || ''}
+grade                  value={item.pos || ''}
                   onChange={(e) => handleWordChange(idx, 'pos', e.target.value)}
                   placeholder="POS"
                   className={`${fieldClass} w-16 text-xs text-center px-2`}
@@ -287,7 +283,7 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
                 <button
                   type="button"
                   onClick={() => handleRemoveWord(idx)}
-                  className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition"
+                  className="p-1.5 rounded-lg text-white/40 hover:text-red-300 hover:bg-white/10 transition"
                   title="Delete"
                 >
                   <Trash2 className="w-4 h-4" />
