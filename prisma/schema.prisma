@@ -50,13 +50,14 @@ model Word {
 }
 
 model ClozeArticle {
-  id          String   @id @default(uuid())
-  deckId      String
-  title       String
-  content     String
-  contentZh   String?
-  blanksJson  String
-  createdAt   DateTime @default(now())
+  id           String   @id @default(uuid())
+  deckId       String
+  title        String
+  content      String
+  contentZh    String?
+  blanksJson   String
+  glossaryJson String?
+  createdAt    DateTime @default(now())
 
   deck Deck @relation(fields: [deckId], references: [id], onDelete: Cascade)
 }
