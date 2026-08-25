@@ -27,12 +27,21 @@ export interface ClozeBlank {
   options: string[];
 }
 
+/** Precomputed word/phrase translation for cloze highlight lookup (no API at read time). */
+export interface GlossaryEntry {
+  en: string;
+  zh: string;
+  sense?: string;
+}
+
 export interface GeneratedCloze {
   id?: string;
   title: string;
   content: string;
   contentZh: string;
   blanks: ClozeBlank[];
+  /** Built at article generation time; used for instant highlight translation */
+  glossary?: GlossaryEntry[];
 }
 
 export interface GeneratedQuiz {
