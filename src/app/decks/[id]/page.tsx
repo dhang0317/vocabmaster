@@ -195,12 +195,11 @@ export default function DeckStudyPage() {
             title={deck.isPublic ? 'Remove from public library' : 'Share to public library'}
             className={
               deck.isPublic
-                ? 'p-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 transition border border-black/10'
+                ? 'chip-light p-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 transition border'
                 : 'liquid-glass liquid-glass-hover p-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 transition text-slate-600'
             }
-            style={deck.isPublic ? { backgroundColor: '#ffffff', color: '#000000' } : undefined}
           >
-            <Globe className="w-4 h-4" style={deck.isPublic ? { color: '#000000' } : undefined} />
+            <Globe className="w-4 h-4" />
             <span>{publishing ? '…' : deck.isPublic ? 'Public' : 'Share'}</span>
           </button>
           <button

@@ -105,6 +105,14 @@
       inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
   }
 
+  /* White surface + black text — wins over dark-mode white text */
+  .chip-light,
+  .chip-light * {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+  }
+
   [data-theme="dark"] .liquid-glass {
     background: rgba(15, 23, 42, 0.4) !important;
     border-color: rgba(255, 255, 255, 0.14) !important;
@@ -126,6 +134,13 @@
   [data-theme="dark"] .liquid-glass-active {
     background: rgba(226, 232, 240, 0.18) !important;
     border-color: rgba(255, 255, 255, 0.3) !important;
+  }
+
+  [data-theme="dark"] .chip-light,
+  [data-theme="dark"] .chip-light * {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-color: rgba(0, 0, 0, 0.15) !important;
   }
 }
 
@@ -285,19 +300,20 @@ body select[class*="border-[#0a192f]"]:focus {
   color: #ffffff !important;
 }
 
-/* Light chips keep black text even in dark mode (higher specificity) */
-[data-theme="dark"] [class*="bg-white"][class*="text-black"],
+/* Light chips / Public button: force black text on white */
+[data-theme="dark"] .chip-light,
+[data-theme="dark"] .chip-light *,
 [data-theme="dark"] [class*="bg-white/90"],
+[data-theme="dark"] [class*="bg-white/90"] *,
 [data-theme="dark"] [class*="bg-emerald-100"],
-[data-theme="dark"] [class*="bg-emerald-50"] {
+[data-theme="dark"] [class*="bg-emerald-100"] *,
+[data-theme="dark"] [class*="bg-emerald-50"],
+[data-theme="dark"] [class*="bg-emerald-50"] * {
   color: #000000 !important;
 }
 
-[data-theme="dark"] [class*="bg-white"][class*="text-black"] *,
-[data-theme="dark"] [class*="bg-white/90"] *,
-[data-theme="dark"] [class*="bg-emerald-100"] *,
-[data-theme="dark"] [class*="bg-emerald-50"] * {
-  color: #000000 !important;
+[data-theme="dark"] [class*="bg-white/90"] {
+  background-color: rgba(255, 255, 255, 0.92) !important;
 }
 
 .perspective-1000 {
