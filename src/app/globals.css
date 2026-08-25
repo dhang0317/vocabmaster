@@ -22,18 +22,34 @@
   :root,
   [data-theme="light"] {
     --background: #f8fafc;
-    --foreground: #000000;
+    --foreground: #0a192f;
     --card: #ffffff;
+    --card-foreground: #0a192f;
+    --muted: #64748b;
     --border: rgba(0, 0, 0, 0.12);
     --border-hover: rgba(0, 0, 0, 0.4);
+    --primary: #0a192f;
+    --primary-foreground: #ffffff;
+    --success-bg: #d1fae5;
+    --success-fg: #064e3b;
+    --danger-bg: #fee2e2;
+    --danger-fg: #7f1d1d;
   }
 
   [data-theme="dark"] {
     --background: #0b1220;
-    --foreground: #ffffff;
+    --foreground: #f1f5f9;
     --card: #111827;
-    --border: rgba(255, 255, 255, 0.12);
-    --border-hover: rgba(255, 255, 255, 0.35);
+    --card-foreground: #f1f5f9;
+    --muted: #94a3b8;
+    --border: rgba(255, 255, 255, 0.14);
+    --border-hover: rgba(255, 255, 255, 0.4);
+    --primary: #e2e8f0;
+    --primary-foreground: #0a192f;
+    --success-bg: #064e3b;
+    --success-fg: #ecfdf5;
+    --danger-bg: #7f1d1d;
+    --danger-fg: #fef2f2;
   }
 }
 
@@ -54,6 +70,75 @@
   .ui-border:focus {
     border-color: var(--border-hover);
     outline: none;
+  }
+
+  /* Explicit contrast helpers — use these on mixed surfaces */
+  .on-light,
+  .on-light * {
+    color: #0a192f !important;
+    -webkit-text-fill-color: #0a192f !important;
+  }
+  .on-dark,
+  .on-dark * {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+  }
+  .on-light-muted {
+    color: #475569 !important;
+    -webkit-text-fill-color: #475569 !important;
+  }
+  .on-dark-muted {
+    color: rgba(255, 255, 255, 0.65) !important;
+    -webkit-text-fill-color: rgba(255, 255, 255, 0.65) !important;
+  }
+
+  /* Letter badge: always navy + white, both themes */
+  .letter-badge {
+    display: inline-flex;
+    width: 1.75rem;
+    height: 1.75rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    font-size: 0.75rem;
+    font-family: ui-monospace, monospace;
+    font-weight: 700;
+    flex-shrink: 0;
+    background-color: #0a192f !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    border: 1px solid #0a192f !important;
+  }
+  .letter-badge * {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+  }
+
+  /* Option / answer chips that stay readable on both themes */
+  .option-surface {
+    background-color: #ffffff !important;
+    color: #0a192f !important;
+    -webkit-text-fill-color: #0a192f !important;
+    border: 2px solid rgba(10, 25, 47, 0.25);
+  }
+  .option-surface *,
+  .option-surface span {
+    color: #0a192f !important;
+    -webkit-text-fill-color: #0a192f !important;
+  }
+  .option-surface .letter-badge,
+  .option-surface .letter-badge * {
+    background-color: #0a192f !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+  }
+  .option-surface-correct {
+    background-color: #d1fae5 !important;
+    border-color: #059669 !important;
+  }
+  .option-surface-wrong {
+    background-color: #fee2e2 !important;
+    border-color: #ef4444 !important;
   }
 
   .liquid-glass {
@@ -113,26 +198,26 @@
   }
 
   [data-theme="dark"] .liquid-glass {
-    background: rgba(15, 23, 42, 0.4) !important;
-    border-color: rgba(255, 255, 255, 0.14) !important;
+    background: rgba(15, 23, 42, 0.55) !important;
+    border-color: rgba(255, 255, 255, 0.16) !important;
     box-shadow:
       0 12px 40px rgba(0, 0, 0, 0.45),
       inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
   }
 
   [data-theme="dark"] .liquid-glass-hover:hover {
-    background: rgba(15, 23, 42, 0.6) !important;
-    border-color: rgba(255, 255, 255, 0.28) !important;
+    background: rgba(15, 23, 42, 0.72) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
   }
 
   [data-theme="dark"] .liquid-glass-menu {
-    background: rgba(15, 23, 42, 0.22) !important;
-    border-color: rgba(255, 255, 255, 0.12) !important;
+    background: rgba(15, 23, 42, 0.85) !important;
+    border-color: rgba(255, 255, 255, 0.18) !important;
   }
 
   [data-theme="dark"] .liquid-glass-active {
-    background: rgba(226, 232, 240, 0.18) !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
+    background: rgba(226, 232, 240, 0.2) !important;
+    border-color: rgba(255, 255, 255, 0.35) !important;
   }
 
   [data-theme="dark"] .chip-light,
@@ -167,22 +252,11 @@ body, body * {
   font-weight: 400 !important;
 }
 
+/* Primary solid buttons: white label */
 body .text-white,
 body [class~="text-white"] {
   color: #ffffff !important;
-}
-
-body :where(p, span, label, li, td, th, button, a, input, textarea, select, option, h1, h2, h3, h4, h5, h6) {
-  color: #000000;
-  font-weight: 200;
-}
-
-body [class*="bg-black"],
-body [class*="bg-[#0a192f]"],
-body [class*="bg-[#0f2a59]"],
-body [class*="bg-slate-800"],
-body [class*="bg-slate-900"] {
-  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 button[class*="bg-[#0a192f]"],
@@ -196,6 +270,7 @@ a[class*="bg-slate-800"],
 button[class*="bg-slate-900"],
 a[class*="bg-slate-900"] {
   color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 button[class*="bg-[#0a192f]"] *,
@@ -209,6 +284,7 @@ a[class*="bg-slate-800"] *,
 button[class*="bg-slate-900"] *,
 a[class*="bg-slate-900"] * {
   color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 body [class*="border-[#0a192f]"] {
@@ -221,35 +297,10 @@ body [class*="border-2"][class*="border-black"]:not([class*="bg-"]) {
   border-width: 1px !important;
 }
 
-body a[class*="border-[#0a192f]"]:hover,
-body div[class*="border-[#0a192f]"]:hover,
-body section[class*="border-[#0a192f]"]:hover,
-body article[class*="border-[#0a192f]"]:hover {
-  border-color: rgba(0, 0, 0, 0.4) !important;
-}
-
-body input[class*="border-[#0a192f]"]:hover,
-body input[class*="border-[#0a192f]"]:focus,
-body textarea[class*="border-[#0a192f]"]:hover,
-body textarea[class*="border-[#0a192f]"]:focus,
-body select[class*="border-[#0a192f]"]:hover,
-body select[class*="border-[#0a192f]"]:focus {
-  border-color: rgba(0, 0, 0, 0.45) !important;
-}
-
+/* ---- Dark theme: page-level only, do NOT force every nested span white ---- */
 [data-theme="dark"] body {
   background: var(--background);
-  color: #ffffff;
-}
-
-[data-theme="dark"] body :where(p, span, label, li, td, th, button, a, h1, h2, h3, h4, h5, h6) {
-  color: #ffffff;
-}
-
-[data-theme="dark"] body input,
-[data-theme="dark"] body textarea,
-[data-theme="dark"] body select {
-  color: #ffffff;
+  color: var(--foreground);
 }
 
 [data-theme="dark"] .nav-header {
@@ -257,14 +308,15 @@ body select[class*="border-[#0a192f]"]:focus {
   border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
-[data-theme="dark"] .bg-white,
-[data-theme="dark"] .bg-slate-50 {
+/* Soft remap of pure white cards on dark page (glass already handled) */
+[data-theme="dark"] .bg-white:not(.option-surface):not(.chip-light):not(.on-light),
+[data-theme="dark"] .bg-slate-50:not(.option-surface):not(.on-light) {
   background-color: #111827 !important;
 }
 
 [data-theme="dark"] body [class*="border-[#0a192f]"],
 [data-theme="dark"] body [class*="border-black"] {
-  border-color: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
 }
 
 [data-theme="dark"] body a[class*="border"]:hover,
@@ -272,22 +324,14 @@ body select[class*="border-[#0a192f]"]:focus {
   border-color: rgba(255, 255, 255, 0.35) !important;
 }
 
-[data-theme="dark"] [class*="text-[#0a192f]"],
-[data-theme="dark"] [class*="text-[#1e3a8a]"],
-[data-theme="dark"] .text-slate-900,
-[data-theme="dark"] .text-slate-800,
-[data-theme="dark"] .text-slate-700,
-[data-theme="dark"] .text-slate-600,
-[data-theme="dark"] .text-slate-500,
-[data-theme="dark"] .text-slate-400,
-[data-theme="dark"] .text-gray-900,
-[data-theme="dark"] .text-gray-800,
-[data-theme="dark"] .text-gray-700,
-[data-theme="dark"] .text-gray-600,
-[data-theme="dark"] .text-gray-500,
-[data-theme="dark"] .text-gray-400,
-[data-theme="dark"] .text-black {
-  color: #ffffff !important;
+/*
+  Only invert common dark-on-light utility classes when they sit on the PAGE,
+  not when they are inside light option chips / on-light regions.
+*/
+[data-theme="dark"] :where(
+  h1, h2, h3, h4, h5, h6, p, label, li
+):not(.on-light):not(.on-light *):not(.option-surface):not(.option-surface *):not(.chip-light):not(.chip-light *):not(.letter-badge):not(.letter-badge *) {
+  color: var(--foreground);
 }
 
 [data-theme="dark"] footer,
@@ -297,19 +341,33 @@ body select[class*="border-[#0a192f]"]:focus {
   color: #ffffff !important;
 }
 
+/* Keep light chips / emerald success chips black text in dark mode */
 [data-theme="dark"] .chip-light,
 [data-theme="dark"] .chip-light *,
+[data-theme="dark"] .option-surface,
+[data-theme="dark"] .option-surface *,
+[data-theme="dark"] [class*="bg-emerald-100"]:not(.liquid-glass),
+[data-theme="dark"] [class*="bg-emerald-100"]:not(.liquid-glass) *,
+[data-theme="dark"] [class*="bg-red-100"]:not(.liquid-glass),
+[data-theme="dark"] [class*="bg-red-100"]:not(.liquid-glass) *,
 [data-theme="dark"] [class*="bg-white/90"],
-[data-theme="dark"] [class*="bg-white/90"] *,
-[data-theme="dark"] [class*="bg-emerald-100"],
-[data-theme="dark"] [class*="bg-emerald-100"] *,
-[data-theme="dark"] [class*="bg-emerald-50"],
-[data-theme="dark"] [class*="bg-emerald-50"] * {
-  color: #000000 !important;
+[data-theme="dark"] [class*="bg-white/90"] * {
+  color: #0a192f !important;
+  -webkit-text-fill-color: #0a192f !important;
 }
 
 [data-theme="dark"] [class*="bg-white/90"] {
-  background-color: rgba(255, 255, 255, 0.92) !important;
+  background-color: rgba(255, 255, 255, 0.94) !important;
+}
+
+/* Restore white letter on navy badge even inside light chips */
+[data-theme="dark"] .letter-badge,
+[data-theme="dark"] .letter-badge *,
+[data-theme="dark"] .option-surface .letter-badge,
+[data-theme="dark"] .option-surface .letter-badge * {
+  background-color: #0a192f !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 /* Word import panel: navy background + white text */
@@ -324,12 +382,14 @@ body select[class*="border-[#0a192f]"]:focus {
 .word-import-panel p,
 .word-import-panel .text-white {
   color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 .word-import-panel input,
 .word-import-panel textarea {
   background-color: #0f172a !important;
   color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
   border-color: rgba(255, 255, 255, 0.2) !important;
   caret-color: #ffffff;
 }
@@ -348,10 +408,11 @@ body select[class*="border-[#0a192f]"]:focus {
   color: rgba(255, 255, 255, 0.4) !important;
 }
 
-/* Light buttons inside dark panel keep dark text */
 .word-import-panel button.bg-white,
-.word-import-panel button[class*="bg-white"] {
+.word-import-panel button[class*="bg-white"],
+.word-import-panel button[class*="bg-white"] * {
   color: #0a192f !important;
+  -webkit-text-fill-color: #0a192f !important;
 }
 
 .perspective-1000 {
