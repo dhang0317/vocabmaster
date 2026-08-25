@@ -1,5 +1,12 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { RawWordInput, GeneratedWord, GeneratedCloze, GeneratedQuiz, GenerationLevel } from '@/types';
+import {
+  RawWordInput,
+  GeneratedWord,
+  GeneratedCloze,
+  GeneratedQuiz,
+  GenerationLevel,
+  GlossaryEntry,
+} from '@/types';
 
 interface GenerationResponse {
   words: GeneratedWord[];
@@ -8,6 +15,12 @@ interface GenerationResponse {
   source: 'ai' | 'offline';
   fallbackReason?: string;
 }
+
+const STOP_WORDS = new Set(
+  'a an the and or but if in on at to for of as by with from into through during before after above below between under again further then once here there when where why how all each few more most other some such no nor not only own same so than too very can will just should now is are was were be been being it its this that these those he she they them we you i'.split(
+    ' '
+  )
+);
 
 export async function translateVocabulary(words: string[], apiKey?: string): Promise<Record<string, string>> {
   const key = apiKey?.trim() || process.env.GEMINI_API_KEY?.trim();
@@ -34,16 +47,45 @@ function shuffle<T>(items: T[]): T[] {
   return result;
 }
 
+function normalizeGlossary(
+  glossary: GlossaryEntry[] | undefined,
+  words: GeneratedWord[],
+  blanks: GeneratedCloze['blanks']
+): GlossaryEntry[] {
+  const map = new Map<string, GlossaryEntry>();
+
+  const add = (en: string, zh: string, sense?: string) => {
+    const key = en.trim().toLowerCase();
+    if (!key || !zh?.trim()) return;
+    if (!map.has(key)) {
+      map.set(key, { en: en.trim(), zh: zh.trim(), sense: sense?.trim() || undefined });
+    }
+  };
+
+  for (const g of glossary || []) {
+    if (g?.en && g?.zh) add(g.en, g.zh, g.sense);
+  }
+  for (const w of words) {
+    add(w.word, w.translation, w.pos ? `詞性 ${w.pos}` : undefined);
+  }
+  for (const b of blanks || []) {
+    if (b.word && b.hint) add(b.word, b.hint.replace(/\s*\([^)]*\)\s*$/, '').trim());
+  }
+
+  return Array.from(map.values());
+}
+
 function normalizeQuizzes(quizzes: GeneratedQuiz[], rawWords: RawWordInput[]): GeneratedQuiz[] {
   const seenQuestions = new Set<string>();
   const wordByText = new Map(rawWords.map(word => [word.word.trim().toLowerCase(), word]));
 
-  return shuffle(quizzes).map((quiz, index) => {
+  return shuffle(quizzes).map(quiz => {
     const source = wordByText.get(quiz.targetWord.trim().toLowerCase());
     const targetWord = quiz.targetWord || source?.word || '';
-    const answer = source?.translation && !/\(翻譯\)|\(translation\)/i.test(source.translation)
-      ? source.translation
-      : (quiz.explanation || targetWord);
+    const answer =
+      source?.translation && !/\(翻譯\)|\(translation\)/i.test(source.translation)
+        ? source.translation
+        : quiz.explanation || targetWord;
     const questionKey = quiz.question.trim().toLowerCase().replace(/\s+/g, ' ');
 
     let question = quiz.question;
@@ -59,16 +101,20 @@ function normalizeQuizzes(quizzes: GeneratedQuiz[], rawWords: RawWordInput[]): G
     const sourceOptions = isMeaningComparison
       ? (quiz.options || []).filter(option => option.trim().toLowerCase() !== targetWord.trim().toLowerCase())
       : [targetWord, ...(quiz.options || [])];
-    const uniqueOptions = sourceOptions.filter((option, optionIndex, all) =>
-      all.findIndex(candidate => candidate.trim().toLowerCase() === option.trim().toLowerCase()) === optionIndex,
+    const uniqueOptions = sourceOptions.filter(
+      (option, optionIndex, all) =>
+        all.findIndex(candidate => candidate.trim().toLowerCase() === option.trim().toLowerCase()) === optionIndex
     );
     const correctOption = isMeaningComparison ? originalCorrect : targetWord;
     if (!uniqueOptions.some(option => option.trim().toLowerCase() === correctOption.trim().toLowerCase())) {
       uniqueOptions[0] = correctOption;
     }
     const options = shuffle(uniqueOptions).slice(0, 4);
-    const normalizedCorrect = options.find(option => option.trim().toLowerCase() === correctOption.trim().toLowerCase()) || correctOption;
-    if (!options.some(option => option.trim().toLowerCase() === correctOption.trim().toLowerCase())) options[0] = normalizedCorrect;
+    const normalizedCorrect =
+      options.find(option => option.trim().toLowerCase() === correctOption.trim().toLowerCase()) || correctOption;
+    if (!options.some(option => option.trim().toLowerCase() === correctOption.trim().toLowerCase())) {
+      options[0] = normalizedCorrect;
+    }
 
     return {
       ...quiz,
@@ -76,7 +122,9 @@ function normalizeQuizzes(quizzes: GeneratedQuiz[], rawWords: RawWordInput[]): G
       questionZh,
       targetWord,
       options,
-      correctIdx: options.findIndex(option => option.trim().toLowerCase() === correctOption.trim().toLowerCase()),
+      correctIdx: options.findIndex(
+        option => option.trim().toLowerCase() === correctOption.trim().toLowerCase()
+      ),
       explanation: `Correct answer: ${correctOption}. "${targetWord}" means "${source?.translation || 'the provided meaning'}".`,
     };
   });
@@ -100,12 +148,14 @@ export async function generateLearningMaterials(
         },
       });
 
-      const wordListStr = rawWords.map(w => {
-        let str = w.word;
-        if (w.translation) str += ` (備註中文: ${w.translation})`;
-        if (w.pos) str += ` (詞性: ${w.pos})`;
-        return str;
-      }).join(', ');
+      const wordListStr = rawWords
+        .map(w => {
+          let str = w.word;
+          if (w.translation) str += ` (備註中文: ${w.translation})`;
+          if (w.pos) str += ` (詞性: ${w.pos})`;
+          return str;
+        })
+        .join(', ');
 
       const prompt = `
 You are an expert English vocabulary teacher. Return valid JSON only.
@@ -143,6 +193,13 @@ Set correctIdx to the correct option's zero-based index and include a concise ex
         "hint": "該空格的繁體中文提示或語境提示",
         "options": ["正確單字", "干擾單字1", "干擾單字2", "干擾單字3"]
       }
+    ],
+    "glossary": [
+      {
+        "en": "文章中出現的實義詞或片語（英文原形或文中形式皆可）",
+        "zh": "此文語境下的繁體中文意思",
+        "sense": "一句話補充用法或語氣（可省略）"
+      }
     ]
   },
   "quizzes": [
@@ -162,13 +219,23 @@ Set correctIdx to the correct option's zero-based index and include a concise ex
 2. quizzes 陣列中，請為清單中的每一個（或至少大部分）重要單字各設計 1 題高品質的單選測驗題。
 3. options 陣列的 correctIdx 必須正確對應到 options 中的正確答案索引 (0 到 3)，請隨機將正確答案置於 0, 1, 2, 3 的位置。
 4. blanks 陣列必須與 content 中的 [blank_1], [blank_2]... 完全一致。
+5. glossary 必須涵蓋：所有目標單字 + 文章中其他可能被學生查詢的實義詞／片語（跳過 a/the/is 等虛詞）。每個 en 對應此文語境的 zh。glossary 約 25–60 筆即可。
 `;
 
       const result = await model.generateContent(prompt);
       const text = result.response.text();
-      const parsed: GenerationResponse = JSON.parse(text);
+      const parsed = JSON.parse(text) as GenerationResponse;
+
+      const article = parsed.article || ({} as GeneratedCloze);
+      article.glossary = normalizeGlossary(
+        article.glossary,
+        parsed.words || [],
+        article.blanks || []
+      );
+
       return {
         ...parsed,
+        article,
         quizzes: normalizeQuizzes(parsed.quizzes || [], rawWords),
         source: 'ai',
       };
@@ -179,14 +246,14 @@ Set correctIdx to the correct option's zero-based index and include a concise ex
     }
   }
 
-  // Fallback / Offline Generator
   return generateOfflineFallback(rawWords, level, 'No API Key was provided.');
 }
 
-/**
- * Intelligent mock/offline generator for instant preview and offline experience
- */
-function generateOfflineFallback(rawWords: RawWordInput[], level: GenerationLevel, fallbackReason: string): GenerationResponse {
+function generateOfflineFallback(
+  rawWords: RawWordInput[],
+  level: GenerationLevel,
+  fallbackReason: string
+): GenerationResponse {
   const words: GeneratedWord[] = rawWords.map(w => {
     const cleanWord = w.word.trim();
     return {
@@ -201,13 +268,16 @@ function generateOfflineFallback(rawWords: RawWordInput[], level: GenerationLeve
     };
   });
 
-  // Build a cloze story
   const blanks = words.map((w, idx) => {
-    const distractors = words.filter(other => other.word.trim().toLowerCase() !== w.word.trim().toLowerCase()).map(o => o.word);
+    const distractors = words
+      .filter(other => other.word.trim().toLowerCase() !== w.word.trim().toLowerCase())
+      .map(o => o.word);
     while (distractors.length < 3) {
       distractors.push(['approach', 'perspective', 'significant', 'potential', 'efficient'][distractors.length % 5]);
     }
-    const shuffledOptions = [w.word, distractors[0], distractors[1], distractors[2]].sort(() => Math.random() - 0.5);
+    const shuffledOptions = [w.word, distractors[0], distractors[1], distractors[2]].sort(
+      () => Math.random() - 0.5
+    );
     return {
       id: idx + 1,
       word: w.word,
@@ -222,14 +292,35 @@ function generateOfflineFallback(rawWords: RawWordInput[], level: GenerationLeve
   }
   storyText += `With continuous practice, mastering these vocabularies becomes natural and rewarding.`;
 
+  const fillerGlossary: GlossaryEntry[] = [
+    { en: 'fast-paced', zh: '快節奏的', sense: '形容步調很快' },
+    { en: 'understanding', zh: '理解', sense: '名詞用法' },
+    { en: 'concepts', zh: '概念' },
+    { en: 'essential', zh: '不可或缺的' },
+    { en: 'studying', zh: '研讀／學習' },
+    { en: 'improve', zh: '改善' },
+    { en: 'communication', zh: '溝通' },
+    { en: 'applying', zh: '運用' },
+    { en: 'reinforce', zh: '強化' },
+    { en: 'memory', zh: '記憶' },
+    { en: 'practical', zh: '實用的' },
+    { en: 'usage', zh: '用法／使用' },
+    { en: 'practice', zh: '練習' },
+    { en: 'mastering', zh: '精通' },
+    { en: 'vocabularies', zh: '詞彙' },
+    { en: 'natural', zh: '自然的' },
+    { en: 'rewarding', zh: '有成就感的' },
+  ].filter(g => !STOP_WORDS.has(g.en.toLowerCase()));
+
   const article: GeneratedCloze = {
     title: 'A Journey of Learning and Discovery',
     content: storyText,
-    contentZh: '在當今快節奏的世界中，理解新概念至關重要。許多人發現學習這些詞彙可以極大地改善溝通，並在持續練習中獲得長期的成果。',
+    contentZh:
+      '在當今快節奏的世界中，理解新概念至關重要。許多人發現學習這些詞彙可以極大地改善溝通，並在持續練習中獲得長期的成果。',
     blanks,
+    glossary: normalizeGlossary(fillerGlossary, words, blanks),
   };
 
-  // Build Quizzes
   const sentenceTemplates = [
     (meaning: string) => `In class, students learned that _____ means "${meaning}".`,
     (meaning: string) => `The teacher wrote _____ on the board and explained that it means "${meaning}".`,
@@ -239,20 +330,28 @@ function generateOfflineFallback(rawWords: RawWordInput[], level: GenerationLeve
   ];
 
   const quizzes: GeneratedQuiz[] = words.map((w, questionIndex) => {
-    const distractors = words.filter(other => other.word.trim().toLowerCase() !== w.word.trim().toLowerCase()).map(o => o.word);
+    const distractors = words
+      .filter(other => other.word.trim().toLowerCase() !== w.word.trim().toLowerCase())
+      .map(o => o.word);
     while (distractors.length < 3) {
-      distractors.push(['comprehend', 'sustainable', 'elaborate', 'innovative', 'phenomenon'][distractors.length % 5]);
+      distractors.push(
+        ['comprehend', 'sustainable', 'elaborate', 'innovative', 'phenomenon'][distractors.length % 5]
+      );
     }
     const shuffled = shuffle([w.word, distractors[0], distractors[1], distractors[2]]);
     const correctIdx = shuffled.indexOf(w.word);
 
     return {
-      question: questionIndex % 2 === 0
-        ? `Which word best matches this meaning: "${w.translation || 'the meaning provided'}"?`
-        : sentenceTemplates[Math.floor(questionIndex / 2) % sentenceTemplates.length](w.translation || 'the meaning provided'),
-      questionZh: questionIndex % 2 === 0
-        ? `哪一個單字最符合「${w.translation || '題目所提供的意思'}」？`
-        : `請選出最適合填入空格的單字；這個單字的意思是「${w.translation || '題目所提供的意思'}」。`,
+      question:
+        questionIndex % 2 === 0
+          ? `Which word best matches this meaning: "${w.translation || 'the meaning provided'}"?`
+          : sentenceTemplates[Math.floor(questionIndex / 2) % sentenceTemplates.length](
+              w.translation || 'the meaning provided'
+            ),
+      questionZh:
+        questionIndex % 2 === 0
+          ? `哪一個單字最符合「${w.translation || '題目所提供的意思'}」？`
+          : `請選出最適合填入空格的單字；這個單字的意思是「${w.translation || '題目所提供的意思'}」。`,
       targetWord: w.word,
       options: shuffled,
       correctIdx,
@@ -260,13 +359,10 @@ function generateOfflineFallback(rawWords: RawWordInput[], level: GenerationLeve
     };
   });
 
-  // Keep quiz order independent from the uploaded flashcard order.
-  const shuffledQuizzes = shuffle(quizzes);
-
   return {
     words,
     article,
-    quizzes: shuffledQuizzes,
+    quizzes: shuffle(quizzes),
     source: 'offline',
     fallbackReason,
   };
