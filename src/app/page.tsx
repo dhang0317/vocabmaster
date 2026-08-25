@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Plus, BookOpen, Layers, CheckCircle2, Award, Trash2, ArrowRight, Search, Globe } from 'lucide-react';
+import { ConfirmModal } from '@/components/common/ConfirmModal';
 
 interface DeckSummary {
   id: string;
@@ -21,6 +22,8 @@ export default function HomePage() {
   const [decks, setDecks] = useState<DeckSummary[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<DeckSummary | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchDecks = async () => {
     try {
@@ -41,20 +44,33 @@ export default function HomePage() {
     fetchDecks();
   }, []);
 
-  const handleDeleteDeck = async (id: string, e: React.MouseEvent) => {
+  const openDeleteModal = useCallback((deck: DeckSummary, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!confirm('Delete this deck? All flashcards and quizzes will be removed.')) return;
+    setDeleteTarget(deck);
+  }, []);
 
+  const closeDeleteModal = useCallback(() => {
+    if (deleting) return;
+    setDeleteTarget(null);
+  }, [deleting]);
+
+  const confirmDelete = useCallback(async () => {
+    if (!deleteTarget) return;
+    const id = deleteTarget.id;
+    setDeleting(true);
     try {
       const res = await fetch(`/api/decks/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setDecks(prev => prev.filter(d => d.id !== id));
+        setDeleteTarget(null);
       }
     } catch (err) {
       console.error('Failed to delete deck', err);
+    } finally {
+      setDeleting(false);
     }
-  };
+  }, [deleteTarget]);
 
   const filteredDecks = decks.filter(d =>
     d.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -67,6 +83,21 @@ export default function HomePage() {
 
   return (
     <div className="relative space-y-10">
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Delete this deck?"
+        description={
+          deleteTarget
+            ? `“${deleteTarget.title}” and all flashcards, cloze articles, and quizzes will be permanently removed.`
+            : undefined
+        }
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={closeDeleteModal}
+      />
+
       <div className="liquid-glass liquid-glass-hover rounded-3xl p-8 sm:p-12">
         <div className="max-w-2xl space-y-4">
           <h1 className="text-3xl sm:text-5xl text-[#0a192f] tracking-tight leading-tight">
@@ -180,7 +211,8 @@ export default function HomePage() {
                       {deck.title}
                     </h3>
                     <button
-                      onClick={(e) => handleDeleteDeck(deck.id, e)}
+                      type="button"
+                      onClick={(e) => openDeleteModal(deck, e)}
                       title="Delete deck"
                       className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-white/50 transition opacity-0 group-hover:opacity-100"
                     >

@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Layers, BookOpen, Pencil, ArrowLeft, CheckCircle2, Volume2, RefreshCw, Trash2, List, Globe } from 'lucide-react';
 import { FlashcardPlayer } from '@/components/flashcard/FlashcardPlayer';
 import { ClozeExercise } from '@/components/cloze/ClozeExercise';
 import { QuizRunner } from '@/components/quiz/QuizRunner';
+import { ConfirmModal } from '@/components/common/ConfirmModal';
 import { DeckData } from '@/types';
 
 type StudyTab = 'flashcards' | 'cloze' | 'quiz' | 'wordlist';
@@ -21,6 +22,8 @@ export default function DeckStudyPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchDeck = async () => {
     try {
@@ -104,15 +107,17 @@ export default function DeckStudyPage() {
     }
   };
 
-  const handleDeleteDeck = async () => {
-    if (!confirm('Delete this deck? This action cannot be undone.')) return;
+  const confirmDelete = useCallback(async () => {
+    setDeleting(true);
     try {
       await fetch(`/api/decks/${id}`, { method: 'DELETE' });
       router.push('/');
     } catch (err) {
       console.error('Failed to delete deck', err);
+      setDeleting(false);
+      setShowDeleteModal(false);
     }
-  };
+  }, [id, router]);
 
   if (isLoading) {
     return (
@@ -143,6 +148,17 @@ export default function DeckStudyPage() {
 
   return (
     <div className="space-y-8">
+      <ConfirmModal
+        open={showDeleteModal}
+        title="Delete this deck?"
+        description={`“${deck.title}” and all related content will be permanently removed. This cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => !deleting && setShowDeleteModal(false)}
+      />
+
       <div className="no-print flex flex-wrap items-start justify-between gap-4 border-b border-black/10 pb-6">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -191,7 +207,7 @@ export default function DeckStudyPage() {
           </button>
           <button
             type="button"
-            onClick={handleDeleteDeck}
+            onClick={() => setShowDeleteModal(true)}
             title="Delete deck"
             className="liquid-glass liquid-glass-hover text-slate-600 hover:text-slate-800 p-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5"
           >
@@ -210,7 +226,7 @@ export default function DeckStudyPage() {
         {deck.articles && deck.articles.length > 0 && (
           <button type="button" onClick={() => setActiveTab('cloze')} className={tabClass(activeTab === 'cloze')}>
             <BookOpen className="w-4 h-4" />
-            <span>Cloze Article</span>
+          <span>Cloze Article</span>
           </button>
         )}
 
