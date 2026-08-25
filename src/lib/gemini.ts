@@ -35,7 +35,6 @@ function isRateLimitError(error: unknown): boolean {
   return /429|Too Many Requests|quota|rate.?limit/i.test(msg);
 }
 
-/** Call Gemini with model fallbacks + short retries on 429. */
 async function generateJsonWithFallback(
   apiKey: string,
   prompt: string,
@@ -59,11 +58,9 @@ async function generateJsonWithFallback(
       } catch (err) {
         lastError = err;
         if (isRateLimitError(err) && attempt < 2) {
-          // Free tier often suggests ~3s; back off a bit more each try
           await sleep(3500 * (attempt + 1));
           continue;
         }
-        // Non-rate-limit or retries exhausted → try next model
         break;
       }
     }
@@ -197,7 +194,6 @@ export async function generateLearningMaterials(
         })
         .join(', ');
 
-      // Single request: full story → full ZH → glossary split from that pair (saves quota vs 2 calls)
       const prompt = `
 You are an expert English vocabulary teacher. Return valid JSON only.
 
@@ -273,7 +269,56 @@ You are an expert English vocabulary teacher. Return valid JSON only.
     }
   }
 
-  return generateOfflineFallback(rawWords, level, 'No API Key was provided.');
+  return generateOfflineFallback(rawWords, level, 'Offline mode (no AI).');
+}
+
+/** Build a readable offline cloze story that mentions each target word. */
+function buildOfflineStory(words: GeneratedWord[]): { content: string; contentZh: string; title: string } {
+  const n = words.length;
+  const title =
+    n === 1
+      ? `Learning about "${words[0].word}"`
+      : `Using ${n} new words in context`;
+
+  const enParts: string[] = [
+    'Last week, our class discussed several useful English words in a real-life story.',
+  ];
+  const zhParts: string[] = ['上週，我們班在一則生活情境故事中討論了幾個實用的英文字。'];
+
+  words.forEach((w, i) => {
+    const blank = `[blank_${i + 1}]`;
+    const zh = w.translation && !/^no definition/i.test(w.translation) ? w.translation : w.word;
+    const frames = [
+      {
+        en: `First, someone explained that ${blank} is important because it relates to "${zh}".`,
+        zh: `首先，有人說明「${zh}」（${w.word}）很重要，因為它與這個概念密切相關。`,
+      },
+      {
+        en: `Next, the group practiced using ${blank} in a short sentence about everyday life.`,
+        zh: `接著，大家練習把「${zh}」用在日常情境的短句中。`,
+      },
+      {
+        en: `Later, a student asked when to choose ${blank} instead of a similar word.`,
+        zh: `後來，有同學問什麼時候該選「${zh}」，而不是意思接近的其他詞。`,
+      },
+      {
+        en: `Finally, the teacher showed how ${blank} appears in news and workplace English.`,
+        zh: `最後，老師示範「${zh}」在新聞與職場英語中的用法。`,
+      },
+    ];
+    const frame = frames[i % frames.length];
+    enParts.push(frame.en);
+    zhParts.push(frame.zh);
+  });
+
+  enParts.push('By the end of the lesson, everyone could recognize the words and use them more confidently.');
+  zhParts.push('下課時，大家都能辨認這些單字，並更有信心地使用它們。');
+
+  return {
+    title,
+    content: enParts.join(' '),
+    contentZh: zhParts.join(''),
+  };
 }
 
 function generateOfflineFallback(
@@ -287,15 +332,15 @@ function generateOfflineFallback(
       word: cleanWord,
       phonetic: w.phonetic || `/${cleanWord.toLowerCase()}/`,
       pos: w.pos || 'n.',
-      translation: w.translation || 'No definition provided',
+      translation: w.translation || '（未提供中文）',
       definition: w.definition || `A concept or action related to ${cleanWord}.`,
-      example: w.example || `The teacher asked the students to explain the term "${cleanWord}".`,
-      exampleZh: w.exampleZh || `老師要求學生們解釋「${cleanWord}」這個詞。`,
+      example: w.example || `Students practiced the word "${cleanWord}" in a short dialogue.`,
+      exampleZh: w.exampleZh || `學生在簡短對話中練習「${cleanWord}」這個詞。`,
       isMastered: false,
     };
   });
 
-  const blanks = words.map((w, idx) => {
+  const blanks: ClozeBlank[] = words.map((w, idx) => {
     const distractors = words
       .filter(other => other.word.trim().toLowerCase() !== w.word.trim().toLowerCase())
       .map(o => o.word);
@@ -313,38 +358,27 @@ function generateOfflineFallback(
     };
   });
 
-  let storyText = `In today's fast-paced world, understanding new concepts is essential. Many people find that studying [blank_1] can greatly improve their communication. `;
-  for (let i = 1; i < blanks.length; i++) {
-    storyText += `Furthermore, applying [blank_${i + 1}] helps reinforce long-term memory and practical usage. `;
-  }
-  storyText += `With continuous practice, mastering these vocabularies becomes natural and rewarding.`;
-
-  const contentZh =
-    '在當今快節奏的世界中，理解新概念至關重要。許多人發現學習這些詞彙可以極大地改善溝通，並透過持續練習強化長期記憶與實際運用。精通這些詞彙會變得自然且有成就感。';
+  const story = buildOfflineStory(words);
 
   const fillerGlossary: GlossaryEntry[] = [
-    { en: 'fast-paced', zh: '快節奏的', sense: '對應「快節奏的世界」' },
-    { en: 'understanding', zh: '理解' },
-    { en: 'concepts', zh: '概念' },
-    { en: 'essential', zh: '至關重要' },
-    { en: 'studying', zh: '學習' },
-    { en: 'improve', zh: '改善' },
-    { en: 'communication', zh: '溝通' },
-    { en: 'applying', zh: '運用' },
-    { en: 'reinforce', zh: '強化' },
-    { en: 'long-term memory', zh: '長期記憶' },
-    { en: 'practical usage', zh: '實際運用' },
-    { en: 'practice', zh: '練習' },
-    { en: 'mastering', zh: '精通' },
-    { en: 'vocabularies', zh: '詞彙' },
-    { en: 'natural', zh: '自然' },
-    { en: 'rewarding', zh: '有成就感' },
-  ].filter(g => !STOP_WORDS.has(g.en.toLowerCase()));
+    { en: 'discussed', zh: '討論了' },
+    { en: 'useful', zh: '實用的' },
+    { en: 'real-life', zh: '生活情境' },
+    { en: 'explained', zh: '說明' },
+    { en: 'important', zh: '重要' },
+    { en: 'practiced', zh: '練習' },
+    { en: 'sentence', zh: '句子' },
+    { en: 'everyday', zh: '日常的' },
+    { en: 'similar', zh: '相似的' },
+    { en: 'workplace', zh: '職場' },
+    { en: 'confidently', zh: '有信心地' },
+    { en: 'recognize', zh: '辨認' },
+  ];
 
   const article: GeneratedCloze = {
-    title: 'A Journey of Learning and Discovery',
-    content: storyText,
-    contentZh,
+    title: story.title,
+    content: story.content,
+    contentZh: story.contentZh,
     blanks,
     glossary: normalizeGlossary(fillerGlossary, words, blanks),
   };
@@ -383,7 +417,7 @@ function generateOfflineFallback(
       targetWord: w.word,
       options: shuffled,
       correctIdx,
-      explanation: `正確答案是「${w.word}」，意思是「${w.translation || '未提供中文意思'}」。這個單字符合題目所描述的語意與詞性。`,
+      explanation: `正確答案是「${w.word}」，意思是「${w.translation || '未提供中文意思'}」。`,
     };
   });
 
