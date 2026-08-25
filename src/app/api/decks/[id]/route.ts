@@ -32,6 +32,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       articles: deck.articles.map(a => ({
         ...a,
         blanks: JSON.parse(a.blanksJson || '[]'),
+        glossary: JSON.parse(
+          // glossaryJson may be missing on older rows before migration
+          (a as { glossaryJson?: string | null }).glossaryJson || '[]'
+        ),
       })),
       quizzes: deck.quizzes.map(q => ({
         ...q,
