@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Volume2, RotateCw, ChevronLeft, ChevronRight, CheckCircle2, BookOpen } from 'lucide-react';
+import { Volume2, ChevronLeft, ChevronRight, CheckCircle2, BookOpen } from 'lucide-react';
 import { GeneratedWord } from '@/types';
 
 interface FlashcardPlayerProps {
@@ -121,7 +121,7 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
             isFlipped ? 'rotate-y-180' : ''
           }`}
         >
-          <div className="absolute inset-0 w-full h-full backface-hidden rounded-3xl liquid-glass p-8 flex flex-col justify-between">
+          <div className="absolute inset-0 w-full h-full backface-hidden rounded-3xl liquid-glass p-8 flex flex-col">
             <div className="flex items-center justify-end">
               <button
                 onClick={handleToggleMaster}
@@ -162,14 +162,9 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
                 </button>
               </div>
             </div>
-
-            <div className="flex items-center justify-center text-xs text-slate-500 font-medium gap-1.5">
-              <RotateCw className="w-3.5 h-3.5" />
-              <span>Click or press Space to view the definition and example.</span>
-            </div>
           </div>
 
-          <div className="absolute inset-0 w-full h-full backface-hidden rotate-y-180 rounded-3xl liquid-glass p-8 flex flex-col justify-between">
+          <div className="absolute inset-0 w-full h-full backface-hidden rotate-y-180 rounded-3xl liquid-glass p-8 flex flex-col">
             <div className="flex items-center justify-end">
               <button
                 onClick={handleToggleMaster}
@@ -183,7 +178,7 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
               </button>
             </div>
 
-            <div className="space-y-4 my-auto overflow-y-auto max-h-56 pr-1">
+            <div className="space-y-4 my-auto overflow-y-auto max-h-64 pr-1">
               <div>
                 <span className="text-2xl font-black text-[#0a192f] block mb-1">
                   {currentWord.translation}
@@ -207,11 +202,6 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
                   )}
                 </div>
               )}
-            </div>
-
-            <div className="flex items-center justify-center text-xs text-slate-500 font-medium gap-1.5">
-              <RotateCw className="w-3.5 h-3.5" />
-              <span>Click to flip back</span>
             </div>
           </div>
         </div>
