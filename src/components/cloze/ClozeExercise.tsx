@@ -13,13 +13,64 @@ interface ClozeExerciseProps {
 interface TranslatePopup {
   text: string;
   translated: string | null;
+  sense: string | null;
+  contextZh: string | null;
   loading: boolean;
   error: string | null;
-  /** viewport X of selection center */
   x: number;
-  /** viewport Y to anchor (top of selection if placeAbove, bottom if placeBelow) */
   y: number;
   placeAbove: boolean;
+}
+
+/** Restore blank markers to plain text for context extraction */
+function articlePlainText(content: string, blanks: GeneratedCloze['blanks']): string {
+  return content.replace(/\[blank_(\d+)\]/g, (_, idStr: string) => {
+    const id = parseInt(idStr, 10);
+    const blank = blanks.find(b => b.id === id);
+    return blank?.word || '____';
+  });
+}
+
+/** Extract the sentence (or nearby window) containing `selected` within `fullText`. */
+function extractContext(fullText: string, selected: string): string {
+  const hay = fullText;
+  const needle = selected.trim();
+  if (!needle) return '';
+
+  // Case-insensitive locate
+  const lowerHay = hay.toLowerCase();
+  const lowerNeedle = needle.toLowerCase();
+  let idx = lowerHay.indexOf(lowerNeedle);
+  if (idx === -1) {
+    // fallback: first word of selection
+    const first = needle.split(/\s+/)[0];
+    idx = lowerHay.indexOf(first.toLowerCase());
+  }
+  if (idx === -1) {
+    // last resort: a window is not available
+    return needle;
+  }
+
+  // Expand to sentence boundaries . ! ? or newlines
+  const breakChars = /[.!?\n\u3002\uff01\uff1f]/;
+  let start = idx;
+  while (start > 0 && !breakChars.test(hay[start - 1])) start--;
+  let end = idx + needle.length;
+  while (end < hay.length && !breakChars.test(hay[end])) end++;
+  if (end < hay.length && breakChars.test(hay[end])) end++;
+
+  let sentence = hay.slice(start, end).trim();
+
+  // Cap length
+  if (sentence.length > 280) {
+    const center = idx - start + Math.floor(needle.length / 2);
+    const half = 120;
+    const s = Math.max(0, center - half);
+    const e = Math.min(sentence.length, center + half);
+    sentence = (s > 0 ? '…' : '') + sentence.slice(s, e).trim() + (e < sentence.length ? '…' : '');
+  }
+
+  return sentence || needle;
 }
 
 export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseProps) {
@@ -55,7 +106,6 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
     setPopup(null);
   }, []);
 
-  // Close popup on outside click or Escape
   useEffect(() => {
     if (!popup) return;
 
@@ -66,7 +116,6 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
     const onMouseDown = (e: MouseEvent) => {
       const target = e.target as Node;
       if (popupRef.current?.contains(target)) return;
-      // Allow re-selecting inside article without immediately closing
       if (articleRef.current?.contains(target)) return;
       closePopup();
     };
@@ -79,7 +128,6 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
     };
   }, [popup, closePopup]);
 
-  // After popup renders / content changes, nudge it fully into the viewport
   useEffect(() => {
     if (!popup || !popupRef.current) return;
 
@@ -100,7 +148,7 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
   }, [popup]);
 
   const fetchTranslation = useCallback(
-    async (text: string, x: number, y: number, placeAbove: boolean) => {
+    async (text: string, context: string, x: number, y: number, placeAbove: boolean) => {
       if (translateAbortRef.current) {
         translateAbortRef.current.abort();
       }
@@ -110,6 +158,8 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
       setPopup({
         text,
         translated: null,
+        sense: null,
+        contextZh: null,
         loading: true,
         error: null,
         x,
@@ -118,10 +168,18 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
       });
 
       try {
+        const apiKey =
+          typeof window !== 'undefined' ? localStorage.getItem('gemini_api_key') || '' : '';
+
         const res = await fetch('/api/translate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text, target: 'zh-TW' }),
+          body: JSON.stringify({
+            text,
+            context,
+            target: 'zh-TW',
+            apiKey: apiKey || undefined,
+          }),
           signal: controller.signal,
         });
         const data = await res.json();
@@ -147,6 +205,8 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
                 ...prev,
                 loading: false,
                 translated: data.translated,
+                sense: data.sense || null,
+                contextZh: data.contextZh || null,
                 error: null,
               }
             : null
@@ -198,16 +258,17 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
     const range = selection.getRangeAt(0);
     const rect = range.getBoundingClientRect();
 
-    // Viewport coordinates (position: fixed)
     const x = rect.left + rect.width / 2;
     const spaceAbove = rect.top;
     const spaceBelow = window.innerHeight - rect.bottom;
-    // Prefer above; if less than ~90px, place below
-    const placeAbove = spaceAbove >= 90 || spaceAbove >= spaceBelow;
+    const placeAbove = spaceAbove >= 110 || spaceAbove >= spaceBelow;
     const y = placeAbove ? rect.top - 6 : rect.bottom + 6;
 
-    fetchTranslation(text, x, y, placeAbove);
-  }, [fetchTranslation]);
+    const plain = articlePlainText(article.content, article.blanks);
+    const context = extractContext(plain, text);
+
+    fetchTranslation(text, context, x, y, placeAbove);
+  }, [article.content, article.blanks, fetchTranslation]);
 
   const handleSelectWordFromBank = (word: string) => {
     if (activeBlankId === null) return;
@@ -378,7 +439,7 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
           </h3>
           <p className="text-xs text-slate-600">
             Choose or type the correct word from the word bank for each blank.
-            <span className="ml-1 text-slate-500">· 反白文章單字可查中文翻譯</span>
+            <span className="ml-1 text-slate-500">· 反白文章單字可查語境翻譯</span>
           </p>
         </div>
 
@@ -487,19 +548,17 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
         </div>
       )}
 
-      {/* Floating translation popup — fixed to viewport, auto-flips above/below */}
       {popup && (
         <div
           ref={popupRef}
           className="fixed z-[100] pointer-events-auto"
           style={{
-            left: Math.min(Math.max(popup.x, 140), window.innerWidth - 140),
+            left: Math.min(Math.max(popup.x, 160), window.innerWidth - 160),
             top: popup.y,
             transform: popup.placeAbove ? 'translate(-50%, -100%)' : 'translate(-50%, 0)',
           }}
         >
           <div className="flex flex-col items-center">
-            {/* arrow when below */}
             {!popup.placeAbove && (
               <div
                 className="w-2.5 h-2.5 rotate-45 mb-[-5px] bg-white/50 border-l border-t border-white/50"
@@ -507,11 +566,11 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
               />
             )}
 
-            <div className="liquid-glass liquid-glass-menu rounded-2xl shadow-xl border border-white/50 min-w-[180px] max-w-[300px] px-3.5 py-3">
+            <div className="liquid-glass liquid-glass-menu rounded-2xl shadow-xl border border-white/50 min-w-[200px] max-w-[320px] px-3.5 py-3">
               <div className="flex items-start justify-between gap-2 mb-1.5">
                 <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   <Languages className="w-3 h-3 shrink-0" />
-                  <span>Google 翻譯</span>
+                  <span>語境翻譯</span>
                 </div>
                 <button
                   type="button"
@@ -523,14 +582,14 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
                 </button>
               </div>
 
-              <p className="text-xs font-bold text-[#0a192f] break-words leading-snug mb-1">
+              <p className="text-xs font-bold text-[#0a192f] break-words leading-snug">
                 {popup.text}
               </p>
 
               {popup.loading && (
-                <div className="flex items-center gap-1.5 text-xs text-slate-500 py-1">
+                <div className="flex items-center gap-1.5 text-xs text-slate-500 py-1.5">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>翻譯中…</span>
+                  <span>依語境翻譯中…</span>
                 </div>
               )}
 
@@ -539,13 +598,25 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
               )}
 
               {popup.translated && !popup.loading && (
-                <p className="text-sm font-bold text-[#0a192f] font-cjk leading-relaxed border-t border-black/10 pt-1.5 mt-0.5 break-words">
-                  {popup.translated}
-                </p>
+                <div className="border-t border-black/10 pt-1.5 mt-1.5 space-y-1.5">
+                  <p className="text-sm font-bold text-[#0a192f] font-cjk leading-relaxed break-words">
+                    {popup.translated}
+                  </p>
+                  {popup.sense && (
+                    <p className="text-[11px] text-slate-600 font-cjk leading-relaxed break-words">
+                      {popup.sense}
+                    </p>
+                  )}
+                  {popup.contextZh && (
+                    <p className="text-[11px] text-slate-500 font-cjk leading-relaxed break-words bg-white/25 rounded-lg px-2 py-1.5 border border-white/40">
+                      <span className="font-bold text-slate-600">句意：</span>
+                      {popup.contextZh}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
 
-            {/* arrow when above */}
             {popup.placeAbove && (
               <div
                 className="w-2.5 h-2.5 rotate-45 mt-[-5px] bg-white/50 border-r border-b border-white/50"
