@@ -115,6 +115,92 @@ function normalizeGlossary(
   return Array.from(map.values());
 }
 
+/**
+ * Ensure each target word appears as at most one blank.
+ * Extra [blank_n] markers in content are filled with the answer word.
+ * Blanks are renumbered 1..N to match remaining markers.
+ */
+function normalizeArticleBlanks(article: GeneratedCloze): GeneratedCloze {
+  const rawBlanks = Array.isArray(article.blanks) ? article.blanks : [];
+  const content = article.content || '';
+
+  // Keep first blank per answer word (case-insensitive)
+  const seenWords = new Set<string>();
+  const uniqueBlanks: ClozeBlank[] = [];
+  const dropIds = new Set<number>();
+
+  for (const b of rawBlanks) {
+    const key = (b.word || '').trim().toLowerCase();
+    if (!key) {
+      dropIds.add(b.id);
+      continue;
+    }
+    if (seenWords.has(key)) {
+      dropIds.add(b.id);
+      continue;
+    }
+    seenWords.add(key);
+    uniqueBlanks.push(b);
+  }
+
+  // Also drop blank markers in content that are not in uniqueBlanks, replace with word
+  const keepByOldId = new Map(uniqueBlanks.map(b => [b.id, b]));
+
+  let newContent = content.replace(/\[blank_(\d+)\]/g, (match, idStr: string) => {
+    const id = parseInt(idStr, 10);
+    const blank = keepByOldId.get(id);
+    if (blank) return match; // keep for now; renumber next
+    // Duplicate or unknown blank → write the answer word as plain text
+    const fallen = rawBlanks.find(b => b.id === id);
+    return fallen?.word || match;
+  });
+
+  // Renumber remaining blanks to 1..N in order of appearance
+  const order: number[] = [];
+  newContent.replace(/\[blank_(\d+)\]/g, (_, idStr: string) => {
+    const id = parseInt(idStr, 10);
+    if (!order.includes(id)) order.push(id);
+    return '';
+  });
+
+  const idMap = new Map<number, number>();
+  order.forEach((oldId, idx) => idMap.set(oldId, idx + 1));
+
+  newContent = newContent.replace(/\[blank_(\d+)\]/g, (_, idStr: string) => {
+    const oldId = parseInt(idStr, 10);
+    const newId = idMap.get(oldId) ?? oldId;
+    return `[blank_${newId}]`;
+  });
+
+  const renumbered: ClozeBlank[] = order
+    .map(oldId => keepByOldId.get(oldId))
+    .filter((b): b is ClozeBlank => Boolean(b))
+    .map((b, idx) => ({
+      ...b,
+      id: idx + 1,
+    }));
+
+  // Safety: if content still has more markers than blanks, strip extras
+  const markerCount = (newContent.match(/\[blank_\d+\]/g) || []).length;
+  if (markerCount !== renumbered.length) {
+    // Fill any leftover markers with plain text from first matching blank word list
+    let i = 0;
+    newContent = newContent.replace(/\[blank_(\d+)\]/g, (match, idStr: string) => {
+      i += 1;
+      if (i <= renumbered.length) return `[blank_${i}]`;
+      const id = parseInt(idStr, 10);
+      const b = renumbered.find(x => x.id === id) || renumbered[0];
+      return b?.word || '';
+    });
+  }
+
+  return {
+    ...article,
+    content: newContent,
+    blanks: renumbered,
+  };
+}
+
 function normalizeQuizzes(quizzes: GeneratedQuiz[], rawWords: RawWordInput[]): GeneratedQuiz[] {
   const seenQuestions = new Set<string>();
   const wordByText = new Map(rawWords.map(word => [word.word.trim().toLowerCase(), word]));
@@ -235,15 +321,17 @@ You are an expert English vocabulary teacher. Return valid JSON only.
 }
 
 規則：
-1. blanks 與 [blank_n] 一致；每個重要目標單字至少一題 quiz。
-2. glossary 含所有目標單字 + 文中實義詞／片語（略過 a/the/is 等虛詞），約 30–70 筆。
-3. glossary.zh 必須能對上 contentZh，不要另起爐灶。
+1. 【重要】每個目標單字在文章中只能出現「一次」空格 [blank_n]。blanks 數量必須等於目標單字數量。若同一單字在文中自然出現第二次，請寫出完整單字，不要再挖空。
+2. blanks 的 id 必須是 1..N 連續編號，並與 content 中的 [blank_n] 一一對應。
+3. 每個重要目標單字至少一題 quiz。
+4. glossary 含所有目標單字 + 文中實義詞／片語（略過 a/the/is 等虛詞），約 30–70 筆；glossary.zh 必須能對上 contentZh。
 `;
 
       const text = await generateJsonWithFallback(effectiveKey, prompt, 0.7);
       const parsed = JSON.parse(text) as GenerationResponse;
 
-      const article = parsed.article || ({} as GeneratedCloze);
+      let article = parsed.article || ({} as GeneratedCloze);
+      article = normalizeArticleBlanks(article);
       article.glossary = normalizeGlossary(
         article.glossary,
         parsed.words || [],
@@ -289,13 +377,14 @@ function generateOfflineFallback(
   const story = buildOfflineStory(words, level);
   const quizzes = buildOfflineQuizzes(words);
 
-  const article: GeneratedCloze = {
+  let article: GeneratedCloze = {
     title: story.title,
     content: story.content,
     contentZh: story.contentZh,
     blanks,
     glossary: normalizeGlossary(story.glossaryExtra, words, blanks),
   };
+  article = normalizeArticleBlanks(article);
 
   return {
     words,
