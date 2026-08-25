@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { BookOpen, Check, HelpCircle, Eye, EyeOff, Award, Languages, X, Loader2 } from 'lucide-react';
-import { GeneratedCloze, GeneratedWord } from '@/types';
+import { GeneratedCloze, GeneratedWord, GlossaryEntry } from '@/types';
 
 interface ClozeExerciseProps {
   article: GeneratedCloze;
@@ -17,12 +17,12 @@ interface TranslatePopup {
   contextZh: string | null;
   loading: boolean;
   error: string | null;
+  fromGlossary: boolean;
   x: number;
   y: number;
   placeAbove: boolean;
 }
 
-/** Restore blank markers to plain text for context extraction */
 function articlePlainText(content: string, blanks: GeneratedCloze['blanks']): string {
   return content.replace(/\[blank_(\d+)\]/g, (_, idStr: string) => {
     const id = parseInt(idStr, 10);
@@ -31,46 +31,63 @@ function articlePlainText(content: string, blanks: GeneratedCloze['blanks']): st
   });
 }
 
-/** Extract the sentence (or nearby window) containing `selected` within `fullText`. */
-function extractContext(fullText: string, selected: string): string {
-  const hay = fullText;
-  const needle = selected.trim();
-  if (!needle) return '';
+function buildGlossaryMap(
+  article: GeneratedCloze,
+  words: GeneratedWord[]
+): Map<string, GlossaryEntry> {
+  const map = new Map<string, GlossaryEntry>();
+  const add = (en: string, zh: string, sense?: string) => {
+    const key = en.trim().toLowerCase();
+    if (!key || !zh?.trim() || map.has(key)) return;
+    map.set(key, { en: en.trim(), zh: zh.trim(), sense: sense?.trim() || undefined });
+  };
 
-  // Case-insensitive locate
-  const lowerHay = hay.toLowerCase();
-  const lowerNeedle = needle.toLowerCase();
-  let idx = lowerHay.indexOf(lowerNeedle);
-  if (idx === -1) {
-    // fallback: first word of selection
-    const first = needle.split(/\s+/)[0];
-    idx = lowerHay.indexOf(first.toLowerCase());
+  for (const g of article.glossary || []) {
+    if (g?.en && g?.zh) add(g.en, g.zh, g.sense);
   }
-  if (idx === -1) {
-    // last resort: a window is not available
-    return needle;
+  for (const w of words) {
+    add(w.word, w.translation, w.pos ? `詞性 ${w.pos}` : undefined);
+  }
+  for (const b of article.blanks || []) {
+    if (b.word && b.hint) {
+      add(b.word, b.hint.replace(/\s*\([^)]*\)\s*$/, '').trim());
+    }
+  }
+  return map;
+}
+
+/** Instant local lookup: exact → lowercase → strip punctuation → single tokens */
+function lookupGlossary(
+  map: Map<string, GlossaryEntry>,
+  selected: string
+): GlossaryEntry | null {
+  const raw = selected.trim();
+  if (!raw) return null;
+
+  const candidates = [
+    raw,
+    raw.toLowerCase(),
+    raw.replace(/^["'“”‘’(\[]+|["'“”‘’)\],.!;:?]+$/g, ''),
+    raw.replace(/^["'“”‘’(\[]+|["'“”‘’)\],.!;:?]+$/g, '').toLowerCase(),
+  ];
+
+  for (const c of candidates) {
+    const hit = map.get(c);
+    if (hit) return hit;
   }
 
-  // Expand to sentence boundaries . ! ? or newlines
-  const breakChars = /[.!?\n\u3002\uff01\uff1f]/;
-  let start = idx;
-  while (start > 0 && !breakChars.test(hay[start - 1])) start--;
-  let end = idx + needle.length;
-  while (end < hay.length && !breakChars.test(hay[end])) end++;
-  if (end < hay.length && breakChars.test(hay[end])) end++;
+  // Multi-word: try joining without extra spaces
+  const collapsed = raw.toLowerCase().replace(/\s+/g, ' ');
+  if (map.has(collapsed)) return map.get(collapsed)!;
 
-  let sentence = hay.slice(start, end).trim();
-
-  // Cap length
-  if (sentence.length > 280) {
-    const center = idx - start + Math.floor(needle.length / 2);
-    const half = 120;
-    const s = Math.max(0, center - half);
-    const e = Math.min(sentence.length, center + half);
-    sentence = (s > 0 ? '…' : '') + sentence.slice(s, e).trim() + (e < sentence.length ? '…' : '');
+  // Single longest token match
+  const tokens = raw.split(/\s+/).filter(Boolean);
+  if (tokens.length === 1) {
+    const t = tokens[0].replace(/^["'“”‘’(\[]+|["'“”‘’)\],.!;:?]+$/g, '').toLowerCase();
+    return map.get(t) || null;
   }
 
-  return sentence || needle;
+  return null;
 }
 
 export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseProps) {
@@ -87,6 +104,8 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
   const articleRef = useRef<HTMLDivElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const translateAbortRef = useRef<AbortController | null>(null);
+
+  const glossaryMap = useMemo(() => buildGlossaryMap(article, words), [article, words]);
 
   useEffect(() => {
     setUserAnswers({});
@@ -147,8 +166,9 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
     }
   }, [popup]);
 
-  const fetchTranslation = useCallback(
-    async (text: string, context: string, x: number, y: number, placeAbove: boolean) => {
+  /** Fallback only when glossary misses — free Google path, no Gemini to save quota */
+  const fetchTranslationFallback = useCallback(
+    async (text: string, x: number, y: number, placeAbove: boolean) => {
       if (translateAbortRef.current) {
         translateAbortRef.current.abort();
       }
@@ -162,28 +182,20 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
         contextZh: null,
         loading: true,
         error: null,
+        fromGlossary: false,
         x,
         y,
         placeAbove,
       });
 
       try {
-        const apiKey =
-          typeof window !== 'undefined' ? localStorage.getItem('gemini_api_key') || '' : '';
-
         const res = await fetch('/api/translate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            text,
-            context,
-            target: 'zh-TW',
-            apiKey: apiKey || undefined,
-          }),
+          body: JSON.stringify({ text, target: 'zh-TW' }),
           signal: controller.signal,
         });
         const data = await res.json();
-
         if (controller.signal.aborted) return;
 
         if (!res.ok || !data.success) {
@@ -192,7 +204,7 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
               ? {
                   ...prev,
                   loading: false,
-                  error: data.error || '翻譯失敗',
+                  error: data.error || '詞庫未收錄，線上翻譯也失敗',
                 }
               : null
           );
@@ -233,27 +245,19 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
 
   const handleArticleMouseUp = useCallback(() => {
     const selection = window.getSelection();
-    if (!selection || selection.isCollapsed || !articleRef.current) {
-      return;
-    }
+    if (!selection || selection.isCollapsed || !articleRef.current) return;
 
     const text = selection.toString().trim();
-    if (!text || text.length < 1 || text.length > 200) {
-      return;
-    }
+    if (!text || text.length < 1 || text.length > 200) return;
 
     const anchorNode = selection.anchorNode;
-    if (!anchorNode || !articleRef.current.contains(anchorNode)) {
-      return;
-    }
+    if (!anchorNode || !articleRef.current.contains(anchorNode)) return;
 
     const anchorEl =
       anchorNode.nodeType === Node.ELEMENT_NODE
         ? (anchorNode as Element)
         : anchorNode.parentElement;
-    if (anchorEl?.closest('input, button, textarea')) {
-      return;
-    }
+    if (anchorEl?.closest('input, button, textarea')) return;
 
     const range = selection.getRangeAt(0);
     const rect = range.getBoundingClientRect();
@@ -264,11 +268,27 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
     const placeAbove = spaceAbove >= 110 || spaceAbove >= spaceBelow;
     const y = placeAbove ? rect.top - 6 : rect.bottom + 6;
 
-    const plain = articlePlainText(article.content, article.blanks);
-    const context = extractContext(plain, text);
+    // 1) Instant local glossary (generated with the article)
+    const hit = lookupGlossary(glossaryMap, text);
+    if (hit) {
+      setPopup({
+        text,
+        translated: hit.zh,
+        sense: hit.sense || null,
+        contextZh: article.contentZh || null,
+        loading: false,
+        error: null,
+        fromGlossary: true,
+        x,
+        y,
+        placeAbove,
+      });
+      return;
+    }
 
-    fetchTranslation(text, context, x, y, placeAbove);
-  }, [article.content, article.blanks, fetchTranslation]);
+    // 2) Soft fallback for words not in precomputed glossary
+    fetchTranslationFallback(text, x, y, placeAbove);
+  }, [glossaryMap, article.contentZh, fetchTranslationFallback]);
 
   const handleSelectWordFromBank = (word: string) => {
     if (activeBlankId === null) return;
@@ -293,9 +313,7 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
     let correctCount = 0;
     article.blanks.forEach(blank => {
       const ans = (userAnswers[blank.id] || '').trim().toLowerCase();
-      if (ans === blank.word.trim().toLowerCase()) {
-        correctCount++;
-      }
+      if (ans === blank.word.trim().toLowerCase()) correctCount++;
     });
 
     const total = article.blanks.length;
@@ -439,7 +457,7 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
           </h3>
           <p className="text-xs text-slate-600">
             Choose or type the correct word from the word bank for each blank.
-            <span className="ml-1 text-slate-500">· 反白文章單字可查語境翻譯</span>
+            <span className="ml-1 text-slate-500">· 反白查詞（預載詞庫，幾乎不耗 API）</span>
           </p>
         </div>
 
@@ -570,7 +588,7 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
               <div className="flex items-start justify-between gap-2 mb-1.5">
                 <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   <Languages className="w-3 h-3 shrink-0" />
-                  <span>語境翻譯</span>
+                  <span>{popup.fromGlossary ? '預載詞庫' : '線上翻譯'}</span>
                 </div>
                 <button
                   type="button"
@@ -582,14 +600,12 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
                 </button>
               </div>
 
-              <p className="text-xs font-bold text-[#0a192f] break-words leading-snug">
-                {popup.text}
-              </p>
+              <p className="text-xs font-bold text-[#0a192f] break-words leading-snug">{popup.text}</p>
 
               {popup.loading && (
                 <div className="flex items-center gap-1.5 text-xs text-slate-500 py-1.5">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>依語境翻譯中…</span>
+                  <span>查詢中…</span>
                 </div>
               )}
 
@@ -607,9 +623,9 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
                       {popup.sense}
                     </p>
                   )}
-                  {popup.contextZh && (
+                  {popup.fromGlossary && popup.contextZh && (
                     <p className="text-[11px] text-slate-500 font-cjk leading-relaxed break-words bg-white/25 rounded-lg px-2 py-1.5 border border-white/40">
-                      <span className="font-bold text-slate-600">句意：</span>
+                      <span className="font-bold text-slate-600">全文對照：</span>
                       {popup.contextZh}
                     </p>
                   )}
