@@ -30,7 +30,7 @@ export interface ClozeBlank {
 export interface GeneratedCloze {
   id?: string;
   title: string;
-  content: string; // text with [blank_1], [blank_2] ...
+  content: string;
   contentZh: string;
   blanks: ClozeBlank[];
 }
@@ -49,6 +49,8 @@ export interface DeckData {
   id: string;
   title: string;
   description?: string | null;
+  isPublic?: boolean;
+  publishedAt?: string | Date | null;
   createdAt: string | Date;
   updatedAt: string | Date;
   words: GeneratedWord[];
