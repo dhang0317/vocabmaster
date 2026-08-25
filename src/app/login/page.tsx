@@ -23,7 +23,7 @@ function LoginContent() {
     <div className="min-h-[60vh] flex items-center justify-center">
       <div className="w-full max-w-sm rounded-3xl bg-white border-2 border-[#0a192f] p-8 space-y-6 shadow-sm text-center">
         <div className="space-y-2">
-          <h1 className="text-2xl font-black text-[#0a192f]">登入 VocabMaster</h1>
+          <h1 className="text-2xl font-black text-[#0a192f]">登入 Vocabulum</h1>
           <p className="text-xs text-slate-600">使用 Google 帳號登入，你的牌組與學習進度會儲存在你的帳號中。</p>
         </div>
 
