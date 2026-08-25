@@ -75,8 +75,11 @@ export default function ExplorePage() {
     <div className="space-y-8">
       <div className="liquid-glass liquid-glass-hover rounded-3xl p-8 sm:p-10 space-y-3">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-white/90 border border-white/70 text-[#0a192f]">
-            <Globe className="w-6 h-6" />
+          <div
+            className="p-2.5 rounded-2xl border border-black/10"
+            style={{ backgroundColor: '#ffffff', color: '#0a192f' }}
+          >
+            <Globe className="w-6 h-6" style={{ color: '#0a192f' }} />
           </div>
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-[#0a192f] tracking-tight">
