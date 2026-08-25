@@ -8,6 +8,7 @@ import {
   GlossaryEntry,
   ClozeBlank,
 } from '@/types';
+import { buildOfflineStory, buildOfflineBlanks, buildOfflineQuizzes } from '@/lib/offlineTemplates';
 
 interface GenerationResponse {
   words: GeneratedWord[];
@@ -17,14 +18,7 @@ interface GenerationResponse {
   fallbackReason?: string;
 }
 
-/** Prefer flash models; free tier often rate-limits a single model name. */
 const GEMINI_MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-3.6-flash'];
-
-const STOP_WORDS = new Set(
-  'a an the and or but if in on at to for of as by with from into through during before after above below between under again further then once here there when where why how all each few more most other some such no nor not only own same so than too very can will just should now is are was were be been being it its this that these those he she they them we you i'.split(
-    ' '
-  )
-);
 
 function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -272,55 +266,6 @@ You are an expert English vocabulary teacher. Return valid JSON only.
   return generateOfflineFallback(rawWords, level, 'Offline mode (no AI).');
 }
 
-/** Build a readable offline cloze story that mentions each target word. */
-function buildOfflineStory(words: GeneratedWord[]): { content: string; contentZh: string; title: string } {
-  const n = words.length;
-  const title =
-    n === 1
-      ? `Learning about "${words[0].word}"`
-      : `Using ${n} new words in context`;
-
-  const enParts: string[] = [
-    'Last week, our class discussed several useful English words in a real-life story.',
-  ];
-  const zhParts: string[] = ['上週，我們班在一則生活情境故事中討論了幾個實用的英文字。'];
-
-  words.forEach((w, i) => {
-    const blank = `[blank_${i + 1}]`;
-    const zh = w.translation && !/^no definition/i.test(w.translation) ? w.translation : w.word;
-    const frames = [
-      {
-        en: `First, someone explained that ${blank} is important because it relates to "${zh}".`,
-        zh: `首先，有人說明「${zh}」（${w.word}）很重要，因為它與這個概念密切相關。`,
-      },
-      {
-        en: `Next, the group practiced using ${blank} in a short sentence about everyday life.`,
-        zh: `接著，大家練習把「${zh}」用在日常情境的短句中。`,
-      },
-      {
-        en: `Later, a student asked when to choose ${blank} instead of a similar word.`,
-        zh: `後來，有同學問什麼時候該選「${zh}」，而不是意思接近的其他詞。`,
-      },
-      {
-        en: `Finally, the teacher showed how ${blank} appears in news and workplace English.`,
-        zh: `最後，老師示範「${zh}」在新聞與職場英語中的用法。`,
-      },
-    ];
-    const frame = frames[i % frames.length];
-    enParts.push(frame.en);
-    zhParts.push(frame.zh);
-  });
-
-  enParts.push('By the end of the lesson, everyone could recognize the words and use them more confidently.');
-  zhParts.push('下課時，大家都能辨認這些單字，並更有信心地使用它們。');
-
-  return {
-    title,
-    content: enParts.join(' '),
-    contentZh: zhParts.join(''),
-  };
-}
-
 function generateOfflineFallback(
   rawWords: RawWordInput[],
   level: GenerationLevel,
@@ -334,97 +279,28 @@ function generateOfflineFallback(
       pos: w.pos || 'n.',
       translation: w.translation || '（未提供中文）',
       definition: w.definition || `A concept or action related to ${cleanWord}.`,
-      example: w.example || `Students practiced the word "${cleanWord}" in a short dialogue.`,
-      exampleZh: w.exampleZh || `學生在簡短對話中練習「${cleanWord}」這個詞。`,
+      example: w.example || '',
+      exampleZh: w.exampleZh || '',
       isMastered: false,
     };
   });
 
-  const blanks: ClozeBlank[] = words.map((w, idx) => {
-    const distractors = words
-      .filter(other => other.word.trim().toLowerCase() !== w.word.trim().toLowerCase())
-      .map(o => o.word);
-    while (distractors.length < 3) {
-      distractors.push(['approach', 'perspective', 'significant', 'potential', 'efficient'][distractors.length % 5]);
-    }
-    const shuffledOptions = [w.word, distractors[0], distractors[1], distractors[2]].sort(
-      () => Math.random() - 0.5
-    );
-    return {
-      id: idx + 1,
-      word: w.word,
-      hint: `${w.translation} (${w.pos})`,
-      options: shuffledOptions,
-    };
-  });
-
-  const story = buildOfflineStory(words);
-
-  const fillerGlossary: GlossaryEntry[] = [
-    { en: 'discussed', zh: '討論了' },
-    { en: 'useful', zh: '實用的' },
-    { en: 'real-life', zh: '生活情境' },
-    { en: 'explained', zh: '說明' },
-    { en: 'important', zh: '重要' },
-    { en: 'practiced', zh: '練習' },
-    { en: 'sentence', zh: '句子' },
-    { en: 'everyday', zh: '日常的' },
-    { en: 'similar', zh: '相似的' },
-    { en: 'workplace', zh: '職場' },
-    { en: 'confidently', zh: '有信心地' },
-    { en: 'recognize', zh: '辨認' },
-  ];
+  const blanks = buildOfflineBlanks(words);
+  const story = buildOfflineStory(words, level);
+  const quizzes = buildOfflineQuizzes(words);
 
   const article: GeneratedCloze = {
     title: story.title,
     content: story.content,
     contentZh: story.contentZh,
     blanks,
-    glossary: normalizeGlossary(fillerGlossary, words, blanks),
+    glossary: normalizeGlossary(story.glossaryExtra, words, blanks),
   };
-
-  const sentenceTemplates = [
-    (meaning: string) => `In class, students learned that _____ means "${meaning}".`,
-    (meaning: string) => `The teacher wrote _____ on the board and explained that it means "${meaning}".`,
-    (meaning: string) => `To remember the meaning "${meaning}", choose the word _____.`,
-    (meaning: string) => `The vocabulary list defines _____ as "${meaning}".`,
-    (meaning: string) => `Which word should complete this note? "_____ = ${meaning}."`,
-  ];
-
-  const quizzes: GeneratedQuiz[] = words.map((w, questionIndex) => {
-    const distractors = words
-      .filter(other => other.word.trim().toLowerCase() !== w.word.trim().toLowerCase())
-      .map(o => o.word);
-    while (distractors.length < 3) {
-      distractors.push(
-        ['comprehend', 'sustainable', 'elaborate', 'innovative', 'phenomenon'][distractors.length % 5]
-      );
-    }
-    const shuffled = shuffle([w.word, distractors[0], distractors[1], distractors[2]]);
-    const correctIdx = shuffled.indexOf(w.word);
-
-    return {
-      question:
-        questionIndex % 2 === 0
-          ? `Which word best matches this meaning: "${w.translation || 'the meaning provided'}"?`
-          : sentenceTemplates[Math.floor(questionIndex / 2) % sentenceTemplates.length](
-              w.translation || 'the meaning provided'
-            ),
-      questionZh:
-        questionIndex % 2 === 0
-          ? `哪一個單字最符合「${w.translation || '題目所提供的意思'}」？`
-          : `請選出最適合填入空格的單字；這個單字的意思是「${w.translation || '題目所提供的意思'}」。`,
-      targetWord: w.word,
-      options: shuffled,
-      correctIdx,
-      explanation: `正確答案是「${w.word}」，意思是「${w.translation || '未提供中文意思'}」。`,
-    };
-  });
 
   return {
     words,
     article,
-    quizzes: shuffle(quizzes),
+    quizzes,
     source: 'offline',
     fallbackReason,
   };
