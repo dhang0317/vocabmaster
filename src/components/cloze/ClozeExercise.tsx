@@ -129,15 +129,15 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
               onClick={() => setActiveBlankId(blankId)}
               className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border font-bold text-sm transition ${
                 isCorrect
-                  ? 'bg-emerald-100 border-emerald-600 text-emerald-900'
+                  ? 'bg-emerald-100 border-emerald-600 !text-black'
                   : isWrong
-                  ? 'bg-red-100 border-red-500 text-red-900'
+                  ? 'bg-red-100 border-red-500 !text-black'
                   : isActive
-                  ? 'bg-white/50 border-white/80 text-[#0a192f] ring-2 ring-[#0a192f]/15'
-                  : 'bg-white/30 border-white/50 text-[#0a192f] hover:bg-white/45'
+                  ? 'bg-white/50 border-white/80 !text-black ring-2 ring-[#0a192f]/15'
+                  : 'bg-white/30 border-white/50 !text-black hover:bg-white/45'
               }`}
             >
-              <span className="text-[11px] font-mono text-slate-500">({blankId})</span>
+              <span className="text-[11px] font-mono !text-black/50">({blankId})</span>
               <input
                 type="text"
                 value={userVal}
@@ -145,7 +145,7 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
                 onChange={(e) => handleInputChange(blankId, e.target.value)}
                 placeholder="____"
                 disabled={isChecked}
-                className="bg-transparent border-none outline-none text-center font-bold text-sm text-[#0a192f] placeholder-slate-400 w-24"
+                className="bg-transparent border-none outline-none text-center font-bold text-sm !text-black placeholder-slate-400 w-24"
               />
               {blankData && (
                 <button
@@ -155,7 +155,7 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
                     handleToggleHint(blankId);
                   }}
                   title="Show/hide hint"
-                  className="text-slate-400 hover:text-[#0a192f] p-0.5 rounded"
+                  className="!text-black/40 hover:!text-black p-0.5 rounded"
                 >
                   <HelpCircle className="w-3.5 h-3.5" />
                 </button>
@@ -163,7 +163,7 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
             </span>
 
             {showHints[blankId] && blankData && (
-              <span className="block text-[11px] text-[#0a192f] bg-amber-50 border border-amber-300 rounded px-1.5 py-0.5 mt-0.5 font-medium">
+              <span className="block text-[11px] !text-black bg-amber-50 border border-amber-300 rounded px-1.5 py-0.5 mt-0.5 font-medium">
                 💡 {blankData.hint}
               </span>
             )}
