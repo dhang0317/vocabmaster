@@ -185,8 +185,8 @@ const QUIZ_STEMS: Record<
       { en: 'A key _____ in the study is the limited sample size.', zh: '本研究的一個關鍵_____是樣本數有限。' },
     ],
     v: [
-      { en: 'The author attempts to _____ competing theories in the second section.', zh: '作者在第二節試圖_____相互競爭的理論。' },
       { en: 'These findings _____ earlier claims about the topic.', zh: '這些發現_____了先前相關主張。' },
+      { en: 'The author attempts to _____ competing theories in the second section.', zh: '作者在第二節試圖_____相互競爭的理論。' },
     ],
     adj: [
       { en: 'The argument becomes less _____ when alternative data are considered.', zh: '若納入其他資料，論點會變得較不_____。' },
@@ -241,7 +241,8 @@ function pickDistractors(w: GeneratedWord, all: GeneratedWord[]): string[] {
 /** Append leftover words using classic POS frames so no word is dropped */
 function appendLeftoverFrames(
   leftovers: GeneratedWord[],
-  startBlankId: number
+  startBlankId: number,
+  allWords: GeneratedWord[]
 ): { en: string; zh: string; blanks: ClozeBlank[]; glossary: GlossaryEntry[] } {
   if (leftovers.length === 0) {
     return { en: '', zh: '', blanks: [], glossary: [] };
@@ -262,7 +263,7 @@ function appendLeftoverFrames(
     enParts.push(frame.en(blank, w.word, zh));
     zhParts.push(frame.zh(w.word, zh));
 
-    const unique = pickDistractors(w, leftovers);
+    const unique = pickDistractors(w, allWords);
     blanks.push({
       id: blankId,
       word: w.word,
@@ -280,19 +281,34 @@ function appendLeftoverFrames(
   };
 }
 
+export interface OfflineArticleResult {
+  title: string;
+  content: string;
+  contentZh: string;
+  blanks: ClozeBlank[];
+  glossaryExtra: GlossaryEntry[];
+  templateId: string;
+}
+
 /**
- * Primary offline story builder: scenario templates + semantic matching,
- * with POS-frame fallback for words that did not fit the chosen template.
+ * Single entry point for offline cloze articles.
+ * Uses scenario templates + semantic matching; leftover words get POS frames.
+ * Story and blanks are always consistent.
  */
-export function buildOfflineStory(
+export function buildOfflineArticle(
   words: GeneratedWord[],
   level: GenerationLevel = 'highschool'
-): { content: string; contentZh: string; title: string; glossaryExtra: GlossaryEntry[] } {
+): OfflineArticleResult {
   const scenario = buildScenarioStory(words, level);
-  const leftover = appendLeftoverFrames(scenario.leftoverWords, scenario.blanks.length + 1);
+  const leftover = appendLeftoverFrames(
+    scenario.leftoverWords,
+    scenario.blanks.length + 1,
+    words
+  );
 
   const content = (scenario.content + leftover.en).trim();
   const contentZh = (scenario.contentZh + leftover.zh).trim();
+  const blanks = [...scenario.blanks, ...leftover.blanks];
 
   const glossaryExtra: GlossaryEntry[] = [
     ...scenario.glossaryExtra,
@@ -310,18 +326,32 @@ export function buildOfflineStory(
     title: scenario.title,
     content,
     contentZh,
+    blanks,
     glossaryExtra,
+    templateId: scenario.templateId,
   };
 }
 
-/**
- * Build blanks aligned with the scenario story (same order as [blank_n] markers).
- * Must be called with the same words/level as buildOfflineStory for consistency.
- */
-export function buildOfflineBlanks(words: GeneratedWord[], level: GenerationLevel = 'highschool'): ClozeBlank[] {
-  const scenario = buildScenarioStory(words, level);
-  const leftover = appendLeftoverFrames(scenario.leftoverWords, scenario.blanks.length + 1);
-  return [...scenario.blanks, ...leftover.blanks];
+/** @deprecated Prefer buildOfflineArticle for consistency */
+export function buildOfflineStory(
+  words: GeneratedWord[],
+  level: GenerationLevel = 'highschool'
+): { content: string; contentZh: string; title: string; glossaryExtra: GlossaryEntry[] } {
+  const article = buildOfflineArticle(words, level);
+  return {
+    title: article.title,
+    content: article.content,
+    contentZh: article.contentZh,
+    glossaryExtra: article.glossaryExtra,
+  };
+}
+
+/** @deprecated Prefer buildOfflineArticle for consistency */
+export function buildOfflineBlanks(
+  words: GeneratedWord[],
+  level: GenerationLevel = 'highschool'
+): ClozeBlank[] {
+  return buildOfflineArticle(words, level).blanks;
 }
 
 type QuizKind = 'cloze' | 'example' | 'definition';

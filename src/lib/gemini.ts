@@ -8,7 +8,7 @@ import {
   GlossaryEntry,
   ClozeBlank,
 } from '@/types';
-import { buildOfflineStory, buildOfflineBlanks, buildOfflineQuizzes } from '@/lib/offlineTemplates';
+import { buildOfflineArticle, buildOfflineQuizzes } from '@/lib/offlineTemplates';
 
 interface GenerationResponse {
   words: GeneratedWord[];
@@ -331,16 +331,16 @@ function generateOfflineFallback(
     };
   });
 
-  const blanks = buildOfflineBlanks(words);
-  const story = buildOfflineStory(words, level);
+  // Single call: scenario template + semantic match + leftover frames
+  const offline = buildOfflineArticle(words, level);
   const quizzes = buildOfflineQuizzes(words, level);
 
   let article: GeneratedCloze = {
-    title: story.title,
-    content: story.content,
-    contentZh: story.contentZh,
-    blanks,
-    glossary: normalizeGlossary(story.glossaryExtra, words, blanks),
+    title: offline.title,
+    content: offline.content,
+    contentZh: offline.contentZh,
+    blanks: offline.blanks,
+    glossary: normalizeGlossary(offline.glossaryExtra, words, offline.blanks),
   };
   article = normalizeArticleBlanks(article);
 
@@ -349,6 +349,8 @@ function generateOfflineFallback(
     article,
     quizzes,
     source: 'offline',
-    fallbackReason,
+    fallbackReason: offline.templateId
+      ? `${fallbackReason} [template:${offline.templateId}]`
+      : fallbackReason,
   };
 }
