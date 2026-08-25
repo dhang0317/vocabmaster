@@ -101,6 +101,7 @@ export async function POST(req: NextRequest) {
                   content: article.content,
                   contentZh: article.contentZh,
                   blanksJson: JSON.stringify(article.blanks || []),
+                  glossaryJson: JSON.stringify(article.glossary || []),
                 },
               ],
             }
