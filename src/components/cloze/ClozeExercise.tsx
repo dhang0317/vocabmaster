@@ -33,7 +33,6 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
     if (activeBlankId === null) return;
     setUserAnswers(prev => ({ ...prev, [activeBlankId]: word }));
 
-    // Auto-advance to next blank
     const blankIds = article.blanks.map(b => b.id);
     const currIdx = blankIds.indexOf(activeBlankId);
     if (currIdx !== -1 && currIdx < blankIds.length - 1) {
@@ -63,11 +62,7 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
     setIsChecked(true);
 
     if (correctCount === total && total > 0) {
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-      });
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
     }
   };
 
@@ -115,7 +110,6 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
     }
   };
 
-  // Render article text by replacing [blank_X] with input/interactive slot
   const renderStoryWithBlanks = () => {
     const parts = article.content.split(/(\[blank_\d+\])/g);
 
@@ -133,14 +127,14 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
           <span key={index} className="inline-block mx-1 my-1">
             <span
               onClick={() => setActiveBlankId(blankId)}
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border-2 font-bold text-sm transition ${
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border font-bold text-sm transition ${
                 isCorrect
                   ? 'bg-emerald-100 border-emerald-600 text-emerald-900'
                   : isWrong
                   ? 'bg-red-100 border-red-500 text-red-900'
                   : isActive
-                  ? 'bg-blue-50 border-[#0a192f] text-[#0a192f] ring-2 ring-[#0a192f]/20'
-                  : 'bg-white border-[#0a192f]/40 text-[#0a192f] hover:border-[#0a192f]'
+                  ? 'bg-white/50 border-white/80 text-[#0a192f] ring-2 ring-[#0a192f]/15'
+                  : 'bg-white/30 border-white/50 text-[#0a192f] hover:bg-white/45'
               }`}
             >
               <span className="text-[11px] font-mono text-slate-500">({blankId})</span>
@@ -168,14 +162,12 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
               )}
             </span>
 
-            {/* Hint popover */}
             {showHints[blankId] && blankData && (
               <span className="block text-[11px] text-[#0a192f] bg-amber-50 border border-amber-300 rounded px-1.5 py-0.5 mt-0.5 font-medium">
                 💡 {blankData.hint}
               </span>
             )}
 
-            {/* If wrong, show correction */}
             {isWrong && blankData && (
               <span className="block text-[11px] text-emerald-800 font-bold mt-0.5">
                 ✓ Correct: {blankData.word}
@@ -192,8 +184,7 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      {/* Header & Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-[#0a192f]/10 pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-black/10 pb-4">
         <div>
           <h3 className="text-xl font-black text-[#0a192f] flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-[#0a192f]" />
@@ -207,17 +198,16 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowChinese(!showChinese)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-xs font-bold text-[#0a192f] border-2 border-[#0a192f] transition shadow-sm"
+            className="liquid-glass liquid-glass-hover flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-[#0a192f]"
           >
             {showChinese ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-            <span>{showChinese ? '隱藏中文對照' : '顯示中文對照'}</span>
+            <span>{showChinese ? 'Hide translation' : 'Show translation'}</span>
           </button>
         </div>
       </div>
 
-      {/* Word Bank Chips */}
       {!isChecked && (
-        <div className="p-4 rounded-2xl bg-white border-2 border-[#0a192f] space-y-2 shadow-sm">
+        <div className="liquid-glass p-4 rounded-2xl space-y-2">
           <div className="flex items-center justify-between text-xs text-slate-600">
             <span className="font-bold text-[#0a192f]">
               Word Bank - click a word to fill the active blank:
@@ -230,10 +220,10 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
                 <button
                   key={idx}
                   onClick={() => handleSelectWordFromBank(word)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition border-2 ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition border ${
                     isUsed
-                      ? 'bg-slate-100 text-slate-400 line-through border-slate-300'
-                      : 'bg-[#0a192f] hover:bg-[#132c5b] !text-white border-[#0a192f] hover:scale-105 shadow-sm'
+                      ? 'bg-white/20 text-slate-400 line-through border-white/30'
+                      : 'bg-[#0a192f] hover:bg-[#132c5b] !text-white border-[#0a192f] hover:scale-105'
                   }`}
                 >
                   {word}
@@ -244,11 +234,10 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
         </div>
       )}
 
-      {/* Score Banner if Checked */}
       {score && (
-        <div className="p-5 rounded-2xl bg-white border-2 border-[#0a192f] flex items-center justify-between shadow-sm">
+        <div className="liquid-glass p-5 rounded-2xl flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-slate-100 rounded-xl text-[#0a192f] border border-[#0a192f]">
+            <div className="p-3 bg-white/40 rounded-xl text-[#0a192f] border border-white/50">
               <Award className="w-7 h-7" />
             </div>
             <div>
@@ -263,14 +252,14 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
           <div className="flex flex-wrap gap-2">
             <button
               onClick={handleReset}
-              className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 !text-[#0a192f] text-xs font-bold shadow-sm transition border-2 border-[#0a192f]"
+              className="liquid-glass liquid-glass-hover px-4 py-2.5 rounded-xl !text-[#0a192f] text-xs font-bold"
             >
               Retake original quiz
             </button>
             <button
               onClick={handleNewArticleRestart}
               disabled={isRegenerating}
-              className="px-4 py-2.5 rounded-xl bg-[#0a192f] hover:bg-[#132c5b] disabled:opacity-60 !text-white text-xs font-bold shadow-sm transition border border-[#0a192f]"
+              className="px-4 py-2.5 rounded-xl bg-[#0a192f] hover:bg-[#132c5b] disabled:opacity-60 !text-white text-xs font-bold transition"
             >
               {isRegenerating ? 'Generating...' : 'Retake shuffled quiz'}
             </button>
@@ -278,34 +267,31 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
         </div>
       )}
 
-      {/* Story Content Box */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white border-2 border-[#0a192f] shadow-sm space-y-6">
+      <div className="liquid-glass p-6 sm:p-8 rounded-3xl space-y-6">
         <div className="text-[#0a192f] text-base sm:text-lg leading-loose font-normal">
           {renderStoryWithBlanks()}
         </div>
 
-        {/* Chinese Translation */}
         {showChinese && article.contentZh && (
-          <div className="pt-6 border-t-2 border-[#0a192f]/10 space-y-2 animate-in fade-in duration-300">
+          <div className="pt-6 border-t border-black/10 space-y-2 animate-in fade-in duration-300">
             <h5 className="text-xs font-bold uppercase tracking-wider text-[#0a192f]">
               Full translation
             </h5>
-            <p className="text-sm text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-[#0a192f]/20">
+            <p className="text-sm text-slate-700 leading-relaxed bg-white/30 p-4 rounded-2xl border border-white/40">
               {article.contentZh}
             </p>
           </div>
         )}
       </div>
 
-      {/* Submit Button */}
       {!isChecked && (
         <div className="flex justify-end">
           <button
             onClick={handleCheckAnswers}
-            className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] text-white font-bold text-sm shadow-md transition transform hover:-translate-y-0.5 border border-[#0a192f]"
+            className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] text-white font-bold text-sm shadow-md transition transform hover:-translate-y-0.5"
           >
             <Check className="w-4 h-4" />
-              <span>Check answers and score</span>
+            <span>Check answers and score</span>
           </button>
         </div>
       )}
