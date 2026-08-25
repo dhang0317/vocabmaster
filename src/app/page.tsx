@@ -229,20 +229,32 @@ export default function HomePage() {
 
                   <div className="flex flex-wrap gap-2 pt-1">
                     {deck.isPublic && (
-                      <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white border border-white/80 font-bold inline-flex items-center gap-1 !text-black">
-                        <Globe className="w-3 h-3 !text-black" /> Public
+                      <span
+                        className="text-[11px] px-2.5 py-1 rounded-lg font-bold inline-flex items-center gap-1 border border-black/10"
+                        style={{ backgroundColor: '#ffffff', color: '#000000' }}
+                      >
+                        <Globe className="w-3 h-3" style={{ color: '#000000' }} /> Public
                       </span>
                     )}
-                    <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white/90 !text-black border border-white/70 font-bold">
+                    <span
+                      className="text-[11px] px-2.5 py-1 rounded-lg font-bold border border-black/10"
+                      style={{ backgroundColor: 'rgba(255,255,255,0.92)', color: '#000000' }}
+                    >
                       {deck.wordCount} words
                     </span>
                     {deck.articleCount > 0 && (
-                      <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white/90 !text-black border border-white/70 font-bold">
+                      <span
+                        className="text-[11px] px-2.5 py-1 rounded-lg font-bold border border-black/10"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.92)', color: '#000000' }}
+                      >
                         Cloze article
                       </span>
                     )}
                     {deck.quizCount > 0 && (
-                      <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white/90 !text-black border border-white/70 font-bold">
+                      <span
+                        className="text-[11px] px-2.5 py-1 rounded-lg font-bold border border-black/10"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.92)', color: '#000000' }}
+                      >
                         {deck.quizCount} quiz questions
                       </span>
                     )}

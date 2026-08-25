@@ -172,14 +172,6 @@ export default function DeckStudyPage() {
             <h1 className="text-2xl sm:text-3xl font-black text-[#0a192f] tracking-tight">
               {deck.title}
             </h1>
-            {deck.isPublic && (
-              <span
-                className="text-[11px] px-2 py-0.5 rounded-lg font-bold inline-flex items-center gap-1 border border-white/70"
-                style={{ backgroundColor: '#ffffff', color: '#000000' }}
-              >
-                <Globe className="w-3 h-3" style={{ color: '#000000' }} /> Public
-              </span>
-            )}
           </div>
 
           {deck.description && (
@@ -201,15 +193,23 @@ export default function DeckStudyPage() {
             onClick={handleTogglePublic}
             disabled={publishing}
             title={deck.isPublic ? 'Remove from public library' : 'Share to public library'}
-            className={`p-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 transition ${
+            className="p-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 transition border border-black/10"
+            style={
               deck.isPublic
-                ? 'bg-[#0a192f] hover:bg-[#132c5b] !text-white'
-                : 'liquid-glass liquid-glass-hover text-slate-600'
-            }`}
-            style={deck.isPublic ? { color: '#ffffff' } : undefined}
+                ? { backgroundColor: '#ffffff', color: '#000000' }
+                : undefined
+            }
           >
-            <Globe className={`w-4 h-4 ${deck.isPublic ? '!text-white' : ''}`} />
-            <span>{publishing ? '…' : deck.isPublic ? 'Public' : 'Share'}</span>
+            {!deck.isPublic && (
+              <span className="liquid-glass liquid-glass-hover absolute inset-0 rounded-xl -z-10" />
+            )}
+            <Globe
+              className="w-4 h-4"
+              style={{ color: deck.isPublic ? '#000000' : undefined }}
+            />
+            <span className={deck.isPublic ? '' : 'text-slate-600'}>
+              {publishing ? '…' : deck.isPublic ? 'Public' : 'Share'}
+            </span>
           </button>
           <button
             type="button"
@@ -301,7 +301,7 @@ export default function DeckStudyPage() {
                       </td>
                       <td className="px-4 py-4">
                         {w.pos ? (
-                          <span className="text-xs italic text-[#1e3a8a] bg-white/40 px-2 py-0.5 rounded-md border border-white/50 font-bold">{w.pos}</span>
+                          <span className="text-xs italic text-[#1e3a8a] font-bold">{w.pos}</span>
                         ) : (
                           <span className="text-xs text-slate-400">—</span>
                         )}
