@@ -59,6 +59,8 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
                   content: a.content,
                   contentZh: a.contentZh,
                   blanksJson: a.blanksJson,
+                  glossaryJson:
+                    (a as { glossaryJson?: string | null }).glossaryJson || '[]',
                 })),
               }
             : undefined,
