@@ -65,9 +65,19 @@ export default function HomePage() {
   const totalQuizzes = decks.reduce((acc, d) => acc + d.resultCount, 0);
 
   return (
-    <div className="space-y-10">
+    <div className="relative space-y-10">
+      {/* Soft backdrop so glass blur is visible */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+      >
+        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-sky-200/50 blur-3xl" />
+        <div className="absolute top-1/3 -right-20 w-80 h-80 rounded-full bg-indigo-200/40 blur-3xl" />
+        <div className="absolute bottom-10 left-1/3 w-72 h-72 rounded-full bg-emerald-100/50 blur-3xl" />
+      </div>
+
       {/* Hero Banner */}
-      <div className="rounded-3xl bg-white border border-black/15 hover:border-black/40 p-8 sm:p-12 shadow-sm transition-colors">
+      <div className="liquid-glass rounded-3xl p-8 sm:p-12 transition-transform hover:-translate-y-0.5">
         <div className="max-w-2xl space-y-4">
           <h1 className="text-3xl sm:text-5xl text-[#0a192f] tracking-tight leading-tight">
             <span className="block">Vocabulary</span>
@@ -88,7 +98,7 @@ export default function HomePage() {
 
       {/* Stats Section */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="p-5 rounded-2xl bg-white border border-black/15 hover:border-black/40 space-y-1 shadow-sm transition-colors">
+        <div className="liquid-glass p-5 rounded-2xl space-y-1 transition-transform hover:-translate-y-0.5">
           <div className="flex items-center justify-between text-slate-600">
             <span className="text-xs font-bold">Total decks</span>
             <Layers className="w-4 h-4 text-[#0a192f]" />
@@ -96,7 +106,7 @@ export default function HomePage() {
           <span className="text-2xl sm:text-3xl font-black text-[#0a192f]">{decks.length}</span>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white border border-black/15 hover:border-black/40 space-y-1 shadow-sm transition-colors">
+        <div className="liquid-glass p-5 rounded-2xl space-y-1 transition-transform hover:-translate-y-0.5">
           <div className="flex items-center justify-between text-slate-600">
             <span className="text-xs font-bold">Total words</span>
             <BookOpen className="w-4 h-4 text-[#0a192f]" />
@@ -104,7 +114,7 @@ export default function HomePage() {
           <span className="text-2xl sm:text-3xl font-black text-[#0a192f]">{totalWords}</span>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white border border-black/15 hover:border-black/40 space-y-1 shadow-sm transition-colors">
+        <div className="liquid-glass p-5 rounded-2xl space-y-1 transition-transform hover:-translate-y-0.5">
           <div className="flex items-center justify-between text-slate-600">
             <span className="text-xs font-bold">Mastered words</span>
             <CheckCircle2 className="w-4 h-4 text-emerald-700" />
@@ -112,7 +122,7 @@ export default function HomePage() {
           <span className="text-2xl sm:text-3xl font-black text-emerald-700">{totalMastered}</span>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white border border-black/15 hover:border-black/40 space-y-1 shadow-sm transition-colors">
+        <div className="liquid-glass p-5 rounded-2xl space-y-1 transition-transform hover:-translate-y-0.5">
           <div className="flex items-center justify-between text-slate-600">
             <span className="text-xs font-bold">Quizzes completed</span>
             <Award className="w-4 h-4 text-[#0a192f]" />
@@ -136,7 +146,7 @@ export default function HomePage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search deck titles or descriptions..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-black/15 hover:border-black/40 focus:border-black/50 text-xs sm:text-sm text-[#0a192f] placeholder-slate-400 focus:outline-none transition-colors font-medium"
+              className="liquid-glass w-full pl-10 pr-4 py-2.5 rounded-xl text-xs sm:text-sm text-[#0a192f] placeholder-slate-400 focus:outline-none font-medium"
             />
           </div>
         </div>
@@ -145,11 +155,11 @@ export default function HomePage() {
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-48 rounded-3xl bg-white border border-black/10 animate-pulse" />
+              <div key={i} className="h-48 rounded-3xl liquid-glass animate-pulse" />
             ))}
           </div>
         ) : filteredDecks.length === 0 ? (
-          <div className="p-12 text-center rounded-3xl bg-white border border-black/15 hover:border-black/40 space-y-4 shadow-sm transition-colors">
+          <div className="liquid-glass p-12 text-center rounded-3xl space-y-4">
             <div className="space-y-1">
               <h3 className="text-lg font-bold text-[#0a192f]">No Voc</h3>
               <p className="text-xs text-slate-600 max-w-sm mx-auto">
@@ -171,7 +181,7 @@ export default function HomePage() {
               <Link
                 key={deck.id}
                 href={`/decks/${deck.id}`}
-                className="group relative rounded-3xl bg-white hover:bg-slate-50 border border-black/15 hover:border-black/40 p-6 flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 shadow-sm hover:shadow-md"
+                className="liquid-glass group relative rounded-3xl p-6 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1"
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-3">
@@ -181,7 +191,7 @@ export default function HomePage() {
                     <button
                       onClick={(e) => handleDeleteDeck(deck.id, e)}
                       title="Delete deck"
-                      className="text-slate-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition opacity-0 group-hover:opacity-100"
+                      className="text-slate-400 hover:text-red-600 p-1 rounded-lg hover:bg-white/50 transition opacity-0 group-hover:opacity-100"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -194,16 +204,16 @@ export default function HomePage() {
                   )}
 
                   <div className="flex flex-wrap gap-2 pt-1">
-                    <span className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-100 text-[#0a192f] border border-black/10 font-bold">
+                    <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white/50 text-[#0a192f] border border-white/40 font-bold">
                       {deck.wordCount} words
                     </span>
                     {deck.articleCount > 0 && (
-                      <span className="text-[11px] px-2.5 py-1 rounded-lg bg-blue-50 text-[#0a192f] border border-black/10 font-bold">
+                      <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white/50 text-[#0a192f] border border-white/40 font-bold">
                         Cloze article
                       </span>
                     )}
                     {deck.quizCount > 0 && (
-                      <span className="text-[11px] px-2.5 py-1 rounded-lg bg-indigo-50 text-[#0a192f] border border-black/10 font-bold">
+                      <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white/50 text-[#0a192f] border border-white/40 font-bold">
                         <span className="text-[#0a192f]">{deck.quizCount} quiz questions</span>
                       </span>
                     )}
