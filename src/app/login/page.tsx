@@ -37,7 +37,7 @@ function LoginContent() {
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center">
-      <div className="w-full max-w-sm rounded-3xl bg-white border border-black/15 hover:border-black/40 p-8 space-y-6 shadow-sm text-center transition-colors">
+      <div className="liquid-glass w-full max-w-sm rounded-3xl p-8 space-y-6 text-center">
         <div className="space-y-2">
           <h1 className="text-2xl font-black text-[#0a192f]">Sign in to Vocabulum</h1>
           <p className="text-xs text-slate-600">
@@ -47,7 +47,7 @@ function LoginContent() {
 
         <button
           onClick={() => signIn('google', { callbackUrl })}
-          className="w-full inline-flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl bg-white hover:bg-slate-50 text-[#0a192f] font-bold text-sm transition border border-black/15 hover:border-black/40 shadow-sm"
+          className="w-full inline-flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl bg-white/50 hover:bg-white/70 text-[#0a192f] font-bold text-sm transition border border-white/50"
         >
           <GoogleIcon />
           <span>Continue with Google</span>
