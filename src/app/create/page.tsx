@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sparkles, Check, RefreshCw, AlertCircle, WifiOff } from 'lucide-react';
 import { FileUpload } from '@/components/upload/FileUpload';
+import { SemanticTagEditor } from '@/components/upload/SemanticTagEditor';
 import {
   RawWordInput,
   GeneratedWord,
@@ -147,6 +148,7 @@ export default function CreateDeckPage() {
           Upload words
         </h2>
         <FileUpload onWordsLoaded={setWords} initialWords={words} />
+        <SemanticTagEditor words={words} onChange={setWords} />
       </div>
 
       <div className="liquid-glass p-6 sm:p-8 rounded-3xl space-y-6">
@@ -225,7 +227,7 @@ export default function CreateDeckPage() {
             </div>
             <p className="mt-2 text-xs text-slate-600">
               {useOffline
-                ? '使用內建模板立即生成文章、填空與測驗，不消耗 API 額度。'
+                ? '使用情境庫 + 語意匹配生成文章、填空與測驗，不消耗 API 額度。'
                 : '使用 Gemini 生成較自然的文章（需 API Key，且受免費額度限制）。'}
             </p>
           </div>
@@ -279,7 +281,7 @@ export default function CreateDeckPage() {
             />
             {generationSource === 'ai'
               ? 'AI generation — materials created by Gemini.'
-              : 'Offline generation — template-based article, cloze, and quizzes (no API used).'}
+              : 'Offline generation — scenario template + semantic matching (no API used).'}
             {fallbackReason && generationSource === 'offline' && useOffline === false && (
               <span className="font-normal opacity-80">（{fallbackReason}）</span>
             )}
