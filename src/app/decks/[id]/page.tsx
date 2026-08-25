@@ -103,11 +103,10 @@ export default function DeckStudyPage() {
 
   const masteredCount = deck.words.filter(w => w.isMastered).length;
 
+  // All tabs are glass; active uses darker glass tint
   const tabClass = (active: boolean) =>
-    `flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition ${
-      active
-        ? 'bg-[#0a192f] text-white shadow-sm'
-        : 'liquid-glass text-[#0a192f] hover:bg-white/50'
+    `flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold liquid-glass liquid-glass-hover ${
+      active ? 'liquid-glass-active text-white' : 'text-[#0a192f]'
     }`;
 
   return (
@@ -117,7 +116,7 @@ export default function DeckStudyPage() {
           <div className="flex items-center gap-2">
             <Link
               href="/"
-              className="liquid-glass text-[#0a192f] hover:bg-white/50 p-1.5 rounded-xl transition"
+              className="liquid-glass liquid-glass-hover text-[#0a192f] p-2 rounded-xl inline-flex items-center justify-center"
               title="Back"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -128,12 +127,12 @@ export default function DeckStudyPage() {
           </div>
 
           {deck.description && (
-            <p className="text-xs sm:text-sm text-slate-600 pl-9">
+            <p className="text-xs sm:text-sm text-slate-600 pl-11">
               {deck.description}
             </p>
           )}
 
-          <div className="flex items-center gap-3 pl-9 pt-1 text-xs text-slate-500 font-medium">
+          <div className="flex items-center gap-3 pl-11 pt-1 text-xs text-slate-500 font-medium">
             <span>{deck.words.length} words</span>
             <span>•</span>
             <span className="text-emerald-700 font-bold">Mastered {masteredCount}</span>
@@ -143,7 +142,7 @@ export default function DeckStudyPage() {
         <button
           onClick={handleDeleteDeck}
           title="Delete deck"
-          className="liquid-glass text-slate-500 hover:text-red-600 p-2 rounded-xl hover:bg-red-50/50 transition text-xs font-bold flex items-center gap-1"
+          className="liquid-glass liquid-glass-hover text-slate-600 hover:text-red-600 p-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5"
         >
           <Trash2 className="w-4 h-4" />
           <span>Delete</span>
@@ -151,26 +150,26 @@ export default function DeckStudyPage() {
       </div>
 
       <div className="no-print flex flex-wrap items-center gap-2 border-b border-black/10 pb-4">
-        <button onClick={() => setActiveTab('flashcards')} className={tabClass(activeTab === 'flashcards')}>
+        <button type="button" onClick={() => setActiveTab('flashcards')} className={tabClass(activeTab === 'flashcards')}>
           <Layers className="w-4 h-4" />
           <span>Flashcards</span>
         </button>
 
         {deck.articles && deck.articles.length > 0 && (
-          <button onClick={() => setActiveTab('cloze')} className={tabClass(activeTab === 'cloze')}>
+          <button type="button" onClick={() => setActiveTab('cloze')} className={tabClass(activeTab === 'cloze')}>
             <BookOpen className="w-4 h-4" />
             <span>Cloze Article</span>
           </button>
         )}
 
         {deck.quizzes && deck.quizzes.length > 0 && (
-          <button onClick={() => setActiveTab('quiz')} className={tabClass(activeTab === 'quiz')}>
+          <button type="button" onClick={() => setActiveTab('quiz')} className={tabClass(activeTab === 'quiz')}>
             <Pencil className="w-4 h-4" />
             <span>Quiz Questions</span>
           </button>
         )}
 
-        <button onClick={() => setActiveTab('wordlist')} className={tabClass(activeTab === 'wordlist')}>
+        <button type="button" onClick={() => setActiveTab('wordlist')} className={tabClass(activeTab === 'wordlist')}>
           <List className="w-4 h-4" />
           <span>Word List</span>
         </button>
@@ -210,6 +209,7 @@ export default function DeckStudyPage() {
                         <div className="flex items-center gap-2">
                           <span>{w.word}</span>
                           <button
+                            type="button"
                             onClick={() => handlePlayAudio(w.word)}
                             title="Pronounce"
                             className="p-1 rounded text-slate-500 hover:text-[#0a192f] hover:bg-white/40"
@@ -239,6 +239,7 @@ export default function DeckStudyPage() {
                       </td>
                       <td className="px-4 py-4 text-center">
                         <button
+                          type="button"
                           onClick={() => w.id && handleToggleMastered(w.id, !w.isMastered)}
                           className={`p-1.5 rounded-lg border transition ${
                             w.isMastered
