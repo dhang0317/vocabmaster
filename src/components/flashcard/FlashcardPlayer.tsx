@@ -1,8 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Volume2, CheckCircle2, BookOpen } from 'lucide-react';
 import { GeneratedWord } from '@/types';
+
+const SWIPE_THRESHOLD = 56;
+const SWIPE_MAX_DRAG = 140;
 
 interface FlashcardPlayerProps {
   words: GeneratedWord[];
@@ -67,7 +70,7 @@ function CardFace({
         </div>
 
         <p className="text-center text-[11px] text-slate-500 font-medium mt-auto">
-          點卡片翻面 · 點兩側書頁換字
+          點卡片翻面 · 左右滑動或點書頁換字
         </p>
       </div>
     );
@@ -119,12 +122,23 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
   const [isFlipped, setIsFlipped] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [slideDir, setSlideDir] = useState<'left' | 'right' | null>(null);
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const pointerStart = useRef<{ x: number; y: number; id: number } | null>(null);
+  const didSwipe = useRef(false);
+  const navigating = useRef(false);
 
   useEffect(() => {
     setWords(initialWords);
     setCurrentIndex(0);
     setIsFlipped(false);
     setSlideDir(null);
+    setDragX(0);
+    setIsDragging(false);
+    pointerStart.current = null;
+    didSwipe.current = false;
+    navigating.current = false;
   }, [initialWords]);
 
   const currentWord = words[currentIndex] || null;
@@ -132,28 +146,116 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
   const nextWord = currentIndex < words.length - 1 ? words[currentIndex + 1] : null;
 
   const handleNext = useCallback(() => {
-    if (currentIndex >= words.length - 1) return;
+    if (navigating.current || currentIndex >= words.length - 1) return;
+    navigating.current = true;
     setSlideDir('left');
     setIsFlipped(false);
+    setDragX(0);
     window.setTimeout(() => {
       setCurrentIndex(prev => prev + 1);
       setSlideDir(null);
+      navigating.current = false;
     }, 180);
   }, [currentIndex, words.length]);
 
   const handlePrev = useCallback(() => {
-    if (currentIndex <= 0) return;
+    if (navigating.current || currentIndex <= 0) return;
+    navigating.current = true;
     setSlideDir('right');
     setIsFlipped(false);
+    setDragX(0);
     window.setTimeout(() => {
       setCurrentIndex(prev => prev - 1);
       setSlideDir(null);
+      navigating.current = false;
     }, 180);
   }, [currentIndex]);
 
   const handleFlip = useCallback(() => {
+    if (didSwipe.current) return;
     setIsFlipped(prev => !prev);
   }, []);
+
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    // Ignore presses on interactive controls inside the card
+    const target = e.target as HTMLElement;
+    if (target.closest('button, a, input, textarea')) return;
+
+    pointerStart.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    didSwipe.current = false;
+    setIsDragging(true);
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const onPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!pointerStart.current || pointerStart.current.id !== e.pointerId) return;
+
+    const dx = e.clientX - pointerStart.current.x;
+    const dy = e.clientY - pointerStart.current.y;
+
+    // Prefer horizontal swipes; ignore mostly-vertical scrolls
+    if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 24) {
+      return;
+    }
+
+    const clamped = Math.max(-SWIPE_MAX_DRAG, Math.min(SWIPE_MAX_DRAG, dx));
+    setDragX(clamped);
+
+    if (Math.abs(dx) > 12) {
+      didSwipe.current = true;
+    }
+  }, []);
+
+  const finishPointer = useCallback(
+    (e: React.PointerEvent) => {
+      if (!pointerStart.current || pointerStart.current.id !== e.pointerId) return;
+
+      const dx = e.clientX - pointerStart.current.x;
+      const dy = e.clientY - pointerStart.current.y;
+      pointerStart.current = null;
+      setIsDragging(false);
+
+      const horizontal = Math.abs(dx) >= Math.abs(dy);
+      if (horizontal && Math.abs(dx) >= SWIPE_THRESHOLD) {
+        didSwipe.current = true;
+        if (dx < 0) {
+          handleNext();
+        } else {
+          handlePrev();
+        }
+      } else {
+        setDragX(0);
+      }
+
+      // Reset swipe flag after click handlers have a chance to run
+      window.setTimeout(() => {
+        didSwipe.current = false;
+        if (!navigating.current) setDragX(0);
+      }, 40);
+    },
+    [handleNext, handlePrev]
+  );
+
+  const onPointerUp = finishPointer;
+  const onPointerCancel = useCallback(
+    (e: React.PointerEvent) => {
+      pointerStart.current = null;
+      setIsDragging(false);
+      setDragX(0);
+      didSwipe.current = false;
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+    },
+    []
+  );
 
   const handlePlayAudio = useCallback(
     (e?: React.MouseEvent) => {
@@ -220,12 +322,15 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
 
   const progressPercent = Math.round(((currentIndex + 1) / words.length) * 100);
 
+  const dragRotate = isDragging ? dragX * 0.04 : 0;
   const mainTransform =
     slideDir === 'left'
       ? 'translateX(-28%) rotate(-4deg) scale(0.94)'
       : slideDir === 'right'
         ? 'translateX(28%) rotate(4deg) scale(0.94)'
-        : 'translateX(0) rotate(0) scale(1)';
+        : isDragging
+          ? `translateX(${dragX}px) rotate(${dragRotate}deg) scale(1)`
+          : 'translateX(0) rotate(0) scale(1)';
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -241,8 +346,11 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
         </span>
       </div>
 
-      {/* Stacked book-page deck */}
-      <div className="relative w-full h-[26rem] sm:h-96 select-none">
+      {/* Stacked book-page deck — swipe left/right to change cards */}
+      <div
+        className="relative w-full h-[26rem] sm:h-96 select-none touch-pan-y"
+        style={{ touchAction: 'pan-y' }}
+      >
         {/* Deep stack layers (decorative) */}
         <div
           aria-hidden
@@ -309,15 +417,22 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
           </button>
         )}
 
-        {/* Current card (center, flippable) */}
+        {/* Current card (center, flippable + swipeable) */}
         <div
-          className="absolute inset-x-[14%] sm:inset-x-[16%] top-0 bottom-0 perspective-1000 cursor-pointer"
+          className="absolute inset-x-[14%] sm:inset-x-[16%] top-0 bottom-0 perspective-1000 cursor-grab active:cursor-grabbing"
           style={{
             zIndex: 5,
             transform: mainTransform,
-            opacity: slideDir ? 0.85 : 1,
-            transition: 'transform 180ms ease, opacity 180ms ease',
+            opacity: slideDir ? 0.85 : isDragging ? 0.92 : 1,
+            transition: isDragging
+              ? 'none'
+              : 'transform 180ms ease, opacity 180ms ease',
+            touchAction: 'pan-y',
           }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerCancel}
           onClick={handleFlip}
         >
           <div
