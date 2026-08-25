@@ -5,12 +5,12 @@
 
 import { PosKey, SemanticTag } from './semanticTags';
 import { GenerationLevel } from '@/types';
+import { EXTRA_SCENARIO_TEMPLATES } from './scenarioTemplatesExtra';
 
 export interface TemplateSlot {
-  id: string; // e.g. "s1"
+  id: string;
   pos: PosKey | PosKey[];
-  tags: SemanticTag[]; // preferred semantic tags (any match scores; empty = any)
-  /** Optional human hint for debugging / future AI assist */
+  tags: SemanticTag[];
   hint?: string;
 }
 
@@ -19,23 +19,14 @@ export interface ScenarioTemplate {
   title: string;
   titleZh: string;
   level: GenerationLevel[];
-  /** Domain for future filtering */
   domain: 'daily' | 'travel' | 'workplace' | 'academic' | 'campus' | 'science' | 'social';
-  /** English body with {{s1}}, {{s2}} placeholders */
   content: string;
-  /** Traditional Chinese body with same {{s1}} placeholders (for alignment) */
   contentZh: string;
   slots: TemplateSlot[];
-  /** Extra glossary entries that often appear in this scenario */
   glossaryExtra?: { en: string; zh: string; sense?: string }[];
 }
 
-/**
- * First batch of high-quality scenario templates.
- * Each template is human-written for natural discourse; slots are the only dynamic parts.
- */
-export const SCENARIO_TEMPLATES: ScenarioTemplate[] = [
-  // ─── Travel / Hotel ───────────────────────────────────────────
+const BASE_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
   {
     id: 'hotel_checkout',
     title: 'Checking Out of the Hotel',
@@ -76,8 +67,6 @@ export const SCENARIO_TEMPLATES: ScenarioTemplate[] = [
       { id: 's4', pos: 'v', tags: ['state_change'], hint: 'improve / subside' },
     ],
   },
-
-  // ─── Workplace ─────────────────────────────────────────────────
   {
     id: 'office_meeting',
     title: 'A Busy Week at the Office',
@@ -117,8 +106,6 @@ export const SCENARIO_TEMPLATES: ScenarioTemplate[] = [
       { id: 's4', pos: 'adj', tags: ['evaluation'], hint: 'acceptable / clear' },
     ],
   },
-
-  // ─── Academic / Science ────────────────────────────────────────
   {
     id: 'lab_discussion',
     title: 'An Academic Discussion',
@@ -153,8 +140,6 @@ export const SCENARIO_TEMPLATES: ScenarioTemplate[] = [
       { id: 's4', pos: 'adj', tags: ['evaluation', 'negative', 'emotion'], hint: 'concerning / urgent' },
     ],
   },
-
-  // ─── Campus / Daily ────────────────────────────────────────────
   {
     id: 'group_project',
     title: 'A Group Project at School',
@@ -189,8 +174,6 @@ export const SCENARIO_TEMPLATES: ScenarioTemplate[] = [
       { id: 's4', pos: 'adj', tags: ['evaluation', 'emotion', 'positive'], hint: 'meaningful / valuable' },
     ],
   },
-
-  // ─── Social / Soft skills ──────────────────────────────────────
   {
     id: 'difficult_conversation',
     title: 'A Difficult Conversation',
@@ -227,7 +210,12 @@ export const SCENARIO_TEMPLATES: ScenarioTemplate[] = [
   },
 ];
 
-/** Pick templates that match the requested level and have enough slots for the word count */
+/** Full library: base + expanded batch (28 templates) */
+export const SCENARIO_TEMPLATES: ScenarioTemplate[] = [
+  ...BASE_SCENARIO_TEMPLATES,
+  ...EXTRA_SCENARIO_TEMPLATES,
+];
+
 export function selectTemplates(
   level: GenerationLevel,
   wordCount: number,
@@ -236,7 +224,6 @@ export function selectTemplates(
   const candidates = SCENARIO_TEMPLATES.filter(t => t.level.includes(level));
   const pool = candidates.length > 0 ? candidates : SCENARIO_TEMPLATES;
 
-  // Prefer templates whose slot count is close to wordCount (or can be repeated/combined later)
   const scored = pool.map(t => ({
     t,
     score: -Math.abs(t.slots.length - Math.min(wordCount, 6)) + Math.random() * 0.3,

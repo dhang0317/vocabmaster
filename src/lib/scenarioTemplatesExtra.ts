@@ -1,6 +1,6 @@
-import { ScenarioTemplate } from './scenarioTemplates';
+import type { ScenarioTemplate } from './scenarioTemplates';
 
-/** Additional human-written scenario templates (batch 2) */
+/** Additional human-written scenario templates (batch 2) — 18 templates */
 export const EXTRA_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
   {
     id: 'restaurant_complaint',
@@ -13,10 +13,10 @@ export const EXTRA_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     contentZh:
       '湯送來時是冷的，因此我決定有禮貌地{{s1}}這個問題。服務生看起來很{{s2}}，並立刻表示要換一道菜。經理後來在帳單上給了我們一點{{s3}}。整體來說，員工用相當{{s4}}的方式處理了這件事。',
     slots: [
-      { id: 's1', pos: 'v', tags: ['communication', 'action'], hint: 'raise / report' },
-      { id: 's2', pos: 'adj', tags: ['emotion'], hint: 'apologetic / concerned' },
-      { id: 's3', pos: 'n', tags: ['abstract', 'quantity', 'object'], hint: 'discount' },
-      { id: 's4', pos: 'adj', tags: ['evaluation', 'positive'], hint: 'professional' },
+      { id: 's1', pos: 'v', tags: ['communication', 'action'] },
+      { id: 's2', pos: 'adj', tags: ['emotion'] },
+      { id: 's3', pos: 'n', tags: ['abstract', 'quantity', 'object'] },
+      { id: 's4', pos: 'adj', tags: ['evaluation', 'positive'] },
     ],
   },
   {
@@ -30,10 +30,10 @@ export const EXTRA_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     contentZh:
       '我到圖書館{{s1}}期末考。閱覽室安靜且{{s2}}。兩小時後我仍無法{{s3}}一個困難的概念。同學用簡短又{{s4}}的說明幫助了我。',
     slots: [
-      { id: 's1', pos: 'v', tags: ['cognitive', 'process', 'action'], hint: 'prepare / study' },
-      { id: 's2', pos: 'adj', tags: ['evaluation', 'physical'], hint: 'comfortable' },
-      { id: 's3', pos: 'v', tags: ['cognitive'], hint: 'understand' },
-      { id: 's4', pos: 'adj', tags: ['evaluation', 'positive'], hint: 'clear' },
+      { id: 's1', pos: 'v', tags: ['cognitive', 'process', 'action'] },
+      { id: 's2', pos: 'adj', tags: ['evaluation', 'physical'] },
+      { id: 's3', pos: 'v', tags: ['cognitive'] },
+      { id: 's4', pos: 'adj', tags: ['evaluation', 'positive'] },
     ],
   },
   {
@@ -47,10 +47,10 @@ export const EXTRA_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     contentZh:
       '面試前，我試著用幾句話{{s1}}自己的主要優勢。面試官問我會如何{{s2}}緊迫的截止日期。我舉了一個上次專案中{{s3}}的例子。到了最後，我對結果感覺比較{{s4}}。',
     slots: [
-      { id: 's1', pos: 'v', tags: ['communication', 'cognitive'], hint: 'summarize / describe' },
-      { id: 's2', pos: 'v', tags: ['process', 'action'], hint: 'handle / manage' },
-      { id: 's3', pos: 'adj', tags: ['evaluation'], hint: 'concrete / relevant' },
-      { id: 's4', pos: 'adj', tags: ['emotion', 'positive'], hint: 'confident' },
+      { id: 's1', pos: 'v', tags: ['communication', 'cognitive'] },
+      { id: 's2', pos: 'v', tags: ['process', 'action'] },
+      { id: 's3', pos: 'adj', tags: ['evaluation'] },
+      { id: 's4', pos: 'adj', tags: ['emotion', 'positive'] },
     ],
   },
   {
@@ -64,10 +64,10 @@ export const EXTRA_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     contentZh:
       '包裹沒有在承諾日期送達，所以我必須{{s1}}客服。客服人員有耐心又{{s2}}。她解釋是當地的{{s3}}拖慢了配送。他們提出隔天免費{{s4}}這項商品。',
     slots: [
-      { id: 's1', pos: 'v', tags: ['communication', 'action'], hint: 'contact' },
-      { id: 's2', pos: 'adj', tags: ['evaluation', 'emotion', 'positive'], hint: 'helpful' },
-      { id: 's3', pos: 'n', tags: ['abstract', 'state_change'], hint: 'delay / issue' },
-      { id: 's4', pos: 'v', tags: ['process', 'action'], hint: 'reship / deliver' },
+      { id: 's1', pos: 'v', tags: ['communication', 'action'] },
+      { id: 's2', pos: 'adj', tags: ['evaluation', 'emotion', 'positive'] },
+      { id: 's3', pos: 'n', tags: ['abstract', 'state_change'] },
+      { id: 's4', pos: 'v', tags: ['process', 'action'] },
     ],
   },
   {
@@ -81,10 +81,10 @@ export const EXTRA_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     contentZh:
       '兩位成員開始為專案方向{{s1}}。緊張氣氛對其他人來說愈來愈{{s2}}。我建議讓每人{{s3}}五分鐘發言。之後，小組找到較{{s4}}的折衷方案。',
     slots: [
-      { id: 's1', pos: 'v', tags: ['communication', 'social'], hint: 'argue / clash' },
-      { id: 's2', pos: 'adj', tags: ['emotion', 'evaluation', 'negative'], hint: 'uncomfortable' },
-      { id: 's3', pos: 'v', tags: ['process', 'social'], hint: 'allow / give' },
-      { id: 's4', pos: 'adj', tags: ['evaluation', 'positive'], hint: 'balanced' },
+      { id: 's1', pos: 'v', tags: ['communication', 'social'] },
+      { id: 's2', pos: 'adj', tags: ['emotion', 'evaluation', 'negative'] },
+      { id: 's3', pos: 'v', tags: ['process', 'social'] },
+      { id: 's4', pos: 'adj', tags: ['evaluation', 'positive'] },
     ],
   },
   {
@@ -98,10 +98,10 @@ export const EXTRA_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     contentZh:
       '上個月我決定{{s1}}一套簡單的晨間作息。一開始這項改變感覺{{s2}}。幾週後，我的精力開始{{s3}}。現在這個習慣幾乎變得{{s4}}。',
     slots: [
-      { id: 's1', pos: 'v', tags: ['process', 'action'], hint: 'start / build' },
-      { id: 's2', pos: 'adj', tags: ['evaluation', 'emotion'], hint: 'difficult' },
-      { id: 's3', pos: 'v', tags: ['state_change', 'positive'], hint: 'improve' },
-      { id: 's4', pos: 'adj', tags: ['evaluation', 'time'], hint: 'natural / automatic' },
+      { id: 's1', pos: 'v', tags: ['process', 'action'] },
+      { id: 's2', pos: 'adj', tags: ['evaluation', 'emotion'] },
+      { id: 's3', pos: 'v', tags: ['state_change', 'positive'] },
+      { id: 's4', pos: 'adj', tags: ['evaluation', 'time'] },
     ],
   },
   {
@@ -115,10 +115,10 @@ export const EXTRA_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     contentZh:
       '市府計劃明年{{s1}}一條新的大眾運輸路線。批評者認為預算過於{{s2}}。支持者主張這項計畫長期將{{s3}}交通。民意目前仍{{s4}}。',
     slots: [
-      { id: 's1', pos: 'v', tags: ['process', 'action'], hint: 'build / launch' },
-      { id: 's2', pos: 'adj', tags: ['evaluation', 'quantity', 'negative'], hint: 'high / large' },
-      { id: 's3', pos: 'v', tags: ['state_change', 'action'], hint: 'reduce / ease' },
-      { id: 's4', pos: 'adj', tags: ['evaluation'], hint: 'divided / mixed' },
+      { id: 's1', pos: 'v', tags: ['process', 'action'] },
+      { id: 's2', pos: 'adj', tags: ['evaluation', 'quantity', 'negative'] },
+      { id: 's3', pos: 'v', tags: ['state_change', 'action'] },
+      { id: 's4', pos: 'adj', tags: ['evaluation'] },
     ],
   },
   {
@@ -132,10 +132,10 @@ export const EXTRA_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     contentZh:
       '學生被要求{{s1}}溫度對反應的影響。第一次試驗產生了{{s2}}的結果。調整方法後，資料變得更{{s3}}。老師稱讚他們的筆記很{{s4}}。',
     slots: [
-      { id: 's1', pos: 'v', tags: ['cognitive', 'process'], hint: 'measure / examine' },
-      { id: 's2', pos: 'adj', tags: ['evaluation', 'negative'], hint: 'inconsistent' },
-      { id: 's3', pos: 'adj', tags: ['evaluation', 'positive'], hint: 'reliable' },
-      { id: 's4', pos: 'adj', tags: ['evaluation'], hint: 'careful / detailed' },
+      { id: 's1', pos: 'v', tags: ['cognitive', 'process'] },
+      { id: 's2', pos: 'adj', tags: ['evaluation', 'negative'] },
+      { id: 's3', pos: 'adj', tags: ['evaluation', 'positive'] },
+      { id: 's4', pos: 'adj', tags: ['evaluation'] },
     ],
   },
   {
@@ -149,10 +149,10 @@ export const EXTRA_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     contentZh:
       '我們整個早上幫忙{{s1}}給有需要家庭的食物包裹。工作簡單卻{{s2}}。中午之前我們完成了{{s3}}數量的箱子。大家離開時都覺得{{s4}}。',
     slots: [
-      { id: 's1', pos: 'v', tags: ['process', 'action', 'social'], hint: 'pack / prepare' },
-      { id: 's2', pos: 'adj', tags: ['evaluation', 'emotion'], hint: 'meaningful' },
-      { id: 's3', pos: 'adj', tags: ['quantity'], hint: 'large / substantial' },
-      { id: 's4', pos: 'adj', tags: ['emotion', 'positive'], hint: 'proud / satisfied' },
+      { id: 's1', pos: 'v', tags: ['process', 'action', 'social'] },
+      { id: 's2', pos: 'adj', tags: ['evaluation', 'emotion'] },
+      { id: 's3', pos: 'adj', tags: ['quantity'] },
+      { id: 's4', pos: 'adj', tags: ['emotion', 'positive'] },
     ],
   },
   {
@@ -166,10 +166,10 @@ export const EXTRA_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     contentZh:
       '走到教室前方之前，我覺得很{{s1}}。我試著慢慢{{s2}}並看著聽眾。第一張投影片之後，恐懼開始{{s3}}。老師說我的重點清楚又{{s4}}。',
     slots: [
-      { id: 's1', pos: 'adj', tags: ['emotion', 'negative'], hint: 'nervous' },
-      { id: 's2', pos: 'v', tags: ['communication', 'action'], hint: 'speak' },
-      { id: 's3', pos: 'v', tags: ['state_change'], hint: 'subside / ease' },
-      { id: 's4', pos: 'adj', tags: ['evaluation', 'positive'], hint: 'well organized' },
+      { id: 's1', pos: 'adj', tags: ['emotion', 'negative'] },
+      { id: 's2', pos: 'v', tags: ['communication', 'action'] },
+      { id: 's3', pos: 'v', tags: ['state_change'] },
+      { id: 's4', pos: 'adj', tags: ['evaluation', 'positive'] },
     ],
   },
   {
@@ -179,14 +179,14 @@ export const EXTRA_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     level: ['toeic', 'toefl_ielts', 'advanced'],
     domain: 'workplace',
     content:
-      'The finance team met to {{s1}} next quarter\'s spending plan. Several items looked {{s2}} compared with last year. The director asked everyone to {{s3}} unnecessary costs. The final plan was more {{s4}} than the first draft.',
+      "The finance team met to {{s1}} next quarter's spending plan. Several items looked {{s2}} compared with last year. The director asked everyone to {{s3}} unnecessary costs. The final plan was more {{s4}} than the first draft.",
     contentZh:
       '財務團隊開會{{s1}}下季的支出計畫。有幾項與去年相比顯得{{s2}}。主管要求大家{{s3}}不必要的成本。最終版本比初稿更{{s4}}。',
     slots: [
-      { id: 's1', pos: 'v', tags: ['cognitive', 'process'], hint: 'review / examine' },
-      { id: 's2', pos: 'adj', tags: ['evaluation', 'quantity'], hint: 'high / excessive' },
-      { id: 's3', pos: 'v', tags: ['action', 'process'], hint: 'cut / reduce' },
-      { id: 's4', pos: 'adj', tags: ['evaluation', 'positive'], hint: 'realistic / balanced' },
+      { id: 's1', pos: 'v', tags: ['cognitive', 'process'] },
+      { id: 's2', pos: 'adj', tags: ['evaluation', 'quantity'] },
+      { id: 's3', pos: 'v', tags: ['action', 'process'] },
+      { id: 's4', pos: 'adj', tags: ['evaluation', 'positive'] },
     ],
   },
   {
@@ -200,10 +200,10 @@ export const EXTRA_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     contentZh:
       '我們需要{{s1}}一條同時符合時間與預算的路線。地圖上海邊的路看起來很{{s2}}。最後我們選了較短的路徑以{{s3}}長途開車。整個計畫感覺{{s4}}。',
     slots: [
-      { id: 's1', pos: 'v', tags: ['cognitive', 'process'], hint: 'choose / design' },
-      { id: 's2', pos: 'adj', tags: ['evaluation', 'positive'], hint: 'scenic / attractive' },
-      { id: 's3', pos: 'v', tags: ['action'], hint: 'avoid' },
-      { id: 's4', pos: 'adj', tags: ['evaluation', 'positive'], hint: 'practical' },
+      { id: 's1', pos: 'v', tags: ['cognitive', 'process'] },
+      { id: 's2', pos: 'adj', tags: ['evaluation', 'positive'] },
+      { id: 's3', pos: 'v', tags: ['action'] },
+      { id: 's4', pos: 'adj', tags: ['evaluation', 'positive'] },
     ],
   },
   {
@@ -217,10 +217,10 @@ export const EXTRA_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     contentZh:
       '指導老師要我在引言{{s1}}主要論點。她說有些例子不夠{{s2}}。我修改結論，更清楚地{{s3}}重點。第二稿明顯更{{s4}}。',
     slots: [
-      { id: 's1', pos: 'v', tags: ['communication', 'cognitive'], hint: 'state / present' },
-      { id: 's2', pos: 'adj', tags: ['evaluation'], hint: 'relevant / strong' },
-      { id: 's3', pos: 'v', tags: ['communication', 'cognitive'], hint: 'summarize' },
-      { id: 's4', pos: 'adj', tags: ['evaluation', 'positive'], hint: 'coherent' },
+      { id: 's1', pos: 'v', tags: ['communication', 'cognitive'] },
+      { id: 's2', pos: 'adj', tags: ['evaluation'] },
+      { id: 's3', pos: 'v', tags: ['communication', 'cognitive'] },
+      { id: 's4', pos: 'adj', tags: ['evaluation', 'positive'] },
     ],
   },
   {
@@ -234,10 +234,10 @@ export const EXTRA_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     contentZh:
       '來電者對帳單錯誤顯得相當{{s1}}。我仔細聆聽並試著{{s2}}帳戶細節。快速核對後，我成功{{s3}}了錯誤。客戶用{{s4}}的語氣向我道謝。',
     slots: [
-      { id: 's1', pos: 'adj', tags: ['emotion', 'negative'], hint: 'upset / anxious' },
-      { id: 's2', pos: 'v', tags: ['cognitive', 'process'], hint: 'verify / check' },
-      { id: 's3', pos: 'v', tags: ['process', 'action'], hint: 'correct / fix' },
-      { id: 's4', pos: 'adj', tags: ['emotion', 'evaluation', 'positive'], hint: 'calm / warm' },
+      { id: 's1', pos: 'adj', tags: ['emotion', 'negative'] },
+      { id: 's2', pos: 'v', tags: ['cognitive', 'process'] },
+      { id: 's3', pos: 'v', tags: ['process', 'action'] },
+      { id: 's4', pos: 'adj', tags: ['emotion', 'evaluation', 'positive'] },
     ],
   },
   {
@@ -251,10 +251,10 @@ export const EXTRA_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     contentZh:
       '展覽幫助訪客{{s1}}兩百年前人們如何生活。有些展品特別{{s2}}。我做了筆記，方便之後{{s3}}主要概念。整個下午感覺很{{s4}}。',
     slots: [
-      { id: 's1', pos: 'v', tags: ['cognitive'], hint: 'understand / imagine' },
-      { id: 's2', pos: 'adj', tags: ['evaluation', 'emotion'], hint: 'impressive' },
-      { id: 's3', pos: 'v', tags: ['cognitive', 'action'], hint: 'review / recall' },
-      { id: 's4', pos: 'adj', tags: ['evaluation', 'positive', 'emotion'], hint: 'rewarding' },
+      { id: 's1', pos: 'v', tags: ['cognitive'] },
+      { id: 's2', pos: 'adj', tags: ['evaluation', 'emotion'] },
+      { id: 's3', pos: 'v', tags: ['cognitive', 'action'] },
+      { id: 's4', pos: 'adj', tags: ['evaluation', 'positive', 'emotion'] },
     ],
   },
   {
@@ -268,10 +268,10 @@ export const EXTRA_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     contentZh:
       '創辦人只有十分鐘可以{{s1}}他們的產品。投資人問團隊將如何{{s2}}早期競爭。財務模型看起來仍有點{{s3}}。即便如此，仍有幾位認為願景很{{s4}}。',
     slots: [
-      { id: 's1', pos: 'v', tags: ['communication', 'action'], hint: 'present / pitch' },
-      { id: 's2', pos: 'v', tags: ['process', 'action'], hint: 'handle / face' },
-      { id: 's3', pos: 'adj', tags: ['evaluation', 'negative'], hint: 'optimistic / weak' },
-      { id: 's4', pos: 'adj', tags: ['evaluation', 'positive', 'emotion'], hint: 'compelling' },
+      { id: 's1', pos: 'v', tags: ['communication', 'action'] },
+      { id: 's2', pos: 'v', tags: ['process', 'action'] },
+      { id: 's3', pos: 'adj', tags: ['evaluation', 'negative'] },
+      { id: 's4', pos: 'adj', tags: ['evaluation', 'positive', 'emotion'] },
     ],
   },
   {
@@ -285,10 +285,10 @@ export const EXTRA_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     contentZh:
       '當局敦促居民在暴風雨期間{{s1}}戶外活動。風勢預計會在夜間{{s2}}。地方收容所準備{{s3}}需要安全處所的人。官員形容風險相當{{s4}}。',
     slots: [
-      { id: 's1', pos: 'v', tags: ['action'], hint: 'avoid / limit' },
-      { id: 's2', pos: 'v', tags: ['state_change'], hint: 'increase / intensify' },
-      { id: 's3', pos: 'v', tags: ['process', 'social', 'action'], hint: 'receive / house' },
-      { id: 's4', pos: 'adj', tags: ['evaluation', 'negative', 'quantity'], hint: 'serious' },
+      { id: 's1', pos: 'v', tags: ['action'] },
+      { id: 's2', pos: 'v', tags: ['state_change'] },
+      { id: 's3', pos: 'v', tags: ['process', 'social', 'action'] },
+      { id: 's4', pos: 'adj', tags: ['evaluation', 'negative', 'quantity'] },
     ],
   },
   {
@@ -302,10 +302,10 @@ export const EXTRA_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     contentZh:
       '在聚會上我試著用英文{{s1}}一個小故事。搭檔很有耐心又{{s2}}。我說錯時，她幫我{{s3}}句子。到了最後，我對開口說話比較不那麼{{s4}}。',
     slots: [
-      { id: 's1', pos: 'v', tags: ['communication', 'action'], hint: 'tell / share' },
-      { id: 's2', pos: 'adj', tags: ['evaluation', 'emotion', 'positive'], hint: 'encouraging' },
-      { id: 's3', pos: 'v', tags: ['process', 'communication'], hint: 'correct / fix' },
-      { id: 's4', pos: 'adj', tags: ['emotion', 'negative'], hint: 'nervous / shy' },
+      { id: 's1', pos: 'v', tags: ['communication', 'action'] },
+      { id: 's2', pos: 'adj', tags: ['evaluation', 'emotion', 'positive'] },
+      { id: 's3', pos: 'v', tags: ['process', 'communication'] },
+      { id: 's4', pos: 'adj', tags: ['emotion', 'negative'] },
     ],
   },
 ];
