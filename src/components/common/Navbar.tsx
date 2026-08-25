@@ -11,6 +11,7 @@ import {
   Sun,
   MessageSquare,
   RefreshCw,
+  Globe,
 } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import { ApiKeyModal } from './ApiKeyModal';
@@ -177,11 +178,27 @@ export function Navbar() {
     <>
       <header className="liquid-glass sticky top-0 z-40 w-full border-0 border-b border-white/40 nav-header rounded-none">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center">
-            <span className="text-2xl tracking-tight">Vocabulum</span>
-          </Link>
+          <div className="flex items-center gap-4 sm:gap-6">
+            <Link href="/" className="flex items-center">
+              <span className="text-2xl tracking-tight">Vocabulum</span>
+            </Link>
+            <Link
+              href="/explore"
+              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-bold text-[#0a192f]/80 hover:text-[#0a192f] transition"
+            >
+              <Globe className="w-4 h-4" />
+              <span>Library</span>
+            </Link>
+          </div>
 
           <nav className="flex items-center gap-2 sm:gap-3">
+            <Link
+              href="/explore"
+              className="sm:hidden liquid-glass liquid-glass-hover p-2 rounded-xl text-[#0a192f]"
+              title="Public library"
+            >
+              <Globe className="w-4 h-4" />
+            </Link>
             {status === 'authenticated' ? (
               <div className="relative">
                 <button
