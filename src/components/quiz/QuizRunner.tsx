@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import confetti from 'canvas-confetti';
 import {
   CheckCircle2,
   XCircle,
@@ -96,7 +95,6 @@ function LetterBadge({ letter }: { letter: string }) {
         backgroundColor: '#0a192f',
         color: '#ffffff',
         border: '1px solid #0a192f',
-        // Beat dark-mode inheritance
         WebkitTextFillColor: '#ffffff',
       }}
     >
@@ -248,18 +246,9 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
   }, [popup, closePopup]);
 
   const fetchTranslation = useCallback(async (text: string, x: number, y: number, placeAbove: boolean) => {
-    // Local word list first
     const local = wordMap.get(text.trim().toLowerCase());
     if (local) {
-      setPopup({
-        text,
-        translated: local,
-        loading: false,
-        error: null,
-        x,
-        y,
-        placeAbove,
-      });
+      setPopup({ text, translated: local, loading: false, error: null, x, y, placeAbove });
       return;
     }
 
@@ -267,15 +256,7 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
     const controller = new AbortController();
     translateAbortRef.current = controller;
 
-    setPopup({
-      text,
-      translated: null,
-      loading: true,
-      error: null,
-      x,
-      y,
-      placeAbove,
-    });
+    setPopup({ text, translated: null, loading: true, error: null, x, y, placeAbove });
 
     try {
       const res = await fetch('/api/translate', {
@@ -287,20 +268,14 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
       const data = await res.json();
       if (controller.signal.aborted) return;
       if (!res.ok || !data.success) {
-        setPopup(prev =>
-          prev ? { ...prev, loading: false, error: data.error || '翻譯失敗' } : null
-        );
+        setPopup(prev => (prev ? { ...prev, loading: false, error: data.error || '翻譯失敗' } : null));
         return;
       }
-      setPopup(prev =>
-        prev ? { ...prev, loading: false, translated: data.translated, error: null } : null
-      );
+      setPopup(prev => (prev ? { ...prev, loading: false, translated: data.translated, error: null } : null));
     } catch (err: unknown) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
       setPopup(prev =>
-        prev
-          ? { ...prev, loading: false, error: err instanceof Error ? err.message : '翻譯失敗' }
-          : null
+        prev ? { ...prev, loading: false, error: err instanceof Error ? err.message : '翻譯失敗' } : null
       );
     } finally {
       if (translateAbortRef.current === controller) translateAbortRef.current = null;
@@ -364,10 +339,6 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
         isCorrect,
       };
     });
-
-    if (score / quizzes.length >= 0.8 && quizzes.length > 0) {
-      confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
-    }
 
     if (deckId) {
       try {
@@ -600,7 +571,6 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
                     const isRightOption = optIdx === q.correctIdx;
                     const isUserChoice = optIdx === userChosen;
 
-                    // Always white card + black text; border shows correctness
                     const borderStyle = isRightOption
                       ? '2px solid #059669'
                       : isUserChoice
@@ -675,11 +645,9 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
           ref={questionRef}
           onMouseUp={handleQuestionMouseUp}
           className="text-lg sm:text-xl font-bold text-[#0a192f] leading-relaxed pt-2 select-text cursor-text"
-          title="反白單字可查看中文翻譯"
         >
           {currentQ.question}
         </h3>
-        <p className="text-[11px] text-slate-500 -mt-3">反白題幹單字可查看中文翻譯</p>
 
         <div className="space-y-3 pt-2">
           {currentQ.options.map((opt, optIdx) => {
@@ -724,7 +692,10 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
         </div>
 
         {showExplanation && (
-          <div className="p-5 rounded-2xl bg-white/60 border border-[#0a192f]/20 space-y-3 animate-in fade-in duration-200">
+          <div
+            className="p-5 rounded-2xl border border-[#0a192f]/20 space-y-3 animate-in fade-in duration-200"
+            style={{ backgroundColor: '#ffffff' }}
+          >
             <div className="flex items-center gap-2 text-xs font-black text-[#0a192f]">
               <HelpCircle className="w-4 h-4" />
               <span>Translation & explanation</span>
