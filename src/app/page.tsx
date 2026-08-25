@@ -126,7 +126,6 @@ export default function HomePage() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-black text-[#0a192f]">Vocabulary</h2>
-            <p className="text-xs text-slate-600">Choose a deck to study flashcards, cloze exercises, or quizzes.</p>
           </div>
 
           <div className="relative w-full sm:w-72">
@@ -180,7 +179,7 @@ export default function HomePage() {
                     <button
                       onClick={(e) => handleDeleteDeck(deck.id, e)}
                       title="Delete deck"
-                      className="text-slate-400 hover:text-red-600 p-1 rounded-lg hover:bg-white/50 transition opacity-0 group-hover:opacity-100"
+                      className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-white/50 transition opacity-0 group-hover:opacity-100"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
