@@ -38,7 +38,6 @@
 }
 
 @layer components {
-  /* Soft card / panel — light gray ring, stronger on hover */
   .ui-card {
     border: 1px solid var(--border);
     transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
@@ -47,7 +46,6 @@
     border-color: var(--border-hover);
   }
 
-  /* Soft input / control border */
   .ui-border {
     border: 1px solid var(--border);
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -56,6 +54,25 @@
   .ui-border:focus {
     border-color: var(--border-hover);
     outline: none;
+  }
+
+  /* Liquid glass trial — frosted translucent panel (iOS Safari friendly) */
+  .liquid-glass {
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  [data-theme="dark"] .liquid-glass {
+    background: rgba(17, 24, 39, 0.55);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
   }
 }
 
@@ -127,7 +144,6 @@ a[class*="bg-slate-900"] * {
   color: #ffffff !important;
 }
 
-/* Soften legacy thick navy/black borders across the app */
 body [class*="border-[#0a192f]"],
 body [class*="border-\[\#0a192f\]"] {
   border-color: rgba(0, 0, 0, 0.12) !important;
