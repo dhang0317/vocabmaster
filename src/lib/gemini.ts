@@ -115,47 +115,31 @@ function normalizeGlossary(
   return Array.from(map.values());
 }
 
-/**
- * Ensure each target word appears as at most one blank.
- * Extra [blank_n] markers in content are filled with the answer word.
- * Blanks are renumbered 1..N to match remaining markers.
- */
 function normalizeArticleBlanks(article: GeneratedCloze): GeneratedCloze {
   const rawBlanks = Array.isArray(article.blanks) ? article.blanks : [];
   const content = article.content || '';
 
-  // Keep first blank per answer word (case-insensitive)
   const seenWords = new Set<string>();
   const uniqueBlanks: ClozeBlank[] = [];
-  const dropIds = new Set<number>();
 
   for (const b of rawBlanks) {
     const key = (b.word || '').trim().toLowerCase();
-    if (!key) {
-      dropIds.add(b.id);
-      continue;
-    }
-    if (seenWords.has(key)) {
-      dropIds.add(b.id);
-      continue;
-    }
+    if (!key) continue;
+    if (seenWords.has(key)) continue;
     seenWords.add(key);
     uniqueBlanks.push(b);
   }
 
-  // Also drop blank markers in content that are not in uniqueBlanks, replace with word
   const keepByOldId = new Map(uniqueBlanks.map(b => [b.id, b]));
 
   let newContent = content.replace(/\[blank_(\d+)\]/g, (match, idStr: string) => {
     const id = parseInt(idStr, 10);
     const blank = keepByOldId.get(id);
-    if (blank) return match; // keep for now; renumber next
-    // Duplicate or unknown blank → write the answer word as plain text
+    if (blank) return match;
     const fallen = rawBlanks.find(b => b.id === id);
     return fallen?.word || match;
   });
 
-  // Renumber remaining blanks to 1..N in order of appearance
   const order: number[] = [];
   newContent.replace(/\[blank_(\d+)\]/g, (_, idStr: string) => {
     const id = parseInt(idStr, 10);
@@ -180,16 +164,13 @@ function normalizeArticleBlanks(article: GeneratedCloze): GeneratedCloze {
       id: idx + 1,
     }));
 
-  // Safety: if content still has more markers than blanks, strip extras
   const markerCount = (newContent.match(/\[blank_\d+\]/g) || []).length;
   if (markerCount !== renumbered.length) {
-    // Fill any leftover markers with plain text from first matching blank word list
     let i = 0;
-    newContent = newContent.replace(/\[blank_(\d+)\]/g, (match, idStr: string) => {
+    newContent = newContent.replace(/\[blank_(\d+)\]/g, () => {
       i += 1;
       if (i <= renumbered.length) return `[blank_${i}]`;
-      const id = parseInt(idStr, 10);
-      const b = renumbered.find(x => x.id === id) || renumbered[0];
+      const b = renumbered[0];
       return b?.word || '';
     });
   }
@@ -282,49 +263,26 @@ You are an expert English vocabulary teacher. Return valid JSON only.
 【嚴格順序——在同一個回應內完成】
 1. 先寫完整英文故事 content（目標單字處用 [blank_1]、[blank_2]…）。
 2. 再把「填入答案後的完整英文故事」翻成自然、道地的繁體中文 contentZh（台灣用法；完整篇章，非逐詞硬翻）。
-3. 最後才根據「英文全文 + contentZh 全文對照」拆出 glossary：每個 en 的 zh 必須與 contentZh 裡的實際譯法一致，禁止與全文矛盾的字典義。
+3. 最後才根據「英文全文 + contentZh 全文對照」拆出 glossary。
 
 輸出純 JSON（不要 Markdown）：
 {
-  "words": [
-    {
-      "word": "目標單字",
-      "phonetic": "/IPA/",
-      "pos": "n./v./adj./adv.",
-      "translation": "繁體中文",
-      "definition": "英文定義",
-      "example": "英文例句",
-      "exampleZh": "例句中文"
-    }
-  ],
+  "words": [ { "word": "...", "phonetic": "/IPA/", "pos": "n.", "translation": "...", "definition": "...", "example": "...", "exampleZh": "..." } ],
   "article": {
-    "title": "英文標題",
-    "content": "英文短文 120–250 字，目標單字以 [blank_n] 標記",
-    "contentZh": "完整繁體中文翻譯",
-    "blanks": [
-      { "id": 1, "word": "正確英文", "hint": "繁中提示", "options": ["正確", "干擾1", "干擾2", "干擾3"] }
-    ],
-    "glossary": [
-      { "en": "文中詞或片語", "zh": "與 contentZh 一致的意思", "sense": "可選用法說明" }
-    ]
+    "title": "...",
+    "content": "... [blank_1] ...",
+    "contentZh": "...",
+    "blanks": [ { "id": 1, "word": "...", "hint": "...", "options": ["...", "...", "...", "..."] } ],
+    "glossary": [ { "en": "...", "zh": "...", "sense": "..." } ]
   },
-  "quizzes": [
-    {
-      "question": "英文題",
-      "questionZh": "中文題",
-      "targetWord": "目標單字",
-      "options": ["A", "B", "C", "D"],
-      "correctIdx": 0,
-      "explanation": "繁中解析"
-    }
-  ]
+  "quizzes": [ { "question": "...", "questionZh": "...", "targetWord": "...", "options": ["A","B","C","D"], "correctIdx": 0, "explanation": "..." } ]
 }
 
 規則：
-1. 【重要】每個目標單字在文章中只能出現「一次」空格 [blank_n]。blanks 數量必須等於目標單字數量。若同一單字在文中自然出現第二次，請寫出完整單字，不要再挖空。
-2. blanks 的 id 必須是 1..N 連續編號，並與 content 中的 [blank_n] 一一對應。
-3. 每個重要目標單字至少一題 quiz。
-4. glossary 含所有目標單字 + 文中實義詞／片語（略過 a/the/is 等虛詞），約 30–70 筆；glossary.zh 必須能對上 contentZh。
+1. 每個目標單字只能有一個 [blank_n]；第二次出現寫完整單字。
+2. blanks id 為 1..N，與 content 對應。
+3. 每個目標單字至少一題 quiz。
+4. glossary 約 30–70 筆，zh 須對齊 contentZh。
 `;
 
       const text = await generateJsonWithFallback(effectiveKey, prompt, 0.7);
@@ -375,7 +333,7 @@ function generateOfflineFallback(
 
   const blanks = buildOfflineBlanks(words);
   const story = buildOfflineStory(words, level);
-  const quizzes = buildOfflineQuizzes(words);
+  const quizzes = buildOfflineQuizzes(words, level);
 
   let article: GeneratedCloze = {
     title: story.title,
