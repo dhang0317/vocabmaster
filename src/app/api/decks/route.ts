@@ -7,7 +7,7 @@ import { GeneratedWord, GeneratedCloze, GeneratedQuiz } from '@/types';
 export async function GET() {
   const userId = await getCurrentUserId();
   if (!userId) {
-    return NextResponse.json({ error: '尚未登入' }, { status: 401 });
+    return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
   }
   try {
     const decks = await prisma.deck.findMany({
@@ -34,6 +34,8 @@ export async function GET() {
       id: d.id,
       title: d.title,
       description: d.description,
+      isPublic: d.isPublic,
+      publishedAt: d.publishedAt,
       createdAt: d.createdAt,
       updatedAt: d.updatedAt,
       wordCount: d._count.words,
@@ -46,7 +48,7 @@ export async function GET() {
     return NextResponse.json({ success: true, decks: formattedDecks });
   } catch (error: any) {
     console.error('Error fetching decks:', error);
-    return NextResponse.json({ error: error.message || '獲取題庫失敗' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Failed to load decks' }, { status: 500 });
   }
 }
 
@@ -54,27 +56,32 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const userId = await getCurrentUserId();
   if (!userId) {
-    return NextResponse.json({ error: '尚未登入' }, { status: 401 });
+    return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
   }
   try {
     const body = await req.json();
-    const { title, description, words, article, quizzes } = body as {
+    const { title, description, words, article, quizzes, isPublic } = body as {
       title: string;
       description?: string;
       words: GeneratedWord[];
       article?: GeneratedCloze;
       quizzes?: GeneratedQuiz[];
+      isPublic?: boolean;
     };
 
     if (!title || !words || words.length === 0) {
-      return NextResponse.json({ error: '請提供題庫名稱與單字清單' }, { status: 400 });
+      return NextResponse.json({ error: 'Please provide a title and word list' }, { status: 400 });
     }
+
+    const makePublic = Boolean(isPublic);
 
     const newDeck = await prisma.deck.create({
       data: {
         title,
         description: description || '',
         userId,
+        isPublic: makePublic,
+        publishedAt: makePublic ? new Date() : null,
         words: {
           create: words.map(w => ({
             word: w.word,
@@ -122,6 +129,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, deck: newDeck });
   } catch (error: any) {
     console.error('Error creating deck:', error);
-    return NextResponse.json({ error: error.message || '建立題庫失敗' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Failed to create deck' }, { status: 500 });
   }
 }
