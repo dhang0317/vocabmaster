@@ -58,8 +58,8 @@ function lookupGlossary(
   const candidates = [
     raw,
     raw.toLowerCase(),
-    raw.replace(/^["'“”‘’(\[]+|["'“”‘’)\],.!;:?]+$/g, ''),
-    raw.replace(/^["'“”‘’(\[]+|["'“”‘’)\],.!;:?]+$/g, '').toLowerCase(),
+    raw.replace(/^["'\u201c\u201d\u2018\u2019(\[]+|["'\u201c\u201d\u2018\u2019)\],.!;:?]+$/g, ''),
+    raw.replace(/^["'\u201c\u201d\u2018\u2019(\[]+|["'\u201c\u201d\u2018\u2019)\],.!;:?]+$/g, '').toLowerCase(),
   ];
 
   for (const c of candidates) {
@@ -72,7 +72,7 @@ function lookupGlossary(
 
   const tokens = raw.split(/\s+/).filter(Boolean);
   if (tokens.length === 1) {
-    const t = tokens[0].replace(/^["'“”‘’(\[]+|["'“”‘’)\],.!;:?]+$/g, '').toLowerCase();
+    const t = tokens[0].replace(/^["'\u201c\u201d\u2018\u2019(\[]+|["'\u201c\u201d\u2018\u2019)\],.!;:?]+$/g, '').toLowerCase();
     return map.get(t) || null;
   }
 
@@ -287,6 +287,17 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
     }
   };
 
+  /** Click a filled blank chip to return its word to the Word Bank */
+  const handleClearBlank = (blankId: number) => {
+    if (isChecked) return;
+    setUserAnswers(prev => {
+      const next = { ...prev };
+      delete next[blankId];
+      return next;
+    });
+    setActiveBlankId(blankId);
+  };
+
   const handleInputChange = (blankId: number, val: string) => {
     setUserAnswers(prev => ({ ...prev, [blankId]: val }));
   };
@@ -387,11 +398,22 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
           border = '2px solid #0a192f';
         }
 
+        const isFilled = !!userVal.trim();
+
         return (
           <span key={index} className="inline-block mx-1 my-1">
             <span
-              onClick={() => setActiveBlankId(blankId)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl font-bold text-sm transition"
+              onClick={() => {
+                if (!isChecked && isFilled) {
+                  handleClearBlank(blankId);
+                } else {
+                  setActiveBlankId(blankId);
+                }
+              }}
+              title={!isChecked && isFilled ? '點一下退回 Word Bank' : undefined}
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl font-bold text-sm transition ${
+                !isChecked && isFilled ? 'cursor-pointer hover:opacity-80' : ''
+              }`}
               style={{
                 backgroundColor: bg,
                 border,
@@ -410,13 +432,22 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
                 value={userVal}
                 onFocus={() => setActiveBlankId(blankId)}
                 onChange={e => handleInputChange(blankId, e.target.value)}
+                onClick={e => {
+                  // Allow click-to-clear on the chip; stop input from blocking parent when filled
+                  if (!isChecked && isFilled) {
+                    e.stopPropagation();
+                    handleClearBlank(blankId);
+                  }
+                }}
                 placeholder="____"
                 disabled={isChecked}
+                readOnly={!isChecked && isFilled}
                 className="bg-transparent border-none outline-none text-center font-bold text-sm w-24"
                 style={{
                   color: '#000000',
                   WebkitTextFillColor: '#000000',
                   caretColor: '#000000',
+                  cursor: !isChecked && isFilled ? 'pointer' : undefined,
                 }}
               />
               {blankData && (
@@ -488,22 +519,24 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
       </div>
 
       {!isChecked && (
-        <div className="liquid-glass p-4 rounded-2xl space-y-2">
-          <div className="flex items-center justify-between text-xs text-slate-600">
-            <span className="font-bold text-[#0a192f]">Word Bank</span>
-          </div>
-          <div className="flex flex-wrap gap-2 pt-1">
-            {wordBank
-              .filter(word => !Object.values(userAnswers).includes(word))
-              .map((word, idx) => (
-                <button
-                  key={`${word}-${idx}`}
-                  onClick={() => handleSelectWordFromBank(word)}
-                  className="px-3 py-1.5 rounded-xl text-xs font-bold transition border bg-[#0a192f] hover:bg-[#132c5b] !text-white border-[#0a192f] hover:scale-105"
-                >
-                  {word}
-                </button>
-              ))}
+        <div className="px-6 sm:px-8">
+          <div className="liquid-glass p-4 rounded-2xl space-y-2">
+            <div className="flex items-center justify-between text-xs text-slate-600">
+              <span className="font-bold text-[#0a192f]">Word Bank</span>
+            </div>
+            <div className="flex flex-wrap gap-2 pt-1">
+              {wordBank
+                .filter(word => !Object.values(userAnswers).includes(word))
+                .map((word, idx) => (
+                  <button
+                    key={`${word}-${idx}`}
+                    onClick={() => handleSelectWordFromBank(word)}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition border bg-[#0a192f] hover:bg-[#132c5b] !text-white border-[#0a192f] hover:scale-105"
+                  >
+                    {word}
+                  </button>
+                ))}
+            </div>
           </div>
         </div>
       )}
