@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { CheckCircle2, XCircle, Award, RotateCcw, ArrowRight, HelpCircle, BookOpen, Clock } from 'lucide-react';
 import { GeneratedQuiz, GeneratedWord } from '@/types';
@@ -11,8 +11,49 @@ interface QuizRunnerProps {
   deckId?: string;
 }
 
+/** Strip leading "A) " / "B. " style prefixes that models sometimes embed in option text. */
+function cleanOptionLabel(raw: string): string {
+  return raw.replace(/^\s*[A-Da-d][).:\-]\s*/, '').trim();
+}
+
+/** Deduplicate options (case-insensitive) while keeping the correct answer once. */
+function sanitizeQuizOptions(quiz: GeneratedQuiz): GeneratedQuiz {
+  const cleaned = quiz.options.map(cleanOptionLabel).filter(Boolean);
+  const correctRaw = cleaned[quiz.correctIdx] ?? cleanOptionLabel(quiz.targetWord);
+  const correctKey = correctRaw.toLowerCase();
+
+  const unique: string[] = [];
+  for (const opt of cleaned) {
+    const key = opt.toLowerCase();
+    if (unique.some(u => u.toLowerCase() === key)) continue;
+    unique.push(opt);
+  }
+
+  if (!unique.some(u => u.toLowerCase() === correctKey)) {
+    unique.unshift(correctRaw);
+  }
+
+  // Prefer exactly 4 options when possible
+  while (unique.length < 4) {
+    unique.push(`option${unique.length + 1}`);
+  }
+
+  const options = unique.slice(0, 4);
+  const correctIdx = Math.max(
+    0,
+    options.findIndex(o => o.toLowerCase() === correctKey)
+  );
+
+  return { ...quiz, options, correctIdx };
+}
+
 export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunnerProps) {
-  const [quizzes, setQuizzes] = useState<GeneratedQuiz[]>(initialQuizzes);
+  const sanitizedInitial = useMemo(
+    () => initialQuizzes.map(sanitizeQuizOptions),
+    [initialQuizzes]
+  );
+
+  const [quizzes, setQuizzes] = useState<GeneratedQuiz[]>(sanitizedInitial);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [showExplanation, setShowExplanation] = useState(false);
@@ -23,17 +64,14 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
   const [isTranslatingOptions, setIsTranslatingOptions] = useState(false);
 
   useEffect(() => {
-    setQuizzes(initialQuizzes);
+    setQuizzes(sanitizedInitial);
     setCurrentIndex(0);
     setSelectedAnswers({});
     setShowExplanation(false);
     setIsFinished(false);
     setSeconds(0);
-  }, [initialQuizzes]);
+  }, [sanitizedInitial]);
 
-  // Fetch Chinese translations for distractor options that are not part of the deck.
-  // Uses a cancellation guard so a stale response from a previous (pre-retake)
-  // quiz set cannot overwrite translations for the current quiz set.
   useEffect(() => {
     let cancelled = false;
 
@@ -56,7 +94,6 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
 
     const currentOptionKeys = new Set(currentOptions.map(normalize));
 
-    // Drop translations that no longer belong to the current quiz set.
     setOptionTranslations(prev =>
       Object.fromEntries(
         Object.entries(prev).filter(([key]) => currentOptionKeys.has(key)),
@@ -114,7 +151,6 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
     };
   }, [quizzes, words]);
 
-  // Timer
   useEffect(() => {
     if (isFinished) return;
     const interval = setInterval(() => {
@@ -186,7 +222,7 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
   };
 
   const resetQuiz = (nextQuizzes: GeneratedQuiz[] = quizzes) => {
-    setQuizzes(nextQuizzes);
+    setQuizzes(nextQuizzes.map(sanitizeQuizOptions));
     setSelectedAnswers({});
     setCurrentIndex(0);
     setShowExplanation(false);
@@ -235,14 +271,15 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getOtherOptionTranslations = (quiz: GeneratedQuiz) => quiz.options
-    .map((option, index) => {
-      if (index === quiz.correctIdx) return null;
-      const word = words.find(item => item.word.trim().toLowerCase() === option.trim().toLowerCase());
-      return `${option}：${word?.translation || optionTranslations[option.trim().toLowerCase()] || (isTranslatingOptions ? '翻譯中...' : '中文翻譯未提供')}`;
-    })
-    .filter(Boolean)
-    .join('；');
+  const getOtherOptionTranslations = (quiz: GeneratedQuiz) =>
+    quiz.options
+      .map((option, index) => {
+        if (index === quiz.correctIdx) return null;
+        const word = words.find(item => item.word.trim().toLowerCase() === option.trim().toLowerCase());
+        return `${option}：${word?.translation || optionTranslations[option.trim().toLowerCase()] || (isTranslatingOptions ? '翻譯中...' : '中文翻譯未提供')}`;
+      })
+      .filter(Boolean)
+      .join('；');
 
   if (!currentQ && !isFinished) {
     return (
@@ -259,10 +296,12 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
   });
   const scorePercent = Math.round((correctCount / quizzes.length) * 100);
 
+  const letterBadgeClass =
+    'w-7 h-7 rounded-xl bg-[#0a192f] border border-[#0a192f] flex items-center justify-center text-xs font-mono font-bold text-white shrink-0';
+
   if (isFinished) {
     return (
       <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in duration-300">
-        {/* Score Card */}
         <div className="p-8 rounded-3xl bg-white border-2 border-[#0a192f] text-center shadow-sm space-y-4">
           <div className="w-20 h-20 mx-auto rounded-3xl bg-slate-100 border-2 border-[#0a192f] flex items-center justify-center text-[#0a192f] shadow-sm">
             <Award className="w-10 h-10" />
@@ -304,11 +343,8 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
           </div>
         </div>
 
-        {/* Detailed Question Review */}
         <div className="space-y-4">
-          <h4 className="text-lg font-black text-[#0a192f]">
-            Review & explanations
-          </h4>
+          <h4 className="text-lg font-black text-[#0a192f]">Review & explanations</h4>
 
           {quizzes.map((q, idx) => {
             const userChosen = selectedAnswers[idx];
@@ -318,9 +354,7 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
               <div
                 key={idx}
                 className={`p-6 rounded-2xl border-2 ${
-                  isCorrect
-                    ? 'bg-white border-[#0a192f]'
-                    : 'bg-red-50/50 border-red-500'
+                  isCorrect ? 'bg-white border-[#0a192f]' : 'bg-red-50/50 border-red-500'
                 } space-y-3 shadow-sm`}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -338,13 +372,9 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
                   )}
                 </div>
 
-                <p className="text-base font-bold text-[#0a192f]">
-                  {q.question}
-                </p>
+                <p className="text-base font-bold text-[#0a192f]">{q.question}</p>
                 {q.questionZh && (
-                  <p className="text-xs text-slate-600 border-l-2 border-[#0a192f]/30 pl-2">
-                    {q.questionZh}
-                  </p>
+                  <p className="text-xs text-slate-600 border-l-2 border-[#0a192f]/30 pl-2">{q.questionZh}</p>
                 )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
@@ -355,19 +385,22 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
                     return (
                       <div
                         key={optIdx}
-                        className={`px-3.5 py-2 rounded-xl text-xs font-bold border-2 flex items-center justify-between ${
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold border-2 flex items-center justify-between gap-2 ${
                           isRightOption
-                            ? 'bg-emerald-100 border-emerald-600 text-emerald-900'
+                            ? 'bg-emerald-100 border-emerald-600 text-black'
                             : isUserChoice
-                            ? 'bg-red-100 border-red-500 text-red-900'
-                            : 'bg-white border-[#0a192f]/20 text-slate-600'
+                            ? 'bg-red-100 border-red-500 text-black'
+                            : 'bg-white border-[#0a192f]/20 text-[#0a192f]'
                         }`}
                       >
-                        <span>
-                          {String.fromCharCode(65 + optIdx)}. {opt}
+                        <span className="flex items-center gap-2">
+                          <span className={letterBadgeClass}>{String.fromCharCode(65 + optIdx)}</span>
+                          <span className="text-black">{opt}</span>
                         </span>
-                        {isRightOption && <span className="text-[10px] font-black text-emerald-800">Correct answer</span>}
-                        {isUserChoice && !isRightOption && <span className="text-[10px] font-black text-red-800">Your choice</span>}
+                        {isRightOption && <span className="text-[10px] font-black text-black">Correct</span>}
+                        {isUserChoice && !isRightOption && (
+                          <span className="text-[10px] font-black text-black">Your choice</span>
+                        )}
                       </div>
                     );
                   })}
@@ -375,7 +408,7 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
 
                 {q.explanation && (
                   <div className="mt-3 p-3.5 bg-slate-50 rounded-xl border border-[#0a192f]/20 text-xs text-[#0a192f] leading-relaxed">
-                    💡 <strong className="text-[#0a192f]">Explanation:</strong>{q.explanation}
+                    💡 <strong className="text-[#0a192f]">Explanation:</strong> {q.explanation}
                     <br />
                     <strong className="text-[#0a192f]">選項翻譯：</strong> {getOtherOptionTranslations(q)}
                   </div>
@@ -390,7 +423,6 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      {/* Top Progress & Timer */}
       <div className="flex items-center justify-between text-sm">
         <div className="flex items-center gap-3">
           <span className="font-black text-[#0a192f]">
@@ -404,7 +436,6 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
         </div>
       </div>
 
-      {/* Progress Bar */}
       <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden border border-[#0a192f]/20">
         <div
           className="bg-[#0a192f] h-full transition-all duration-300 rounded-full"
@@ -412,30 +443,29 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
         />
       </div>
 
-      {/* Question Box */}
       <div className="p-6 sm:p-8 rounded-3xl bg-white border-2 border-[#0a192f] shadow-sm space-y-6">
         <div className="space-y-2">
           <h3 className="text-lg sm:text-xl font-bold text-[#0a192f] leading-relaxed pt-2">
             {currentQ.question}
           </h3>
-          {/* 中文翻譯在作答前隱藏，作答後才在下方詳解區呈現 */}
         </div>
 
-        {/* Options */}
         <div className="space-y-3 pt-2">
           {currentQ.options.map((opt, optIdx) => {
             const isSelected = currentSelected === optIdx;
             const isCorrect = optIdx === currentQ.correctIdx;
 
-            let optionStyle = 'bg-white border-[#0a192f] text-[#0a192f] hover:bg-slate-50';
+            // Default: white card, dark text. After answer: green/red with BLACK text; unselected stay readable (no gray fade).
+            let optionStyle =
+              'bg-white border-[#0a192f] text-black hover:bg-slate-50';
 
             if (hasAnswered) {
               if (isCorrect) {
-                optionStyle = 'bg-emerald-100 border-emerald-600 text-emerald-900 ring-2 ring-emerald-600/30';
+                optionStyle = 'bg-emerald-100 border-emerald-600 text-black ring-2 ring-emerald-600/30';
               } else if (isSelected) {
-                optionStyle = 'bg-red-100 border-red-500 text-red-900 ring-2 ring-red-500/30';
+                optionStyle = 'bg-red-100 border-red-500 text-black ring-2 ring-red-500/30';
               } else {
-                optionStyle = 'bg-slate-100 border-slate-300 text-slate-400 opacity-60';
+                optionStyle = 'bg-white border-[#0a192f]/40 text-black';
               }
             }
 
@@ -446,25 +476,20 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
                 disabled={hasAnswered}
                 className={`w-full p-4 rounded-2xl border-2 text-left font-bold text-sm sm:text-base flex items-center justify-between transition ${optionStyle}`}
               >
-                <div className="flex items-center gap-3">
-                  <span className="w-7 h-7 rounded-xl bg-slate-100 border border-[#0a192f]/30 flex items-center justify-center text-xs font-mono font-bold text-[#0a192f]">
-                    {String.fromCharCode(65 + optIdx)}
-                  </span>
-                  <span>{opt}</span>
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className={letterBadgeClass}>{String.fromCharCode(65 + optIdx)}</span>
+                  <span className="text-black truncate">{opt}</span>
                 </div>
 
-                {hasAnswered && isCorrect && (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-700" />
-                )}
+                {hasAnswered && isCorrect && <CheckCircle2 className="w-5 h-5 text-black shrink-0" />}
                 {hasAnswered && isSelected && !isCorrect && (
-                  <XCircle className="w-5 h-5 text-red-700" />
+                  <XCircle className="w-5 h-5 text-black shrink-0" />
                 )}
               </button>
             );
           })}
         </div>
 
-        {/* Explanation Card (包含題目中文翻譯與答案解析，作答後才顯示) */}
         {showExplanation && (
           <div className="p-5 rounded-2xl bg-slate-50 border-2 border-[#0a192f]/30 space-y-3 animate-in fade-in duration-200">
             <div className="flex items-center gap-2 text-xs font-black text-[#0a192f]">
@@ -474,12 +499,12 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
 
             {currentQ.questionZh && (
               <div className="p-3 rounded-xl bg-white border border-[#0a192f]/20 text-xs sm:text-sm text-[#0a192f] font-medium leading-relaxed">
-                <span className="font-bold text-[#0a192f]">Translation:</span>{currentQ.questionZh}
+                <span className="font-bold text-[#0a192f]">Translation:</span> {currentQ.questionZh}
               </div>
             )}
 
             <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
-              <strong className="text-[#0a192f]">Explanation:</strong>{currentQ.explanation}
+              <strong className="text-[#0a192f]">Explanation:</strong> {currentQ.explanation}
               <br />
               <strong className="text-[#0a192f]">選項翻譯：</strong> {getOtherOptionTranslations(currentQ)}
             </p>
@@ -487,7 +512,6 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
         )}
       </div>
 
-      {/* Next Question Button */}
       {hasAnswered && (
         <div className="flex justify-end">
           <button
