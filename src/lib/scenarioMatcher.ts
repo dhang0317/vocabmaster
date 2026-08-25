@@ -1,5 +1,11 @@
 /**
  * Match user words into scenario template slots and produce a coherent cloze article.
+ *
+ * Quality rules:
+ * - Only assign a word when matchScore > 0 (POS must match AND at least one semantic tag hits).
+ * - Never force-fit a random leftover word into a slot (that caused absurd fills like Designate / Subsequent).
+ * - Prefer templates with higher semantic scoreSum; require a minimum fill ratio when possible.
+ * - Unfilled slots use a soft, POS-aware connective — never the literal word "thing".
  */
 
 import {
@@ -21,6 +27,12 @@ import {
   selectTemplates,
   SCENARIO_TEMPLATES,
 } from './scenarioTemplates';
+
+/** Minimum score to accept a word into a slot (0 = POS-only with no tag hit). */
+const MIN_ASSIGN_SCORE = 0.01;
+
+/** Prefer templates that can fill at least this fraction of slots well. */
+const MIN_FILL_RATIO = 0.5;
 
 function shuffle<T>(items: T[]): T[] {
   const result = [...items];
@@ -53,38 +65,51 @@ function tagWords(words: GeneratedWord[]): TaggedWord[] {
   }));
 }
 
-/** Greedy assignment: for each slot, pick the best remaining word */
+/** Soft fillers by POS when no good word is available — keep the sentence readable. */
+const SOFT_FILL: Record<PosKey, { en: string; zh: string }> = {
+  v: { en: 'notice', zh: '注意到' },
+  adj: { en: 'unexpected', zh: '意外的' },
+  n: { en: 'feeling', zh: '感受' },
+  adv: { en: 'carefully', zh: '小心地' },
+  other: { en: 'then', zh: '然後' },
+};
+
+/** Greedy assignment: only place words with a real semantic match (score > 0). */
 function assignWordsToSlots(
   tagged: TaggedWord[],
   slots: TemplateSlot[]
 ): Map<string, TaggedWord | null> {
   const assignment = new Map<string, TaggedWord | null>();
-  const available = tagged.filter(t => !t.used);
+
+  // Score every (slot, word) pair, assign best first (global greedy by score)
+  type Cand = { slotId: string; tw: TaggedWord; score: number };
+  const candidates: Cand[] = [];
 
   for (const slot of slots) {
-    let best: TaggedWord | null = null;
-    let bestScore = -1;
-
-    for (const tw of available) {
-      if (tw.used) continue;
+    for (const tw of tagged) {
       const score = matchScore(tw.tags, slot.tags, tw.pos, slot.pos);
-      if (score > bestScore) {
-        bestScore = score;
-        best = tw;
+      if (score > MIN_ASSIGN_SCORE) {
+        candidates.push({ slotId: slot.id, tw, score });
       }
     }
+  }
 
-    if (best && bestScore >= 0) {
-      best.used = true;
-      assignment.set(slot.id, best);
-    } else {
-      const fallback = available.find(t => !t.used);
-      if (fallback) {
-        fallback.used = true;
-        assignment.set(slot.id, fallback);
-      } else {
-        assignment.set(slot.id, null);
-      }
+  candidates.sort((a, b) => b.score - a.score);
+
+  const usedSlots = new Set<string>();
+  const usedWords = new Set<TaggedWord>();
+
+  for (const c of candidates) {
+    if (usedSlots.has(c.slotId) || usedWords.has(c.tw)) continue;
+    usedSlots.add(c.slotId);
+    usedWords.add(c.tw);
+    c.tw.used = true;
+    assignment.set(c.slotId, c.tw);
+  }
+
+  for (const slot of slots) {
+    if (!assignment.has(slot.id)) {
+      assignment.set(slot.id, null);
     }
   }
 
@@ -105,14 +130,18 @@ function fillTemplate(
     const tw = assignment.get(slotId);
     const blankMarker = `[blank_${index + 1}]`;
     const pattern = new RegExp(`\\{\\{${slotId}\\}\\}`, 'g');
+    const slot = template.slots.find(s => s.id === slotId);
+    const pos = (slot?.pos as PosKey) || 'other';
 
     if (tw) {
       content = content.replace(pattern, blankMarker);
       contentZh = contentZh.replace(pattern, blankMarker);
       used.push(tw);
     } else {
-      content = content.replace(pattern, 'thing');
-      contentZh = contentZh.replace(pattern, '事物');
+      // Readable soft fill — never the absurd literal "thing"
+      const soft = SOFT_FILL[pos] || SOFT_FILL.other;
+      content = content.replace(pattern, soft.en);
+      contentZh = contentZh.replace(pattern, soft.zh);
     }
   });
 
@@ -175,16 +204,19 @@ export function buildScenarioStory(
   }
 
   const tagged = tagWords(words);
-  const templates = selectTemplates(level, words.length, 5);
+  // Pull more candidates so we can pick the best semantic fit
+  const templates = selectTemplates(level, words.length, 12);
+  const pool = templates.length ? templates : SCENARIO_TEMPLATES.slice(0, 8);
 
   let best: {
     template: ScenarioTemplate;
     assignment: Map<string, TaggedWord | null>;
     placedCount: number;
     scoreSum: number;
+    fillRatio: number;
   } | null = null;
 
-  for (const template of templates.length ? templates : SCENARIO_TEMPLATES.slice(0, 3)) {
+  for (const template of pool) {
     tagged.forEach(t => {
       t.used = false;
     });
@@ -198,12 +230,28 @@ export function buildScenarioStory(
         scoreSum += matchScore(tw.tags, slot.tags, tw.pos, slot.pos);
       }
     }
-    if (
+    const fillRatio =
+      template.slots.length > 0 ? placedCount / template.slots.length : 0;
+
+    const better =
       !best ||
-      placedCount > best.placedCount ||
-      (placedCount === best.placedCount && scoreSum > best.scoreSum)
-    ) {
-      best = { template, assignment, placedCount, scoreSum };
+      scoreSum > best.scoreSum ||
+      (scoreSum === best.scoreSum && placedCount > best.placedCount) ||
+      (scoreSum === best.scoreSum &&
+        placedCount === best.placedCount &&
+        fillRatio > best.fillRatio);
+
+    // Prefer candidates that meet the minimum fill ratio when any such exist
+    const meetsMin = fillRatio >= MIN_FILL_RATIO && scoreSum > 0;
+    const bestMeetsMin =
+      best !== null && best.fillRatio >= MIN_FILL_RATIO && best.scoreSum > 0;
+
+    if (meetsMin && !bestMeetsMin) {
+      best = { template, assignment, placedCount, scoreSum, fillRatio };
+    } else if (meetsMin === bestMeetsMin && better) {
+      best = { template, assignment, placedCount, scoreSum, fillRatio };
+    } else if (!best) {
+      best = { template, assignment, placedCount, scoreSum, fillRatio };
     }
   }
 
@@ -211,7 +259,8 @@ export function buildScenarioStory(
     t.used = false;
   });
   const template = best?.template || SCENARIO_TEMPLATES[0];
-  const assignment = assignWordsToSlots(tagged, template.slots);
+  const assignment =
+    best?.assignment || assignWordsToSlots(tagged, template.slots);
   const { content, contentZh, used } = fillTemplate(template, assignment);
 
   const placedWords = used.map(u => u.word);
