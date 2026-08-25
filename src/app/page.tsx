@@ -115,9 +115,10 @@ export default function HomePage() {
             </Link>
             <Link
               href="/explore"
-              className="liquid-glass liquid-glass-hover inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl text-[#0a192f] font-bold text-sm"
+              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] !text-white font-bold text-sm transition"
+              style={{ color: '#ffffff' }}
             >
-              <Globe className="w-5 h-5" />
+              <Globe className="w-5 h-5 !text-white" />
               <span>Public library</span>
             </Link>
           </div>
@@ -228,8 +229,8 @@ export default function HomePage() {
 
                   <div className="flex flex-wrap gap-2 pt-1">
                     {deck.isPublic && (
-                      <span className="text-[11px] px-2.5 py-1 rounded-lg bg-emerald-100 !text-emerald-900 border border-emerald-200 font-bold inline-flex items-center gap-1">
-                        <Globe className="w-3 h-3" /> Public
+                      <span className="text-[11px] px-2.5 py-1 rounded-lg bg-emerald-100 border border-emerald-200 font-bold inline-flex items-center gap-1 !text-black">
+                        <Globe className="w-3 h-3 !text-black" /> Public
                       </span>
                     )}
                     <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white/90 !text-black border border-white/70 font-bold">

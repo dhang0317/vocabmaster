@@ -173,8 +173,8 @@ export default function DeckStudyPage() {
               {deck.title}
             </h1>
             {deck.isPublic && (
-              <span className="text-[11px] px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold inline-flex items-center gap-1">
-                <Globe className="w-3 h-3" /> Public
+              <span className="text-[11px] px-2 py-0.5 rounded-lg bg-emerald-100 border border-emerald-200 font-bold inline-flex items-center gap-1 !text-black">
+                <Globe className="w-3 h-3 !text-black" /> Public
               </span>
             )}
           </div>
@@ -198,11 +198,14 @@ export default function DeckStudyPage() {
             onClick={handleTogglePublic}
             disabled={publishing}
             title={deck.isPublic ? 'Remove from public library' : 'Share to public library'}
-            className={`liquid-glass liquid-glass-hover p-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 ${
-              deck.isPublic ? 'text-emerald-800' : 'text-slate-600'
+            className={`p-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 transition ${
+              deck.isPublic
+                ? 'bg-[#0a192f] hover:bg-[#132c5b] !text-white'
+                : 'liquid-glass liquid-glass-hover text-slate-600'
             }`}
+            style={deck.isPublic ? { color: '#ffffff' } : undefined}
           >
-            <Globe className="w-4 h-4" />
+            <Globe className={`w-4 h-4 ${deck.isPublic ? '!text-white' : ''}`} />
             <span>{publishing ? '…' : deck.isPublic ? 'Public' : 'Share'}</span>
           </button>
           <button
@@ -226,7 +229,7 @@ export default function DeckStudyPage() {
         {deck.articles && deck.articles.length > 0 && (
           <button type="button" onClick={() => setActiveTab('cloze')} className={tabClass(activeTab === 'cloze')}>
             <BookOpen className="w-4 h-4" />
-          <span>Cloze Article</span>
+            <span>Cloze Article</span>
           </button>
         )}
 
