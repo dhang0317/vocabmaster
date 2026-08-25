@@ -75,7 +75,7 @@ export default function ExplorePage() {
     <div className="space-y-8">
       <div className="liquid-glass liquid-glass-hover rounded-3xl p-8 sm:p-10 space-y-3">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-white/40 border border-white/50 text-[#0a192f]">
+          <div className="p-2.5 rounded-2xl bg-white/90 border border-white/70 text-[#0a192f]">
             <Globe className="w-6 h-6" />
           </div>
           <div>
@@ -151,16 +151,16 @@ export default function ExplorePage() {
                   <span className="font-medium truncate">{deck.author.name}</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white/50 border border-white/40 font-bold text-[#0a192f] inline-flex items-center gap-1">
+                  <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white/90 border border-white/70 font-bold !text-black inline-flex items-center gap-1">
                     <BookOpen className="w-3 h-3" /> {deck.wordCount} words
                   </span>
                   {deck.articleCount > 0 && (
-                    <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white/50 border border-white/40 font-bold text-[#0a192f] inline-flex items-center gap-1">
+                    <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white/90 border border-white/70 font-bold !text-black inline-flex items-center gap-1">
                       <Layers className="w-3 h-3" /> Cloze
                     </span>
                   )}
                   {deck.quizCount > 0 && (
-                    <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white/50 border border-white/40 font-bold text-[#0a192f] inline-flex items-center gap-1">
+                    <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white/90 border border-white/70 font-bold !text-black inline-flex items-center gap-1">
                       <Pencil className="w-3 h-3" /> {deck.quizCount} quizzes
                     </span>
                   )}
