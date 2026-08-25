@@ -41,7 +41,6 @@ export function Navbar() {
     document.documentElement.setAttribute('data-theme', preferred);
   }, []);
 
-  // Position menu under the avatar (fixed, outside header stacking context)
   useEffect(() => {
     if (!menuOpen || !buttonRef.current) return;
     const rect = buttonRef.current.getBoundingClientRect();
@@ -176,7 +175,7 @@ export function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-black/10 bg-white/95 backdrop-blur-md shadow-sm nav-header">
+      <header className="liquid-glass sticky top-0 z-40 w-full border-0 border-b border-white/40 nav-header rounded-none">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center">
             <span className="text-2xl tracking-tight">Vocabulum</span>
@@ -189,7 +188,7 @@ export function Navbar() {
                   ref={buttonRef}
                   type="button"
                   onClick={() => setMenuOpen((v) => !v)}
-                  className="rounded-full border border-black/20 hover:border-black/50 transition bg-white p-0.5"
+                  className="rounded-full border border-white/50 hover:border-white/80 transition bg-white/40 p-0.5"
                   aria-expanded={menuOpen}
                   aria-haspopup="menu"
                   title={session.user?.email || 'Account menu'}
@@ -209,11 +208,11 @@ export function Navbar() {
                 </button>
               </div>
             ) : status === 'loading' ? (
-              <div className="w-8 h-8 rounded-full bg-slate-200 animate-pulse" />
+              <div className="w-8 h-8 rounded-full bg-slate-200/60 animate-pulse" />
             ) : (
               <Link
                 href="/login"
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm transition border border-black/20 hover:border-black/50 bg-black text-white hover:bg-slate-800"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm transition bg-[#0a192f] text-white hover:bg-[#132c5b]"
               >
                 <LogIn className="w-4 h-4" />
                 <span>Log in</span>
