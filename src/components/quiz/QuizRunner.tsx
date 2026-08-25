@@ -1,8 +1,19 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
-import { CheckCircle2, XCircle, RotateCcw, ArrowRight, HelpCircle, BookOpen, Clock } from 'lucide-react';
+import {
+  CheckCircle2,
+  XCircle,
+  RotateCcw,
+  ArrowRight,
+  HelpCircle,
+  BookOpen,
+  Clock,
+  Languages,
+  X,
+  Loader2,
+} from 'lucide-react';
 import { GeneratedQuiz, GeneratedWord } from '@/types';
 
 interface QuizRunnerProps {
@@ -11,11 +22,20 @@ interface QuizRunnerProps {
   deckId?: string;
 }
 
+interface TranslatePopup {
+  text: string;
+  translated: string | null;
+  loading: boolean;
+  error: string | null;
+  x: number;
+  y: number;
+  placeAbove: boolean;
+}
+
 function cleanOptionLabel(raw: string): string {
   return raw.replace(/^\s*[A-Da-d][).:\-]\s*/, '').trim();
 }
 
-/** Rewrite flat "meaning match" stems into context-style prompts. */
 function rewriteMeaningQuestion(quiz: GeneratedQuiz): GeneratedQuiz {
   const isMeaning =
     /which word best matches this meaning|select the word that means|is best expressed by which word/i.test(
@@ -68,6 +88,23 @@ function sanitizeQuizOptions(quiz: GeneratedQuiz): GeneratedQuiz {
   return { ...rewritten, options, correctIdx };
 }
 
+function LetterBadge({ letter }: { letter: string }) {
+  return (
+    <span
+      className="inline-flex w-7 h-7 rounded-xl items-center justify-center text-xs font-mono font-bold shrink-0"
+      style={{
+        backgroundColor: '#0a192f',
+        color: '#ffffff',
+        border: '1px solid #0a192f',
+        // Beat dark-mode inheritance
+        WebkitTextFillColor: '#ffffff',
+      }}
+    >
+      <span style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}>{letter}</span>
+    </span>
+  );
+}
+
 export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunnerProps) {
   const sanitizedInitial = useMemo(
     () => initialQuizzes.map(sanitizeQuizOptions),
@@ -83,6 +120,19 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [optionTranslations, setOptionTranslations] = useState<Record<string, string>>({});
   const [isTranslatingOptions, setIsTranslatingOptions] = useState(false);
+  const [popup, setPopup] = useState<TranslatePopup | null>(null);
+
+  const questionRef = useRef<HTMLHeadingElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const translateAbortRef = useRef<AbortController | null>(null);
+
+  const wordMap = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const w of words) {
+      if (w.word && w.translation) m.set(w.word.trim().toLowerCase(), w.translation);
+    }
+    return m;
+  }, [words]);
 
   useEffect(() => {
     setQuizzes(sanitizedInitial);
@@ -91,6 +141,7 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
     setShowExplanation(false);
     setIsFinished(false);
     setSeconds(0);
+    setPopup(null);
   }, [sanitizedInitial]);
 
   useEffect(() => {
@@ -169,6 +220,114 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
     return () => clearInterval(interval);
   }, [isFinished]);
 
+  const closePopup = useCallback(() => {
+    if (translateAbortRef.current) {
+      translateAbortRef.current.abort();
+      translateAbortRef.current = null;
+    }
+    setPopup(null);
+  }, []);
+
+  useEffect(() => {
+    if (!popup) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closePopup();
+    };
+    const onMouseDown = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (popupRef.current?.contains(target)) return;
+      if (questionRef.current?.contains(target)) return;
+      closePopup();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('mousedown', onMouseDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('mousedown', onMouseDown);
+    };
+  }, [popup, closePopup]);
+
+  const fetchTranslation = useCallback(async (text: string, x: number, y: number, placeAbove: boolean) => {
+    // Local word list first
+    const local = wordMap.get(text.trim().toLowerCase());
+    if (local) {
+      setPopup({
+        text,
+        translated: local,
+        loading: false,
+        error: null,
+        x,
+        y,
+        placeAbove,
+      });
+      return;
+    }
+
+    if (translateAbortRef.current) translateAbortRef.current.abort();
+    const controller = new AbortController();
+    translateAbortRef.current = controller;
+
+    setPopup({
+      text,
+      translated: null,
+      loading: true,
+      error: null,
+      x,
+      y,
+      placeAbove,
+    });
+
+    try {
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, target: 'zh-TW' }),
+        signal: controller.signal,
+      });
+      const data = await res.json();
+      if (controller.signal.aborted) return;
+      if (!res.ok || !data.success) {
+        setPopup(prev =>
+          prev ? { ...prev, loading: false, error: data.error || '翻譯失敗' } : null
+        );
+        return;
+      }
+      setPopup(prev =>
+        prev ? { ...prev, loading: false, translated: data.translated, error: null } : null
+      );
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      setPopup(prev =>
+        prev
+          ? { ...prev, loading: false, error: err instanceof Error ? err.message : '翻譯失敗' }
+          : null
+      );
+    } finally {
+      if (translateAbortRef.current === controller) translateAbortRef.current = null;
+    }
+  }, [wordMap]);
+
+  const handleQuestionMouseUp = useCallback(() => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || !questionRef.current) return;
+
+    const text = selection.toString().trim();
+    if (!text || text.length < 1 || text.length > 120) return;
+
+    const anchorNode = selection.anchorNode;
+    if (!anchorNode || !questionRef.current.contains(anchorNode)) return;
+
+    const range = selection.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const spaceAbove = rect.top;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const placeAbove = spaceAbove >= 110 || spaceAbove >= spaceBelow;
+    const y = placeAbove ? rect.top - 6 : rect.bottom + 6;
+
+    fetchTranslation(text, x, y, placeAbove);
+  }, [fetchTranslation]);
+
   const currentQ = quizzes[currentIndex] || null;
   const currentSelected = currentQ ? selectedAnswers[currentIndex] : undefined;
   const hasAnswered = currentSelected !== undefined;
@@ -181,6 +340,7 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
 
   const handleNext = () => {
     setShowExplanation(false);
+    setPopup(null);
     if (currentIndex < quizzes.length - 1) {
       setCurrentIndex(prev => prev + 1);
     } else {
@@ -234,6 +394,7 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
     setShowExplanation(false);
     setIsFinished(false);
     setSeconds(0);
+    setPopup(null);
   };
 
   const handleOldQuizRestart = () => resetQuiz(quizzes);
@@ -302,14 +463,61 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
   });
   const scorePercent = Math.round((correctCount / quizzes.length) * 100);
 
-  // Force white letter on black badge (survives dark-mode overrides)
-  const letterBadge = (letter: string) => (
-    <span
-      className="w-7 h-7 rounded-xl flex items-center justify-center text-xs font-mono font-bold shrink-0 border border-[#0a192f]"
-      style={{ backgroundColor: '#0a192f', color: '#ffffff' }}
+  const translatePopupNode = popup && (
+    <div
+      ref={popupRef}
+      className="fixed z-[100] pointer-events-auto"
+      style={{
+        left: Math.min(Math.max(popup.x, 160), (typeof window !== 'undefined' ? window.innerWidth : 320) - 160),
+        top: popup.y,
+        transform: popup.placeAbove ? 'translate(-50%, -100%)' : 'translate(-50%, 0)',
+      }}
     >
-      {letter}
-    </span>
+      <div className="flex flex-col items-center">
+        {!popup.placeAbove && (
+          <div
+            className="w-2.5 h-2.5 rotate-45 mb-[-5px] bg-white/50 border-l border-t border-white/50"
+            style={{ backdropFilter: 'blur(8px)' }}
+          />
+        )}
+        <div className="liquid-glass liquid-glass-menu rounded-2xl shadow-xl border border-white/50 min-w-[180px] max-w-[300px] px-3.5 py-3">
+          <div className="flex items-start justify-between gap-2 mb-1.5">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <Languages className="w-3 h-3 shrink-0" />
+              <span>翻譯</span>
+            </div>
+            <button
+              type="button"
+              onClick={closePopup}
+              className="p-0.5 rounded-lg text-slate-400 hover:text-[#0a192f] hover:bg-white/40 transition shrink-0"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <p className="text-xs font-bold text-[#0a192f] break-words leading-snug">{popup.text}</p>
+          {popup.loading && (
+            <div className="flex items-center gap-1.5 text-xs text-slate-500 py-1.5">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span>查詢中…</span>
+            </div>
+          )}
+          {popup.error && <p className="text-xs text-red-600 font-medium py-0.5">{popup.error}</p>}
+          {popup.translated && !popup.loading && (
+            <div className="border-t border-black/10 pt-1.5 mt-1.5">
+              <p className="text-sm font-bold text-[#0a192f] font-cjk leading-relaxed break-words">
+                {popup.translated}
+              </p>
+            </div>
+          )}
+        </div>
+        {popup.placeAbove && (
+          <div
+            className="w-2.5 h-2.5 rotate-45 mt-[-5px] bg-white/50 border-r border-b border-white/50"
+            style={{ backdropFilter: 'blur(8px)' }}
+          />
+        )}
+      </div>
+    </div>
   );
 
   if (isFinished) {
@@ -338,7 +546,7 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
           <div className="flex flex-wrap items-center justify-center gap-3">
             <button
               onClick={handleOldQuizRestart}
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] text-white font-bold text-sm shadow-md transition transform hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] font-bold text-sm shadow-md transition transform hover:-translate-y-0.5"
               style={{ color: '#ffffff' }}
             >
               <RotateCcw className="w-4 h-4" style={{ color: '#ffffff' }} />
@@ -347,7 +555,7 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
             <button
               onClick={handleNewQuizRestart}
               disabled={isRegenerating}
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] disabled:opacity-60 text-white font-bold text-sm shadow-md transition transform hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] disabled:opacity-60 font-bold text-sm shadow-md transition transform hover:-translate-y-0.5"
               style={{ color: '#ffffff' }}
             >
               <RotateCcw className="w-4 h-4" style={{ color: '#ffffff' }} />
@@ -357,7 +565,6 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
         </div>
 
         <div className="space-y-4">
-          {/* Align title with card inner text (p-6), not outer border */}
           <h4 className="text-lg font-black text-[#0a192f] px-6">Review & explanations</h4>
 
           {quizzes.map((q, idx) => {
@@ -393,24 +600,36 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
                     const isRightOption = optIdx === q.correctIdx;
                     const isUserChoice = optIdx === userChosen;
 
+                    // Always white card + black text; border shows correctness
+                    const borderStyle = isRightOption
+                      ? '2px solid #059669'
+                      : isUserChoice
+                      ? '2px solid #ef4444'
+                      : '2px solid rgba(10,25,47,0.2)';
+
                     return (
                       <div
                         key={optIdx}
-                        className={`px-3.5 py-2 rounded-xl text-xs font-bold border-2 flex items-center justify-between gap-2 ${
-                          isRightOption
-                            ? 'bg-emerald-100 border-emerald-600'
-                            : isUserChoice
-                            ? 'bg-red-100 border-red-500'
-                            : 'bg-white/80 border-[#0a192f]/20'
-                        }`}
+                        className="px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-between gap-2"
+                        style={{
+                          backgroundColor: '#ffffff',
+                          color: '#000000',
+                          border: borderStyle,
+                        }}
                       >
                         <span className="flex items-center gap-2 min-w-0">
-                          {letterBadge(String.fromCharCode(65 + optIdx))}
-                          <span className="text-black truncate">{opt}</span>
+                          <LetterBadge letter={String.fromCharCode(65 + optIdx)} />
+                          <span style={{ color: '#000000' }}>{opt}</span>
                         </span>
-                        {isRightOption && <span className="text-[10px] font-black text-black shrink-0">Correct</span>}
+                        {isRightOption && (
+                          <span className="text-[10px] font-black shrink-0" style={{ color: '#000000' }}>
+                            Correct
+                          </span>
+                        )}
                         {isUserChoice && !isRightOption && (
-                          <span className="text-[10px] font-black text-black shrink-0">Your choice</span>
+                          <span className="text-[10px] font-black shrink-0" style={{ color: '#000000' }}>
+                            Your choice
+                          </span>
                         )}
                       </div>
                     );
@@ -452,24 +671,33 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
       </div>
 
       <div className="liquid-glass liquid-glass-hover p-6 sm:p-8 rounded-3xl space-y-6">
-        <h3 className="text-lg sm:text-xl font-bold text-[#0a192f] leading-relaxed pt-2">
+        <h3
+          ref={questionRef}
+          onMouseUp={handleQuestionMouseUp}
+          className="text-lg sm:text-xl font-bold text-[#0a192f] leading-relaxed pt-2 select-text cursor-text"
+          title="反白單字可查看中文翻譯"
+        >
           {currentQ.question}
         </h3>
+        <p className="text-[11px] text-slate-500 -mt-3">反白題幹單字可查看中文翻譯</p>
 
         <div className="space-y-3 pt-2">
           {currentQ.options.map((opt, optIdx) => {
             const isSelected = currentSelected === optIdx;
             const isCorrect = optIdx === currentQ.correctIdx;
 
-            let optionStyle = 'bg-white/90 border-[#0a192f] text-black hover:bg-white';
-
+            let bg = '#ffffff';
+            let border = '2px solid #0a192f';
             if (hasAnswered) {
               if (isCorrect) {
-                optionStyle = 'bg-emerald-100 border-emerald-600 text-black ring-2 ring-emerald-600/30';
+                bg = '#d1fae5';
+                border = '2px solid #059669';
               } else if (isSelected) {
-                optionStyle = 'bg-red-100 border-red-500 text-black ring-2 ring-red-500/30';
+                bg = '#fee2e2';
+                border = '2px solid #ef4444';
               } else {
-                optionStyle = 'bg-white/90 border-[#0a192f]/40 text-black';
+                bg = '#ffffff';
+                border = '2px solid rgba(10,25,47,0.35)';
               }
             }
 
@@ -478,16 +706,17 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
                 key={optIdx}
                 onClick={() => handleSelectOption(optIdx)}
                 disabled={hasAnswered}
-                className={`w-full p-4 rounded-2xl border-2 text-left font-bold text-sm sm:text-base flex items-center justify-between transition ${optionStyle}`}
+                className="w-full p-4 rounded-2xl text-left font-bold text-sm sm:text-base flex items-center justify-between transition"
+                style={{ backgroundColor: bg, border, color: '#000000' }}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  {letterBadge(String.fromCharCode(65 + optIdx))}
-                  <span className="text-black truncate">{opt}</span>
+                  <LetterBadge letter={String.fromCharCode(65 + optIdx)} />
+                  <span style={{ color: '#000000' }}>{opt}</span>
                 </div>
 
-                {hasAnswered && isCorrect && <CheckCircle2 className="w-5 h-5 text-black shrink-0" />}
+                {hasAnswered && isCorrect && <CheckCircle2 className="w-5 h-5 shrink-0" style={{ color: '#000000' }} />}
                 {hasAnswered && isSelected && !isCorrect && (
-                  <XCircle className="w-5 h-5 text-black shrink-0" />
+                  <XCircle className="w-5 h-5 shrink-0" style={{ color: '#000000' }} />
                 )}
               </button>
             );
@@ -520,7 +749,7 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
         <div className="flex justify-end">
           <button
             onClick={handleNext}
-            className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] text-white font-bold text-sm shadow-md transition transform hover:-translate-y-0.5"
+            className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] font-bold text-sm shadow-md transition transform hover:-translate-y-0.5"
             style={{ color: '#ffffff' }}
           >
             <span>{currentIndex === quizzes.length - 1 ? 'View results' : 'Next question'}</span>
@@ -528,6 +757,8 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
           </button>
         </div>
       )}
+
+      {translatePopupNode}
     </div>
   );
 }
