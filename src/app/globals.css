@@ -30,7 +30,7 @@
 
   [data-theme="dark"] {
     --background: #0b1220;
-    --foreground: #e2e8f0;
+    --foreground: #ffffff;
     --card: #111827;
     --border: rgba(255, 255, 255, 0.12);
     --border-hover: rgba(255, 255, 255, 0.35);
@@ -199,7 +199,7 @@ a[class*="bg-slate-900"] * {
 }
 
 body [class*="border-[#0a192f]"],
-body [class*="border-\[\#0a192f\]"] {
+body [class*="border-\\[#0a192f\\]"] {
   border-color: rgba(0, 0, 0, 0.12) !important;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -213,7 +213,7 @@ body a[class*="border-[#0a192f]"]:hover,
 body div[class*="border-[#0a192f]"]:hover,
 body section[class*="border-[#0a192f]"]:hover,
 body article[class*="border-[#0a192f]"]:hover,
-body button[class*="border-black\/30"]:hover {
+body button[class*="border-black\\/30"]:hover {
   border-color: rgba(0, 0, 0, 0.4) !important;
 }
 
@@ -228,11 +228,17 @@ body select[class*="border-[#0a192f]"]:focus {
 
 [data-theme="dark"] body {
   background: var(--background);
-  color: var(--foreground);
+  color: #ffffff;
 }
 
-[data-theme="dark"] body :where(p, span, label, li, td, th, h1, h2, h3, h4, h5, h6) {
-  color: #e2e8f0;
+[data-theme="dark"] body :where(p, span, label, li, td, th, button, a, h1, h2, h3, h4, h5, h6) {
+  color: #ffffff;
+}
+
+[data-theme="dark"] body input,
+[data-theme="dark"] body textarea,
+[data-theme="dark"] body select {
+  color: #ffffff;
 }
 
 [data-theme="dark"] .nav-header {
@@ -255,16 +261,39 @@ body select[class*="border-[#0a192f]"]:focus {
   border-color: rgba(255, 255, 255, 0.35) !important;
 }
 
-[data-theme="dark"] .text-\[\#0a192f\],
+/* All previously gray / navy text classes → pure white in dark mode */
+[data-theme="dark"] .text-\\[#0a192f\\],
+[data-theme="dark"] .text-\\[#1e3a8a\\],
+[data-theme="dark"] .text-slate-900,
+[data-theme="dark"] .text-slate-800,
+[data-theme="dark"] .text-slate-700,
 [data-theme="dark"] .text-slate-600,
-[data-theme="dark"] .text-slate-500 {
-  color: #cbd5e1 !important;
+[data-theme="dark"] .text-slate-500,
+[data-theme="dark"] .text-slate-400,
+[data-theme="dark"] .text-gray-900,
+[data-theme="dark"] .text-gray-800,
+[data-theme="dark"] .text-gray-700,
+[data-theme="dark"] .text-gray-600,
+[data-theme="dark"] .text-gray-500,
+[data-theme="dark"] .text-gray-400,
+[data-theme="dark"] .text-black {
+  color: #ffffff !important;
 }
 
-[data-theme="dark"] footer {
-  background: transparent !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
-  color: #94a3b8 !important;
+[data-theme="dark"] footer,
+[data-theme="dark"] footer * {
+  color: #ffffff !important;
+}
+
+/* Keep forced black text on light chips/badges readable */
+[data-theme="dark"] .\\!text-black,
+[data-theme="dark"] [class~="!text-black"] {
+  color: #000000 !important;
+}
+
+[data-theme="dark"] .\\!text-emerald-900,
+[data-theme="dark"] [class~="!text-emerald-900"] {
+  color: #064e3b !important;
 }
 
 .perspective-1000 {
