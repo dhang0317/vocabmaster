@@ -550,12 +550,18 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
               >
                 <div className="flex items-start justify-end gap-3">
                   {isCorrect ? (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-600">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Correct
+                    <span
+                      className="inline-flex items-center gap-1 text-xs font-bold bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-600"
+                      style={{ color: '#000000', WebkitTextFillColor: '#000000' }}
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" style={{ color: '#000000' }} /> Correct
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-red-800 bg-red-100 px-2.5 py-1 rounded-full border border-red-500">
-                      <XCircle className="w-3.5 h-3.5" /> Incorrect
+                    <span
+                      className="inline-flex items-center gap-1 text-xs font-bold bg-red-100 px-2.5 py-1 rounded-full border border-red-500"
+                      style={{ color: '#000000', WebkitTextFillColor: '#000000' }}
+                    >
+                      <XCircle className="w-3.5 h-3.5" style={{ color: '#000000' }} /> Incorrect
                     </span>
                   )}
                 </div>
@@ -608,11 +614,21 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
                 {q.explanation && (
                   <div
                     className="mt-3 p-3.5 rounded-xl border border-[#0a192f]/15 text-xs leading-relaxed"
-                    style={{ backgroundColor: '#ffffff', color: '#000000' }}
+                    style={{
+                      backgroundColor: '#ffffff',
+                      color: '#000000',
+                      WebkitTextFillColor: '#000000',
+                    }}
                   >
-                    <strong style={{ color: '#000000' }}>Explanation:</strong> {q.explanation}
+                    <strong style={{ color: '#000000', WebkitTextFillColor: '#000000' }}>
+                      Explanation:
+                    </strong>{' '}
+                    {q.explanation}
                     <br />
-                    <strong style={{ color: '#000000' }}>選項翻譯：</strong> {getOtherOptionTranslations(q)}
+                    <strong style={{ color: '#000000', WebkitTextFillColor: '#000000' }}>
+                      選項翻譯：
+                    </strong>{' '}
+                    {getOtherOptionTranslations(q)}
                   </div>
                 )}
               </div>
@@ -696,22 +712,47 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
         {showExplanation && (
           <div
             className="p-5 rounded-2xl border border-[#0a192f]/20 space-y-3 animate-in fade-in duration-200"
-            style={{ backgroundColor: '#ffffff', color: '#000000' }}
+            style={{
+              backgroundColor: '#ffffff',
+              color: '#000000',
+              WebkitTextFillColor: '#000000',
+            }}
           >
-            <div className="text-xs font-black text-[#0a192f]">
-              <span>Translation & explanation</span>
+            <div
+              className="text-xs font-black"
+              style={{ color: '#000000', WebkitTextFillColor: '#000000' }}
+            >
+              <span style={{ color: '#000000', WebkitTextFillColor: '#000000' }}>
+                Translation & explanation
+              </span>
             </div>
 
             {currentQ.questionZh && (
-              <div className="p-3 rounded-xl bg-white border border-[#0a192f]/15 text-xs sm:text-sm text-[#0a192f] font-medium leading-relaxed">
-                <span className="font-bold text-[#0a192f]">Translation:</span> {currentQ.questionZh}
+              <div
+                className="p-3 rounded-xl border text-xs sm:text-sm font-medium leading-relaxed"
+                style={{
+                  backgroundColor: '#ffffff',
+                  borderColor: 'rgba(10,25,47,0.15)',
+                  color: '#000000',
+                  WebkitTextFillColor: '#000000',
+                }}
+              >
+                <span className="font-bold" style={{ color: '#000000', WebkitTextFillColor: '#000000' }}>
+                  Translation:
+                </span>{' '}
+                {currentQ.questionZh}
               </div>
             )}
 
-            <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
-              <strong className="text-[#0a192f]">Explanation:</strong> {currentQ.explanation}
+            <p
+              className="text-xs sm:text-sm leading-relaxed font-medium"
+              style={{ color: '#000000', WebkitTextFillColor: '#000000' }}
+            >
+              <strong style={{ color: '#000000', WebkitTextFillColor: '#000000' }}>Explanation:</strong>{' '}
+              {currentQ.explanation}
               <br />
-              <strong className="text-[#0a192f]">選項翻譯：</strong> {getOtherOptionTranslations(currentQ)}
+              <strong style={{ color: '#000000', WebkitTextFillColor: '#000000' }}>選項翻譯：</strong>{' '}
+              {getOtherOptionTranslations(currentQ)}
             </p>
           </div>
         )}
