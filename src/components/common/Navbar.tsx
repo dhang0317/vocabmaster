@@ -18,7 +18,7 @@ export function Navbar() {
     <>
       <header className="sticky top-0 z-40 w-full border-b-2 border-black bg-white/95 backdrop-blur-md shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center"><span className="text-2xl tracking-tight">VocabMaster</span></Link>
+          <Link href="/" className="flex items-center"><span className="text-2xl tracking-tight">Vocabulum</span></Link>
           <nav className="flex items-center gap-2 sm:gap-4">
             <button
               onClick={() => setIsKeyModalOpen(true)}
