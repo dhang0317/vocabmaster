@@ -17,23 +17,71 @@ interface GenerationResponse {
   fallbackReason?: string;
 }
 
+/** Prefer flash models; free tier often rate-limits a single model name. */
+const GEMINI_MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-3.6-flash'];
+
 const STOP_WORDS = new Set(
   'a an the and or but if in on at to for of as by with from into through during before after above below between under again further then once here there when where why how all each few more most other some such no nor not only own same so than too very can will just should now is are was were be been being it its this that these those he she they them we you i'.split(
     ' '
   )
 );
 
+function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function isRateLimitError(error: unknown): boolean {
+  const msg = error instanceof Error ? error.message : String(error);
+  return /429|Too Many Requests|quota|rate.?limit/i.test(msg);
+}
+
+/** Call Gemini with model fallbacks + short retries on 429. */
+async function generateJsonWithFallback(
+  apiKey: string,
+  prompt: string,
+  temperature: number
+): Promise<string> {
+  let lastError: unknown;
+
+  for (const modelName of GEMINI_MODELS) {
+    const model = new GoogleGenerativeAI(apiKey.trim()).getGenerativeModel({
+      model: modelName,
+      generationConfig: {
+        responseMimeType: 'application/json',
+        temperature,
+      },
+    });
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const result = await model.generateContent(prompt);
+        return result.response.text();
+      } catch (err) {
+        lastError = err;
+        if (isRateLimitError(err) && attempt < 2) {
+          // Free tier often suggests ~3s; back off a bit more each try
+          await sleep(3500 * (attempt + 1));
+          continue;
+        }
+        // Non-rate-limit or retries exhausted → try next model
+        break;
+      }
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error(String(lastError));
+}
+
 export async function translateVocabulary(words: string[], apiKey?: string): Promise<Record<string, string>> {
   const key = apiKey?.trim() || process.env.GEMINI_API_KEY?.trim();
   if (!key) throw new Error('No Gemini API Key was provided.');
-  const model = new GoogleGenerativeAI(key).getGenerativeModel({
-    model: 'gemini-3.6-flash',
-    generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
-  });
-  const result = await model.generateContent(
+
+  const text = await generateJsonWithFallback(
+    key,
     `Translate each English vocabulary word into concise Traditional Chinese. Return JSON only in this exact shape: {"translations":{"word":"中文翻譯"}}. Words: ${JSON.stringify(words)}`,
+    0.2
   );
-  const parsed = JSON.parse(result.response.text()) as { translations?: Record<string, string> };
+  const parsed = JSON.parse(text) as { translations?: Record<string, string> };
   return Object.fromEntries(
     Object.entries(parsed.translations || {}).map(([word, translation]) => [word.trim().toLowerCase(), translation]),
   );
@@ -46,15 +94,6 @@ function shuffle<T>(items: T[]): T[] {
     [result[i], result[j]] = [result[j], result[i]];
   }
   return result;
-}
-
-/** Fill [blank_n] with the actual answer words for alignment. */
-function fillBlanks(content: string, blanks: ClozeBlank[]): string {
-  return content.replace(/\[blank_(\d+)\]/g, (_, idStr: string) => {
-    const id = parseInt(idStr, 10);
-    const blank = blanks.find(b => b.id === id);
-    return blank?.word || '____';
-  });
 }
 
 function normalizeGlossary(
@@ -72,76 +111,17 @@ function normalizeGlossary(
     }
   };
 
-  // Card / blank defaults first (lower priority)
   for (const w of words) {
     add(w.word, w.translation, w.pos ? `詞性 ${w.pos}` : undefined);
   }
   for (const b of blanks || []) {
     if (b.word && b.hint) add(b.word, b.hint.replace(/\s*\([^)]*\)\s*$/, '').trim());
   }
-  // Full-article-aligned glossary overwrites with contextual meanings
   for (const g of glossary || []) {
     if (g?.en && g?.zh) add(g.en, g.zh, g.sense, true);
   }
 
   return Array.from(map.values());
-}
-
-/**
- * Second pass: given complete EN + ZH article text, split into word/phrase glossary
- * so each entry matches how it was actually translated in the full text.
- */
-async function buildGlossaryFromFullTranslation(
-  content: string,
-  contentZh: string,
-  blanks: ClozeBlank[],
-  apiKey: string
-): Promise<GlossaryEntry[]> {
-  const englishFull = fillBlanks(content, blanks);
-  if (!englishFull.trim() || !contentZh?.trim()) return [];
-
-  const model = new GoogleGenerativeAI(apiKey.trim()).getGenerativeModel({
-    model: 'gemini-3.6-flash',
-    generationConfig: {
-      responseMimeType: 'application/json',
-      temperature: 0.15,
-    },
-  });
-
-  const prompt = `你是英中對照與詞彙教學專家。任務：已有「完整英文文章」與「完整繁體中文翻譯」，請依全文對照拆出詞彙表。
-
-【必須遵守的步驟】
-1. 先完整閱讀英文全文與中文全文（不要先拆單字）。
-2. 以中文全文為準，回推每個英文詞／片語在「這篇文章裡」實際對應的中文意思。
-3. 再輸出 glossary。禁止使用與全文翻譯矛盾的字典義。
-
-【英文全文】
-${englishFull}
-
-【繁體中文全文】
-${contentZh}
-
-【輸出】只回傳 JSON：
-{
-  "glossary": [
-    {
-      "en": "文中出現的英文詞或片語（可保留文中型態，如 wasted / looking for）",
-      "zh": "在這篇中文翻譯裡對應的意思（必須與全文一致）",
-      "sense": "可選；一句話說明此處用法或語氣"
-    }
-  ]
-}
-
-規則：
-- 涵蓋所有目標填空單字，以及學生可能反白查詢的實義詞、片語、固定搭配。
-- 跳過純虛詞（a, the, is, of, to…），除非在片語中。
-- 同一英文若全文多處意思相同只列一次；若意思明顯不同可分列（en 可加簡短註記）。
-- zh 必須能在中文全文中對得起來，不要憑空字典翻譯。
-- 約 30–80 筆，繁體中文（台灣用法）。`;
-
-  const result = await model.generateContent(prompt);
-  const parsed = JSON.parse(result.response.text()) as { glossary?: GlossaryEntry[] };
-  return Array.isArray(parsed.glossary) ? parsed.glossary : [];
 }
 
 function normalizeQuizzes(quizzes: GeneratedQuiz[], rawWords: RawWordInput[]): GeneratedQuiz[] {
@@ -204,19 +184,10 @@ export async function generateLearningMaterials(
   level: GenerationLevel = 'highschool',
   apiKey?: string
 ): Promise<GenerationResponse> {
-  const effectiveKey = apiKey || process.env.GEMINI_API_KEY;
+  const effectiveKey = (apiKey || process.env.GEMINI_API_KEY || '').trim();
 
-  if (effectiveKey && effectiveKey.trim() !== '') {
+  if (effectiveKey) {
     try {
-      const genAI = new GoogleGenerativeAI(effectiveKey.trim());
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-3.6-flash',
-        generationConfig: {
-          responseMimeType: 'application/json',
-          temperature: 0.7,
-        },
-      });
-
       const wordListStr = rawWords
         .map(w => {
           let str = w.word;
@@ -226,20 +197,18 @@ export async function generateLearningMaterials(
         })
         .join(', ');
 
-      // Pass 1: story + full Chinese translation + quizzes (glossary comes from pass 2)
+      // Single request: full story → full ZH → glossary split from that pair (saves quota vs 2 calls)
       const prompt = `
 You are an expert English vocabulary teacher. Return valid JSON only.
 
-你是一位頂尖的英語教學專家。請針對單字清單，難度「${level}」，生成學習資料。
+你是頂尖英語教學專家。難度「${level}」。目標單字: [${wordListStr}]
 
-目標單字清單: [${wordListStr}]
+【嚴格順序——在同一個回應內完成】
+1. 先寫完整英文故事 content（目標單字處用 [blank_1]、[blank_2]…）。
+2. 再把「填入答案後的完整英文故事」翻成自然、道地的繁體中文 contentZh（台灣用法；完整篇章，非逐詞硬翻）。
+3. 最後才根據「英文全文 + contentZh 全文對照」拆出 glossary：每個 en 的 zh 必須與 contentZh 裡的實際譯法一致，禁止與全文矛盾的字典義。
 
-【文章寫作順序——必須遵守】
-1. 先寫完整、通順的英文故事 content（目標單字處用 [blank_1]… 標記）。
-2. 再把「填入答案後的完整英文故事」完整翻譯成自然、道地的繁體中文 contentZh（台灣用法）。contentZh 必須是完整篇章翻譯，不是逐詞硬翻。
-3. 不要在此步驟拆單字詞庫。
-
-請輸出純 JSON（不要 Markdown）：
+輸出純 JSON（不要 Markdown）：
 {
   "words": [
     {
@@ -254,21 +223,19 @@ You are an expert English vocabulary teacher. Return valid JSON only.
   ],
   "article": {
     "title": "英文標題",
-    "content": "英文短文 120–250 字，目標單字以 [blank_1],[blank_2]… 標記",
-    "contentZh": "上述故事的完整繁體中文翻譯（含空白處應有的中文意思）",
+    "content": "英文短文 120–250 字，目標單字以 [blank_n] 標記",
+    "contentZh": "完整繁體中文翻譯",
     "blanks": [
-      {
-        "id": 1,
-        "word": "正確英文單字",
-        "hint": "繁中提示",
-        "options": ["正確", "干擾1", "干擾2", "干擾3"]
-      }
+      { "id": 1, "word": "正確英文", "hint": "繁中提示", "options": ["正確", "干擾1", "干擾2", "干擾3"] }
+    ],
+    "glossary": [
+      { "en": "文中詞或片語", "zh": "與 contentZh 一致的意思", "sense": "可選用法說明" }
     ]
   },
   "quizzes": [
     {
-      "question": "英文題目（可含 _____）",
-      "questionZh": "題目中文",
+      "question": "英文題",
+      "questionZh": "中文題",
       "targetWord": "目標單字",
       "options": ["A", "B", "C", "D"],
       "correctIdx": 0,
@@ -277,34 +244,21 @@ You are an expert English vocabulary teacher. Return valid JSON only.
   ]
 }
 
-注意：
-1. blanks 與 content 的 [blank_n] 必須一致。
-2. contentZh 必須對應整篇英文（含答案詞義），語氣自然。
-3. 每個重要目標單字至少一題 quiz；correctIdx 正確。
+規則：
+1. blanks 與 [blank_n] 一致；每個重要目標單字至少一題 quiz。
+2. glossary 含所有目標單字 + 文中實義詞／片語（略過 a/the/is 等虛詞），約 30–70 筆。
+3. glossary.zh 必須能對上 contentZh，不要另起爐灶。
 `;
 
-      const result = await model.generateContent(prompt);
-      const text = result.response.text();
+      const text = await generateJsonWithFallback(effectiveKey, prompt, 0.7);
       const parsed = JSON.parse(text) as GenerationResponse;
 
       const article = parsed.article || ({} as GeneratedCloze);
-      const blanks = article.blanks || [];
-      const genWords = parsed.words || [];
-
-      // Pass 2: read full EN+ZH, then split glossary (contextual, aligned)
-      let alignedGlossary: GlossaryEntry[] = [];
-      try {
-        alignedGlossary = await buildGlossaryFromFullTranslation(
-          article.content || '',
-          article.contentZh || '',
-          blanks,
-          effectiveKey.trim()
-        );
-      } catch (glossaryError) {
-        console.warn('Glossary alignment pass failed, using word-card fallback:', glossaryError);
-      }
-
-      article.glossary = normalizeGlossary(alignedGlossary, genWords, blanks);
+      article.glossary = normalizeGlossary(
+        article.glossary,
+        parsed.words || [],
+        article.blanks || []
+      );
 
       return {
         ...parsed,
