@@ -115,10 +115,10 @@ export default function HomePage() {
             </Link>
             <Link
               href="/explore"
-              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] !text-white font-bold text-sm transition"
+              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] text-white font-bold text-sm shadow-md transition transform hover:-translate-y-0.5"
               style={{ color: '#ffffff' }}
             >
-              <Globe className="w-5 h-5 !text-white" />
+              <Globe className="w-5 h-5" style={{ color: '#ffffff' }} />
               <span>Public library</span>
             </Link>
           </div>
@@ -160,7 +160,7 @@ export default function HomePage() {
       </div>
 
       <div className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 px-6">
           <h2 className="text-2xl font-black text-[#0a192f]">Vocabulary</h2>
 
           <div className="relative w-full sm:w-72">
@@ -229,7 +229,7 @@ export default function HomePage() {
 
                   <div className="flex flex-wrap gap-2 pt-1">
                     {deck.isPublic && (
-                      <span className="text-[11px] px-2.5 py-1 rounded-lg bg-emerald-100 border border-emerald-200 font-bold inline-flex items-center gap-1 !text-black">
+                      <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white border border-white/80 font-bold inline-flex items-center gap-1 !text-black">
                         <Globe className="w-3 h-3 !text-black" /> Public
                       </span>
                     )}

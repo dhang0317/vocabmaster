@@ -48,15 +48,10 @@ export function ApiKeyModal({ isOpen, onClose }: ApiKeyModalProps) {
           </div>
           <div>
             <h3 className="text-xl font-black text-[#0a192f]">API Key Settings</h3>
-            <p className="text-xs text-slate-600">Enable high-quality online flashcard, article, and quiz generation.</p>
           </div>
         </div>
 
         <div className="space-y-4">
-          <p className="text-sm text-slate-600">
-            Your API key is stored only in your browser (LocalStorage) and is never uploaded to a third-party server.
-          </p>
-
           <div>
             <label className="block text-xs font-bold text-[#0a192f] mb-1">
               GEMINI API KEY
@@ -78,10 +73,6 @@ export function ApiKeyModal({ isOpen, onClose }: ApiKeyModalProps) {
           >
             Get a free Google Gemini API key <ExternalLink className="w-3.5 h-3.5" />
           </a>
-
-          <div className="p-3 bg-white/30 rounded-2xl border border-white/40 text-xs text-slate-600">
-              💡 Tip: without an API key, the built-in offline fallback still supports flashcards, cloze exercises, and quizzes.
-          </div>
 
           <div className="flex items-center justify-end gap-3 pt-2">
             <button

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Globe, BookOpen, Layers, Pencil, Plus, Search, User } from 'lucide-react';
+import { BookOpen, Layers, Pencil, Plus, Search, User } from 'lucide-react';
 
 interface PublicDeck {
   id: string;
@@ -74,21 +74,13 @@ export default function ExplorePage() {
   return (
     <div className="space-y-8">
       <div className="liquid-glass liquid-glass-hover rounded-3xl p-8 sm:p-10 space-y-3">
-        <div className="flex items-center gap-3">
-          <div
-            className="p-2.5 rounded-2xl border border-black/10"
-            style={{ backgroundColor: '#ffffff', color: '#0a192f' }}
-          >
-            <Globe className="w-6 h-6" style={{ color: '#0a192f' }} />
-          </div>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-[#0a192f] tracking-tight">
-              Public library
-            </h1>
-            <p className="text-xs text-slate-600">
-              Browse decks shared by the community. Add any deck to your own Vocabulary.
-            </p>
-          </div>
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-[#0a192f] tracking-tight">
+            Public library
+          </h1>
+          <p className="text-xs text-slate-600 mt-1">
+            Browse decks shared by the community. Add any deck to your own Vocabulary.
+          </p>
         </div>
       </div>
 

@@ -173,8 +173,11 @@ export default function DeckStudyPage() {
               {deck.title}
             </h1>
             {deck.isPublic && (
-              <span className="text-[11px] px-2 py-0.5 rounded-lg bg-emerald-100 border border-emerald-200 font-bold inline-flex items-center gap-1 !text-black">
-                <Globe className="w-3 h-3 !text-black" /> Public
+              <span
+                className="text-[11px] px-2 py-0.5 rounded-lg font-bold inline-flex items-center gap-1 border border-white/70"
+                style={{ backgroundColor: '#ffffff', color: '#000000' }}
+              >
+                <Globe className="w-3 h-3" style={{ color: '#000000' }} /> Public
               </span>
             )}
           </div>
