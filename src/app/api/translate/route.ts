@@ -97,7 +97,7 @@ async function translateWithGemini(
 ): Promise<ContextualResult | null> {
   try {
     const model = new GoogleGenerativeAI(apiKey.trim()).getGenerativeModel({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-3.6-flash',
       generationConfig: {
         responseMimeType: 'application/json',
         temperature: 0.2,
