@@ -112,9 +112,11 @@ export function inferSemanticTags(
   const posKey = normalizePos(pos);
   const def = (definition || '').toLowerCase();
 
-  if (posKey === 'adj') tags.add('evaluation');
-  if (posKey === 'v') tags.add('action');
-  if (posKey === 'n') tags.add('abstract');
+  // Do NOT auto-tag every adjective as evaluation — that causes absurd cloze fills
+  // (e.g. "subsequent" matching an evaluation slot). Prefer definition cues.
+  if (posKey === 'adj' && /good|bad|better|worse|critical|crucial|essential|important|significant|effective|severe|minor|major|appropriate|suitable|useful|positive|negative|strong|weak/.test(def + ' ' + w)) {
+    tags.add('evaluation');
+  }
 
   const emotionWords =
     /anxio|delight|frustrat|angr|happ|sad|nervous|calm|excit|fear|worri|confiden|embarrass|proud|guilt|lonely|optim|pessim/;
@@ -133,7 +135,7 @@ export function inferSemanticTags(
   if (process.test(w) || process.test(def)) tags.add('process');
 
   const cognitive =
-    /analy[sz]|perceiv|assum|conclud|infer|reason|consider|evaluat|assess|judg|think|believ|recogn|realis|interpret/;
+    /analy[sz]|perceiv|assum|conclud|infer|reason|consider|evaluat|assess|judg|think|believ|recogn|realis|interpret|notic|spot\b|identify|recall|remember/;
   if (cognitive.test(w) || cognitive.test(def)) tags.add('cognitive');
 
   const quantity =
@@ -141,7 +143,7 @@ export function inferSemanticTags(
   if (quantity.test(w) || quantity.test(def)) tags.add('quantity');
 
   const time =
-    /temporar|prolong|eventual|immediat|gradual|sudden|permanent|brief|lasting|previous|current/;
+    /temporar|prolong|eventual|immediat|gradual|sudden|permanent|brief|lasting|previous|current|subsequent/;
   if (time.test(w) || time.test(def)) tags.add('time');
 
   const causeEffect =

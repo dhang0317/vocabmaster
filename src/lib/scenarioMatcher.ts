@@ -81,7 +81,6 @@ function assignWordsToSlots(
 ): Map<string, TaggedWord | null> {
   const assignment = new Map<string, TaggedWord | null>();
 
-  // Score every (slot, word) pair, assign best first (global greedy by score)
   type Cand = { slotId: string; tw: TaggedWord; score: number };
   const candidates: Cand[] = [];
 
@@ -138,7 +137,6 @@ function fillTemplate(
       contentZh = contentZh.replace(pattern, blankMarker);
       used.push(tw);
     } else {
-      // Readable soft fill — never the absurd literal "thing"
       const soft = SOFT_FILL[pos] || SOFT_FILL.other;
       content = content.replace(pattern, soft.en);
       contentZh = contentZh.replace(pattern, soft.zh);
@@ -204,7 +202,6 @@ export function buildScenarioStory(
   }
 
   const tagged = tagWords(words);
-  // Pull more candidates so we can pick the best semantic fit
   const templates = selectTemplates(level, words.length, 12);
   const pool = templates.length ? templates : SCENARIO_TEMPLATES.slice(0, 8);
 
@@ -241,7 +238,6 @@ export function buildScenarioStory(
         placedCount === best.placedCount &&
         fillRatio > best.fillRatio);
 
-    // Prefer candidates that meet the minimum fill ratio when any such exist
     const meetsMin = fillRatio >= MIN_FILL_RATIO && scoreSum > 0;
     const bestMeetsMin =
       best !== null && best.fillRatio >= MIN_FILL_RATIO && best.scoreSum > 0;
