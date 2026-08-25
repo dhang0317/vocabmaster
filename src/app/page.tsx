@@ -80,7 +80,7 @@ export default function HomePage() {
               style={{ color: '#ffffff' }}
             >
               <Plus className="w-5 h-5" />
-            <span>Create a vocabulary deck</span>
+              <span>Add words</span>
             </Link>
           </div>
         </div>
