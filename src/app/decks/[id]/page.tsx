@@ -103,7 +103,6 @@ export default function DeckStudyPage() {
 
   const masteredCount = deck.words.filter(w => w.isMastered).length;
 
-  // All tabs are glass; active uses darker glass tint
   const tabClass = (active: boolean) =>
     `flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold liquid-glass liquid-glass-hover ${
       active ? 'liquid-glass-active text-white' : 'text-[#0a192f]'
@@ -142,7 +141,7 @@ export default function DeckStudyPage() {
         <button
           onClick={handleDeleteDeck}
           title="Delete deck"
-          className="liquid-glass liquid-glass-hover text-slate-600 hover:text-red-600 p-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5"
+          className="liquid-glass liquid-glass-hover text-slate-600 hover:text-slate-800 p-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5"
         >
           <Trash2 className="w-4 h-4" />
           <span>Delete</span>
