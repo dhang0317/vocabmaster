@@ -69,9 +69,6 @@ function CardFace({
           </div>
         </div>
 
-        <p className="text-center text-[11px] text-slate-500 font-medium mt-auto">
-          點卡片翻面 · 左右滑動或點書頁換字
-        </p>
       </div>
     );
   }
@@ -142,8 +139,6 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
   }, [initialWords]);
 
   const currentWord = words[currentIndex] || null;
-  const prevWord = currentIndex > 0 ? words[currentIndex - 1] : null;
-  const nextWord = currentIndex < words.length - 1 ? words[currentIndex + 1] : null;
 
   const handleNext = useCallback(() => {
     if (navigating.current || currentIndex >= words.length - 1) return;
@@ -354,72 +349,18 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
         {/* Deep stack layers (decorative) */}
         <div
           aria-hidden
-          className="absolute inset-x-8 inset-y-4 rounded-3xl liquid-glass opacity-40"
-          style={{ transform: 'translateY(14px) scale(0.92)', zIndex: 0 }}
+          className="absolute inset-x-6 inset-y-4 rounded-3xl liquid-glass opacity-40"
+          style={{ transform: 'translateY(14px) scale(0.94)', zIndex: 0 }}
         />
         <div
           aria-hidden
-          className="absolute inset-x-5 inset-y-2 rounded-3xl liquid-glass opacity-55"
-          style={{ transform: 'translateY(8px) scale(0.96)', zIndex: 1 }}
+          className="absolute inset-x-3 inset-y-2 rounded-3xl liquid-glass opacity-55"
+          style={{ transform: 'translateY(8px) scale(0.97)', zIndex: 1 }}
         />
-
-        {/* Previous page (left peek) */}
-        {prevWord && (
-          <button
-            type="button"
-            onClick={handlePrev}
-            title="上一張"
-            className="absolute left-0 top-3 bottom-3 w-[22%] sm:w-[18%] rounded-2xl liquid-glass border border-white/40 shadow-md overflow-hidden group/prev transition hover:brightness-105"
-            style={{
-              zIndex: 2,
-              transform: 'perspective(900px) rotateY(18deg) translateX(-6%) scale(0.94)',
-              transformOrigin: 'right center',
-            }}
-          >
-            <div className="h-full w-full flex flex-col items-center justify-center px-2 bg-gradient-to-r from-white/10 to-transparent">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                Prev
-              </span>
-              <span className="text-sm sm:text-base font-black text-[#0a192f] truncate max-w-full">
-                {prevWord.word}
-              </span>
-              <span className="mt-2 text-[10px] text-slate-500 opacity-0 group-hover/prev:opacity-100 transition">
-                點擊上一張
-              </span>
-            </div>
-          </button>
-        )}
-
-        {/* Next page (right peek) */}
-        {nextWord && (
-          <button
-            type="button"
-            onClick={handleNext}
-            title="下一張"
-            className="absolute right-0 top-3 bottom-3 w-[22%] sm:w-[18%] rounded-2xl liquid-glass border border-white/40 shadow-md overflow-hidden group/next transition hover:brightness-105"
-            style={{
-              zIndex: 2,
-              transform: 'perspective(900px) rotateY(-18deg) translateX(6%) scale(0.94)',
-              transformOrigin: 'left center',
-            }}
-          >
-            <div className="h-full w-full flex flex-col items-center justify-center px-2 bg-gradient-to-l from-white/10 to-transparent">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                Next
-              </span>
-              <span className="text-sm sm:text-base font-black text-[#0a192f] truncate max-w-full">
-                {nextWord.word}
-              </span>
-              <span className="mt-2 text-[10px] text-slate-500 opacity-0 group-hover/next:opacity-100 transition">
-                點擊下一張
-              </span>
-            </div>
-          </button>
-        )}
 
         {/* Current card (center, flippable + swipeable) */}
         <div
-          className="absolute inset-x-[14%] sm:inset-x-[16%] top-0 bottom-0 perspective-1000 cursor-grab active:cursor-grabbing"
+          className="absolute inset-x-0 top-0 bottom-0 perspective-1000 cursor-grab active:cursor-grabbing"
           style={{
             zIndex: 5,
             transform: mainTransform,
