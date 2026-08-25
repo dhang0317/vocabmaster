@@ -125,7 +125,7 @@ export default function HomePage() {
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-black text-[#0a192f]">vocabulary</h2>
+            <h2 className="text-2xl font-black text-[#0a192f]">Vocabulary</h2>
             <p className="text-xs text-slate-600">Choose a deck to study flashcards, cloze exercises, or quizzes.</p>
           </div>
 
