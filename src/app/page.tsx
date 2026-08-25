@@ -125,7 +125,7 @@ export default function HomePage() {
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-black text-[#0a192f]">My vocabulary decks</h2>
+            <h2 className="text-2xl font-black text-[#0a192f]">vocabulary</h2>
             <p className="text-xs text-slate-600">Choose a deck to study flashcards, cloze exercises, or quizzes.</p>
           </div>
 
@@ -150,11 +150,8 @@ export default function HomePage() {
           </div>
         ) : filteredDecks.length === 0 ? (
           <div className="p-12 text-center rounded-3xl bg-white border-2 border-[#0a192f] space-y-4 shadow-sm">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-100 border-2 border-[#0a192f] flex items-center justify-center text-[#0a192f]">
-              <BookOpen className="w-6 h-6" />
-            </div>
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-[#0a192f]">No decks yet</h3>
+              <h3 className="text-lg font-bold text-[#0a192f]">No Voc</h3>
               <p className="text-xs text-slate-600 max-w-sm mx-auto">
                 Upload a word list below and generate your own flashcards and practice questions.
               </p>
