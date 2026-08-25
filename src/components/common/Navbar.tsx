@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import {
   LogIn,
@@ -19,9 +20,16 @@ export function Navbar() {
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
+  const [mounted, setMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const initial = (session?.user?.name || session?.user?.email || '?').charAt(0).toUpperCase();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -33,15 +41,37 @@ export function Navbar() {
     document.documentElement.setAttribute('data-theme', preferred);
   }, []);
 
+  // Position menu under the avatar (fixed, outside header stacking context)
+  useEffect(() => {
+    if (!menuOpen || !buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    setMenuPos({
+      top: rect.bottom + 8,
+      right: Math.max(8, window.innerWidth - rect.right),
+    });
+  }, [menuOpen]);
+
   useEffect(() => {
     if (!menuOpen) return;
     const onPointerDown = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
+      const target = e.target as Node;
+      if (
+        menuRef.current?.contains(target) ||
+        buttonRef.current?.contains(target)
+      ) {
+        return;
       }
+      setMenuOpen(false);
     };
+    const onResize = () => setMenuOpen(false);
     document.addEventListener('mousedown', onPointerDown);
-    return () => document.removeEventListener('mousedown', onPointerDown);
+    window.addEventListener('resize', onResize);
+    window.addEventListener('scroll', onResize, true);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('scroll', onResize, true);
+    };
   }, [menuOpen]);
 
   const toggleTheme = () => {
@@ -61,6 +91,89 @@ export function Navbar() {
     await signOut({ callbackUrl: '/' });
   };
 
+  const menu =
+    menuOpen && mounted
+      ? createPortal(
+          <div
+            ref={menuRef}
+            role="menu"
+            className="liquid-glass fixed z-[100] w-64 rounded-2xl py-2"
+            style={{ top: menuPos.top, right: menuPos.right }}
+          >
+            <div className="px-4 py-3 border-b border-black/10">
+              <p className="text-sm font-bold text-[#0a192f] truncate">
+                {session?.user?.name || 'User'}
+              </p>
+              <p className="text-[11px] text-slate-500 truncate">
+                {session?.user?.email}
+              </p>
+            </div>
+
+            <div className="py-1">
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setIsKeyModalOpen(true);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#0a192f] hover:bg-white/50 transition text-left"
+              >
+                <Key className="w-4 h-4 shrink-0" />
+                <span>API Key settings</span>
+              </button>
+
+              <button
+                type="button"
+                role="menuitem"
+                onClick={toggleTheme}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#0a192f] hover:bg-white/50 transition text-left"
+              >
+                {theme === 'light' ? (
+                  <Moon className="w-4 h-4 shrink-0" />
+                ) : (
+                  <Sun className="w-4 h-4 shrink-0" />
+                )}
+                <span>{theme === 'light' ? 'Dark mode' : 'Light mode'}</span>
+              </button>
+
+              <Link
+                href="/feedback"
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#0a192f] hover:bg-white/50 transition text-left"
+              >
+                <MessageSquare className="w-4 h-4 shrink-0" />
+                <span>Feedback</span>
+              </Link>
+
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handleSwitchAccount}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#0a192f] hover:bg-white/50 transition text-left"
+              >
+                <RefreshCw className="w-4 h-4 shrink-0" />
+                <span>Switch account</span>
+              </button>
+            </div>
+
+            <div className="border-t border-black/10 pt-1">
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50/60 transition text-left"
+              >
+                <LogOut className="w-4 h-4 shrink-0" />
+                <span>Log out</span>
+              </button>
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
+
   return (
     <>
       <header className="sticky top-0 z-40 w-full border-b border-black/10 bg-white/95 backdrop-blur-md shadow-sm nav-header">
@@ -71,8 +184,9 @@ export function Navbar() {
 
           <nav className="flex items-center gap-2 sm:gap-3">
             {status === 'authenticated' ? (
-              <div className="relative" ref={menuRef}>
+              <div className="relative">
                 <button
+                  ref={buttonRef}
                   type="button"
                   onClick={() => setMenuOpen((v) => !v)}
                   className="rounded-full border border-black/20 hover:border-black/50 transition bg-white p-0.5"
@@ -93,83 +207,6 @@ export function Navbar() {
                     </span>
                   )}
                 </button>
-
-                {menuOpen && (
-                  <div
-                    role="menu"
-                    className="liquid-glass absolute right-0 mt-2 w-64 rounded-2xl py-2 z-50 overflow-hidden"
-                  >
-                    <div className="px-4 py-3 border-b border-black/10">
-                      <p className="text-sm font-bold text-[#0a192f] truncate">
-                        {session.user?.name || 'User'}
-                      </p>
-                      <p className="text-[11px] text-slate-500 truncate">
-                        {session.user?.email}
-                      </p>
-                    </div>
-
-                    <div className="py-1">
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={() => {
-                          setMenuOpen(false);
-                          setIsKeyModalOpen(true);
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#0a192f] hover:bg-white/40 transition text-left"
-                      >
-                        <Key className="w-4 h-4 shrink-0" />
-                        <span>API Key settings</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={toggleTheme}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#0a192f] hover:bg-white/40 transition text-left"
-                      >
-                        {theme === 'light' ? (
-                          <Moon className="w-4 h-4 shrink-0" />
-                        ) : (
-                          <Sun className="w-4 h-4 shrink-0" />
-                        )}
-                        <span>{theme === 'light' ? 'Dark mode' : 'Light mode'}</span>
-                      </button>
-
-                      <Link
-                        href="/feedback"
-                        role="menuitem"
-                        onClick={() => setMenuOpen(false)}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#0a192f] hover:bg-white/40 transition text-left"
-                      >
-                        <MessageSquare className="w-4 h-4 shrink-0" />
-                        <span>Feedback</span>
-                      </Link>
-
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={handleSwitchAccount}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#0a192f] hover:bg-white/40 transition text-left"
-                      >
-                        <RefreshCw className="w-4 h-4 shrink-0" />
-                        <span>Switch account</span>
-                      </button>
-                    </div>
-
-                    <div className="border-t border-black/10 pt-1">
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50/50 transition text-left"
-                      >
-                        <LogOut className="w-4 h-4 shrink-0" />
-                        <span>Log out</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
             ) : status === 'loading' ? (
               <div className="w-8 h-8 rounded-full bg-slate-200 animate-pulse" />
@@ -185,6 +222,7 @@ export function Navbar() {
           </nav>
         </div>
       </header>
+      {menu}
       <ApiKeyModal isOpen={isKeyModalOpen} onClose={() => setIsKeyModalOpen(false)} />
     </>
   );
