@@ -5,6 +5,8 @@ import {
   GlossaryEntry,
   GenerationLevel,
 } from '@/types';
+import { buildScenarioStory } from './scenarioMatcher';
+import { normalizePos } from './semanticTags';
 
 function shuffle<T>(items: T[]): T[] {
   const result = [...items];
@@ -13,15 +15,6 @@ function shuffle<T>(items: T[]): T[] {
     [result[i], result[j]] = [result[j], result[i]];
   }
   return result;
-}
-
-function normalizePos(pos?: string): 'n' | 'v' | 'adj' | 'adv' | 'other' {
-  const p = (pos || '').toLowerCase();
-  if (/^n\b|noun|n\./.test(p)) return 'n';
-  if (/^v\b|verb|v\./.test(p)) return 'v';
-  if (/adj|a\./.test(p)) return 'adj';
-  if (/adv/.test(p)) return 'adv';
-  return 'other';
 }
 
 function zhOf(w: GeneratedWord): string {
@@ -116,80 +109,6 @@ const FRAMES: Record<'n' | 'v' | 'adj' | 'adv' | 'other', Frame[]> = {
     },
   ],
 };
-
-const OPENERS: Record<GenerationLevel, { en: string; zh: string; title: string }[]> = {
-  elementary: [
-    {
-      title: 'A Day at School',
-      en: 'It was an ordinary morning at school, and something interesting happened.',
-      zh: '那是普通的一天早晨，學校裡發生了一件有趣的事。',
-    },
-    {
-      title: 'Friends and New Words',
-      en: 'Two friends talked about what they learned after class.',
-      zh: '兩個朋友下課後聊起他們學到的內容。',
-    },
-  ],
-  highschool: [
-    {
-      title: 'A Lesson Beyond the Textbook',
-      en: 'During a project week, students faced a problem that textbooks did not fully explain.',
-      zh: '專題週期間，學生遇到課本沒有完整說明的問題。',
-    },
-    {
-      title: 'News from the Campus',
-      en: 'A short campus news story captured several useful ideas.',
-      zh: '一則簡短的校園新聞涵蓋了幾個實用概念。',
-    },
-  ],
-  toeic: [
-    {
-      title: 'A Busy Week at the Office',
-      en: 'In a busy office, the team had to finish an important client request.',
-      zh: '在忙碌的辦公室裡，團隊必須完成一項重要的客戶需求。',
-    },
-    {
-      title: 'Meeting Notes',
-      en: 'After the weekly meeting, the manager summarized the key points.',
-      zh: '每週會議結束後，經理整理了重點。',
-    },
-  ],
-  toefl_ielts: [
-    {
-      title: 'An Academic Discussion',
-      en: 'In a seminar, researchers compared different ways to understand the same issue.',
-      zh: '在研討會上，研究人員比較了理解同一問題的不同方式。',
-    },
-    {
-      title: 'Reading for the Exam',
-      en: 'The practice passage introduced ideas that often appear in academic English.',
-      zh: '練習文章介紹了學術英語中常見的概念。',
-    },
-  ],
-  advanced: [
-    {
-      title: 'Beyond Simple Definitions',
-      en: 'The case study showed how precise language changes decisions in complex settings.',
-      zh: '這則個案顯示，在複雜情境中精確用字如何改變決策。',
-    },
-    {
-      title: 'A Critical Review',
-      en: 'The review examined several claims and tested them against recent evidence.',
-      zh: '這篇評論檢視了若干主張，並以近期證據加以檢驗。',
-    },
-  ],
-};
-
-const CLOSERS = [
-  {
-    en: 'In the end, clear language helped everyone take the next step with confidence.',
-    zh: '最後，清楚的表達讓大家更有信心踏出下一步。',
-  },
-  {
-    en: 'These details may look small, but together they change the whole outcome.',
-    zh: '這些細節看似微小，合在一起卻會改變整體結果。',
-  },
-];
 
 const DISTRACTOR_POOL: Record<'n' | 'v' | 'adj' | 'adv' | 'other', string[]> = {
   n: ['strategy', 'resource', 'challenge', 'outcome', 'process', 'demand', 'benefit', 'risk', 'policy', 'budget'],
@@ -319,76 +238,90 @@ function pickDistractors(w: GeneratedWord, all: GeneratedWord[]): string[] {
   return unique.slice(0, 3);
 }
 
-export function buildOfflineStory(
-  words: GeneratedWord[],
-  level: GenerationLevel = 'highschool'
-): { content: string; contentZh: string; title: string; glossaryExtra: GlossaryEntry[] } {
-  const openers = OPENERS[level] || OPENERS.highschool;
-  const opener = openers[Math.floor(Math.random() * openers.length)];
-  const closer = CLOSERS[Math.floor(Math.random() * CLOSERS.length)];
+/** Append leftover words using classic POS frames so no word is dropped */
+function appendLeftoverFrames(
+  leftovers: GeneratedWord[],
+  startBlankId: number
+): { en: string; zh: string; blanks: ClozeBlank[]; glossary: GlossaryEntry[] } {
+  if (leftovers.length === 0) {
+    return { en: '', zh: '', blanks: [], glossary: [] };
+  }
 
-  const enParts: string[] = [opener.en];
-  const zhParts: string[] = [opener.zh];
-  const glossaryExtra: GlossaryEntry[] = [];
+  const enParts: string[] = [];
+  const zhParts: string[] = [];
+  const blanks: ClozeBlank[] = [];
+  const glossary: GlossaryEntry[] = [];
 
-  words.forEach((w, i) => {
-    const blank = `[blank_${i + 1}]`;
+  leftovers.forEach((w, i) => {
+    const blankId = startBlankId + i;
+    const blank = `[blank_${blankId}]`;
     const zh = zhOf(w);
     const pos = normalizePos(w.pos);
-
-    if (w.example && w.example.trim().length > 8) {
-      const re = new RegExp(`\\b${escapeRegExp(w.word)}\\b`, 'i');
-      if (re.test(w.example)) {
-        enParts.push(w.example.replace(re, blank));
-        zhParts.push(
-          w.exampleZh && w.exampleZh.trim()
-            ? w.exampleZh.trim()
-            : `（例句）與「${zh}」相關的用法。`
-        );
-        glossaryExtra.push({ en: w.word, zh, sense: '來自你提供的例句' });
-        return;
-      }
-    }
-
     const pool = FRAMES[pos];
     const frame = pool[i % pool.length];
     enParts.push(frame.en(blank, w.word, zh));
     zhParts.push(frame.zh(w.word, zh));
-    glossaryExtra.push({ en: w.word, zh, sense: `詞性 ${w.pos || pos}` });
+
+    const unique = pickDistractors(w, leftovers);
+    blanks.push({
+      id: blankId,
+      word: w.word,
+      hint: `${zh} (${w.pos || pos})`,
+      options: shuffle([w.word, unique[0], unique[1], unique[2]]),
+    });
+    glossary.push({ en: w.word, zh, sense: `詞性 ${w.pos || pos}` });
   });
 
-  enParts.push(closer.en);
-  zhParts.push(closer.zh);
+  return {
+    en: ' ' + enParts.join(' '),
+    zh: zhParts.join(''),
+    blanks,
+    glossary,
+  };
+}
 
-  glossaryExtra.push(
+/**
+ * Primary offline story builder: scenario templates + semantic matching,
+ * with POS-frame fallback for words that did not fit the chosen template.
+ */
+export function buildOfflineStory(
+  words: GeneratedWord[],
+  level: GenerationLevel = 'highschool'
+): { content: string; contentZh: string; title: string; glossaryExtra: GlossaryEntry[] } {
+  const scenario = buildScenarioStory(words, level);
+  const leftover = appendLeftoverFrames(scenario.leftoverWords, scenario.blanks.length + 1);
+
+  const content = (scenario.content + leftover.en).trim();
+  const contentZh = (scenario.contentZh + leftover.zh).trim();
+
+  const glossaryExtra: GlossaryEntry[] = [
+    ...scenario.glossaryExtra,
+    ...leftover.glossary,
     { en: 'importance', zh: '重要性' },
     { en: 'situation', zh: '情境' },
     { en: 'project', zh: '專案' },
     { en: 'policy', zh: '政策' },
     { en: 'strategy', zh: '策略' },
     { en: 'outcome', zh: '結果' },
-    { en: 'confidence', zh: '信心' }
-  );
+    { en: 'confidence', zh: '信心' },
+  ];
 
   return {
-    title: opener.title,
-    content: enParts.join(' '),
-    contentZh: zhParts.join(''),
+    title: scenario.title,
+    content,
+    contentZh,
     glossaryExtra,
   };
 }
 
-export function buildOfflineBlanks(words: GeneratedWord[]): ClozeBlank[] {
-  return words.map((w, idx) => {
-    const pos = normalizePos(w.pos);
-    const unique = pickDistractors(w, words);
-    return {
-      id: idx + 1,
-      word: w.word,
-      hint: `${zhOf(w)} (${w.pos || pos})`,
-      options: shuffle([w.word, unique[0], unique[1], unique[2]]),
-    };
-  });
+/**
+ * Build blanks aligned with the scenario story (same order as [blank_n] markers).
+ * Must be called with the same words/level as buildOfflineStory for consistency.
+ */
+export function buildOfflineBlanks(words: GeneratedWord[], level: GenerationLevel = 'highschool'): ClozeBlank[] {
+  const scenario = buildScenarioStory(words, level);
+  const leftover = appendLeftoverFrames(scenario.leftoverWords, scenario.blanks.length + 1);
+  return [...scenario.blanks, ...leftover.blanks];
 }
 
 type QuizKind = 'cloze' | 'example' | 'definition';
@@ -438,7 +371,6 @@ function buildOneQuiz(
   }
 
   if (!question && kind === 'definition' && w.definition && w.definition.trim().length > 5) {
-    // Prefer embedding definition into a cloze-style prompt, not "match this meaning"
     question = `Based on this definition — "${w.definition.trim()}" — choose the word that best completes a related sentence: _____.`;
     questionZh = `根據定義「${w.definition.trim()}」，選出最合適的單字填入空格。`;
   }
