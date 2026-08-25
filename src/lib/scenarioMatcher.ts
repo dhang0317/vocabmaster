@@ -48,7 +48,7 @@ function tagWords(words: GeneratedWord[]): TaggedWord[] {
   return words.map(w => ({
     word: w,
     pos: normalizePos(w.pos),
-    tags: inferSemanticTags(w.word, w.pos, w.definition),
+    tags: inferSemanticTags(w.word, w.pos, w.definition, w.semanticTags),
     used: false,
   }));
 }
@@ -74,12 +74,10 @@ function assignWordsToSlots(
       }
     }
 
-    // Accept even weak matches if score >= 0 (POS ok). score -1 = hard POS reject.
     if (best && bestScore >= 0) {
       best.used = true;
       assignment.set(slot.id, best);
     } else {
-      // Last resort: any unused word
       const fallback = available.find(t => !t.used);
       if (fallback) {
         fallback.used = true;
@@ -101,7 +99,6 @@ function fillTemplate(
   let contentZh = template.contentZh;
   const used: TaggedWord[] = [];
 
-  // Sort slot ids so we replace in a stable order; use blank markers
   const slotIds = template.slots.map(s => s.id);
 
   slotIds.forEach((slotId, index) => {
@@ -111,11 +108,9 @@ function fillTemplate(
 
     if (tw) {
       content = content.replace(pattern, blankMarker);
-      // In Chinese, keep the blank marker too (UI shows word bank / options)
       contentZh = contentZh.replace(pattern, blankMarker);
       used.push(tw);
     } else {
-      // No word — remove placeholder awkwardly; better leave a generic word
       content = content.replace(pattern, 'thing');
       contentZh = contentZh.replace(pattern, '事物');
     }
@@ -157,17 +152,11 @@ export interface ScenarioStoryResult {
   contentZh: string;
   blanks: ClozeBlank[];
   glossaryExtra: GlossaryEntry[];
-  /** Words that were successfully placed into slots (order = blank order) */
   placedWords: GeneratedWord[];
-  /** Words that could not fit this template (caller may append with legacy frames) */
   leftoverWords: GeneratedWord[];
   templateId: string;
 }
 
-/**
- * Build one cloze article by selecting a scenario template and filling slots
- * with the best-matching words from the user's list.
- */
 export function buildScenarioStory(
   words: GeneratedWord[],
   level: GenerationLevel = 'highschool'
@@ -188,7 +177,6 @@ export function buildScenarioStory(
   const tagged = tagWords(words);
   const templates = selectTemplates(level, words.length, 5);
 
-  // Try each candidate template; pick the one that places the most words with best avg score
   let best: {
     template: ScenarioTemplate;
     assignment: Map<string, TaggedWord | null>;
@@ -197,7 +185,6 @@ export function buildScenarioStory(
   } | null = null;
 
   for (const template of templates.length ? templates : SCENARIO_TEMPLATES.slice(0, 3)) {
-    // Reset used flags
     tagged.forEach(t => {
       t.used = false;
     });
@@ -220,7 +207,6 @@ export function buildScenarioStory(
     }
   }
 
-  // Re-run assignment on the winning template with fresh flags
   tagged.forEach(t => {
     t.used = false;
   });
