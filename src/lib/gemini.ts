@@ -9,6 +9,7 @@ import {
   ClozeBlank,
 } from '@/types';
 import { buildOfflineArticle, buildOfflineQuizzes } from '@/lib/offlineTemplates';
+import { inferSemanticTags } from '@/lib/semanticTags';
 
 interface GenerationResponse {
   words: GeneratedWord[];
@@ -319,6 +320,10 @@ function generateOfflineFallback(
 ): GenerationResponse {
   const words: GeneratedWord[] = rawWords.map(w => {
     const cleanWord = w.word.trim();
+    const tags =
+      w.semanticTags && w.semanticTags.length > 0
+        ? w.semanticTags
+        : inferSemanticTags(cleanWord, w.pos, w.definition, w.semanticTags);
     return {
       word: cleanWord,
       phonetic: w.phonetic || `/${cleanWord.toLowerCase()}/`,
@@ -328,10 +333,10 @@ function generateOfflineFallback(
       example: w.example || '',
       exampleZh: w.exampleZh || '',
       isMastered: false,
+      semanticTags: tags,
     };
   });
 
-  // Single call: scenario template + semantic match + leftover frames
   const offline = buildOfflineArticle(words, level);
   const quizzes = buildOfflineQuizzes(words, level);
 
