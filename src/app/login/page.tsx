@@ -21,7 +21,6 @@ function LoginContent() {
   const { status } = useSession();
   const callbackUrl = params.get('callbackUrl') || '/';
 
-  // Already signed in → go home (or original destination)
   useEffect(() => {
     if (status === 'authenticated') {
       router.replace(callbackUrl);
@@ -31,7 +30,7 @@ function LoginContent() {
   if (status === 'loading' || status === 'authenticated') {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <p className="text-sm text-slate-500">載入中…</p>
+        <p className="text-sm text-slate-500">Loading…</p>
       </div>
     );
   }
@@ -40,8 +39,10 @@ function LoginContent() {
     <div className="min-h-[60vh] flex items-center justify-center">
       <div className="w-full max-w-sm rounded-3xl bg-white border-2 border-[#0a192f] p-8 space-y-6 shadow-sm text-center">
         <div className="space-y-2">
-          <h1 className="text-2xl font-black text-[#0a192f]">登入 Vocabulum</h1>
-          <p className="text-xs text-slate-600">使用 Google 帳號登入，你的牌組與學習進度會儲存在你的帳號中。</p>
+          <h1 className="text-2xl font-black text-[#0a192f]">Sign in to Vocabulum</h1>
+          <p className="text-xs text-slate-600">
+            Sign in with Google to save your decks and learning progress to your account.
+          </p>
         </div>
 
         <button
@@ -49,10 +50,12 @@ function LoginContent() {
           className="w-full inline-flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-[#0a192f] font-bold text-sm transition border-2 border-[#0a192f] shadow-sm"
         >
           <GoogleIcon />
-          <span>使用 Google 登入</span>
+          <span>Continue with Google</span>
         </button>
 
-        <p className="text-[11px] text-slate-400">登入即代表你同意我們將單字牌組儲存至你的帳號。</p>
+        <p className="text-[11px] text-slate-400">
+          By signing in, you agree that your vocabulary decks will be stored in your account.
+        </p>
       </div>
     </div>
   );
