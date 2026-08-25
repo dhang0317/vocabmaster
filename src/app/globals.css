@@ -332,6 +332,7 @@ body select[class*="border-[#0a192f]"]:focus {
   color: #ffffff !important;
   border-color: rgba(255, 255, 255, 0.2) !important;
   caret-color: #ffffff;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 .word-import-panel input:hover,
@@ -341,17 +342,71 @@ body select[class*="border-[#0a192f]"]:focus {
   background-color: #0f172a !important;
   color: #ffffff !important;
   border-color: rgba(255, 255, 255, 0.45) !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 .word-import-panel input::placeholder,
 .word-import-panel textarea::placeholder {
   color: rgba(255, 255, 255, 0.4) !important;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.4) !important;
 }
 
 /* Light buttons inside dark panel keep dark text */
 .word-import-panel button.bg-white,
 .word-import-panel button[class*="bg-white"] {
   color: #0a192f !important;
+  -webkit-text-fill-color: #0a192f !important;
+}
+
+/* Upload dropzone / light surfaces under "Upload words": always white bg + dark text */
+.upload-surface {
+  background-color: #ffffff !important;
+  color: #0a192f !important;
+  border-color: #0a192f !important;
+  -webkit-text-fill-color: #0a192f !important;
+}
+
+.upload-surface * {
+  color: #0a192f !important;
+  -webkit-text-fill-color: #0a192f !important;
+}
+
+.upload-surface input,
+.upload-surface textarea {
+  background-color: #ffffff !important;
+  color: #0a192f !important;
+  -webkit-text-fill-color: #0a192f !important;
+  caret-color: #0a192f !important;
+}
+
+.upload-surface input::placeholder,
+.upload-surface textarea::placeholder {
+  color: rgba(10, 25, 47, 0.4) !important;
+  -webkit-text-fill-color: rgba(10, 25, 47, 0.4) !important;
+}
+
+.upload-btn-light {
+  background-color: #ffffff !important;
+  color: #0a192f !important;
+  border-color: #0a192f !important;
+  -webkit-text-fill-color: #0a192f !important;
+}
+
+.upload-btn-light * {
+  color: #0a192f !important;
+  -webkit-text-fill-color: #0a192f !important;
+}
+
+.upload-btn-dark {
+  background-color: #0a192f !important;
+  color: #ffffff !important;
+  border-color: #0a192f !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.upload-btn-dark * {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 .perspective-1000 {
