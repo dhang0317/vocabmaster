@@ -1,13 +1,22 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
-import { BookOpen, Check, HelpCircle, Eye, EyeOff, Award } from 'lucide-react';
+import { BookOpen, Check, HelpCircle, Eye, EyeOff, Award, Languages, X, Loader2 } from 'lucide-react';
 import { GeneratedCloze, GeneratedWord } from '@/types';
 
 interface ClozeExerciseProps {
   article: GeneratedCloze;
   words: GeneratedWord[];
+}
+
+interface TranslatePopup {
+  text: string;
+  translated: string | null;
+  loading: boolean;
+  error: string | null;
+  x: number;
+  y: number;
 }
 
 export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseProps) {
@@ -19,6 +28,11 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
   const [isChecked, setIsChecked] = useState(false);
   const [score, setScore] = useState<{ correct: number; total: number } | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [popup, setPopup] = useState<TranslatePopup | null>(null);
+
+  const articleRef = useRef<HTMLDivElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const translateAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     setUserAnswers({});
@@ -27,7 +41,149 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
     setShowChinese(false);
     setIsChecked(false);
     setScore(null);
+    setPopup(null);
   }, [article]);
+
+  const closePopup = useCallback(() => {
+    if (translateAbortRef.current) {
+      translateAbortRef.current.abort();
+      translateAbortRef.current = null;
+    }
+    setPopup(null);
+  }, []);
+
+  // Close popup on outside click or Escape
+  useEffect(() => {
+    if (!popup) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closePopup();
+    };
+
+    const onMouseDown = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        popupRef.current &&
+        !popupRef.current.contains(target) &&
+        articleRef.current &&
+        !articleRef.current.contains(target)
+      ) {
+        closePopup();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('mousedown', onMouseDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('mousedown', onMouseDown);
+    };
+  }, [popup, closePopup]);
+
+  const fetchTranslation = useCallback(async (text: string, x: number, y: number) => {
+    if (translateAbortRef.current) {
+      translateAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    translateAbortRef.current = controller;
+
+    setPopup({
+      text,
+      translated: null,
+      loading: true,
+      error: null,
+      x,
+      y,
+    });
+
+    try {
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, target: 'zh-TW' }),
+        signal: controller.signal,
+      });
+      const data = await res.json();
+
+      if (controller.signal.aborted) return;
+
+      if (!res.ok || !data.success) {
+        setPopup(prev =>
+          prev
+            ? {
+                ...prev,
+                loading: false,
+                error: data.error || '翻譯失敗',
+              }
+            : null
+        );
+        return;
+      }
+
+      setPopup(prev =>
+        prev
+          ? {
+              ...prev,
+              loading: false,
+              translated: data.translated,
+              error: null,
+            }
+          : null
+      );
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      setPopup(prev =>
+        prev
+          ? {
+              ...prev,
+              loading: false,
+              error: err instanceof Error ? err.message : '翻譯失敗',
+            }
+          : null
+      );
+    } finally {
+      if (translateAbortRef.current === controller) {
+        translateAbortRef.current = null;
+      }
+    }
+  }, []);
+
+  const handleArticleMouseUp = useCallback(() => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || !articleRef.current) {
+      return;
+    }
+
+    const text = selection.toString().trim();
+    // Ignore empty / pure whitespace / very long selections
+    if (!text || text.length < 1 || text.length > 200) {
+      return;
+    }
+
+    // Ensure selection is inside the article content area
+    const anchorNode = selection.anchorNode;
+    if (!anchorNode || !articleRef.current.contains(anchorNode)) {
+      return;
+    }
+
+    // Don't trigger when selecting inside an input (blank field)
+    const anchorEl =
+      anchorNode.nodeType === Node.ELEMENT_NODE
+        ? (anchorNode as Element)
+        : anchorNode.parentElement;
+    if (anchorEl?.closest('input, button, textarea')) {
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+
+    // Position popup above the selection, centered
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + window.scrollY;
+
+    fetchTranslation(text, x, y);
+  }, [fetchTranslation]);
 
   const handleSelectWordFromBank = (word: string) => {
     if (activeBlankId === null) return;
@@ -192,6 +348,7 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
           </h3>
           <p className="text-xs text-slate-600">
             Choose or type the correct word from the word bank for each blank.
+            <span className="ml-1 text-slate-500">· 反白文章單字可查中文翻譯</span>
           </p>
         </div>
 
@@ -267,8 +424,12 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
         </div>
       )}
 
-      <div className="liquid-glass p-6 sm:p-8 rounded-3xl space-y-6">
-        <div className="text-[#0a192f] text-base sm:text-lg leading-loose font-normal">
+      <div className="liquid-glass p-6 sm:p-8 rounded-3xl space-y-6 relative">
+        <div
+          ref={articleRef}
+          onMouseUp={handleArticleMouseUp}
+          className="text-[#0a192f] text-base sm:text-lg leading-loose font-normal select-text cursor-text"
+        >
           {renderStoryWithBlanks()}
         </div>
 
@@ -293,6 +454,62 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
             <Check className="w-4 h-4" />
             <span>Check answers and score</span>
           </button>
+        </div>
+      )}
+
+      {/* Floating translation popup */}
+      {popup && (
+        <div
+          ref={popupRef}
+          className="fixed z-50 pointer-events-auto"
+          style={{
+            left: Math.min(Math.max(popup.x, 120), typeof window !== 'undefined' ? window.innerWidth - 120 : popup.x),
+            top: Math.max(popup.y - 8, 12),
+            transform: 'translate(-50%, -100%)',
+          }}
+        >
+          <div className="liquid-glass liquid-glass-menu rounded-2xl shadow-xl border border-white/50 min-w-[160px] max-w-[280px] px-3.5 py-3 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-start justify-between gap-2 mb-1.5">
+              <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                <Languages className="w-3 h-3" />
+                <span>Google 翻譯</span>
+              </div>
+              <button
+                type="button"
+                onClick={closePopup}
+                className="p-0.5 rounded-lg text-slate-400 hover:text-[#0a192f] hover:bg-white/40 transition"
+                title="關閉"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <p className="text-xs font-bold text-[#0a192f] break-words leading-snug mb-1">
+              {popup.text}
+            </p>
+
+            {popup.loading && (
+              <div className="flex items-center gap-1.5 text-xs text-slate-500 py-1">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>翻譯中…</span>
+              </div>
+            )}
+
+            {popup.error && (
+              <p className="text-xs text-red-600 font-medium py-0.5">{popup.error}</p>
+            )}
+
+            {popup.translated && !popup.loading && (
+              <p className="text-sm font-bold text-[#0a192f] font-cjk leading-relaxed border-t border-black/8 pt-1.5 mt-0.5">
+                {popup.translated}
+              </p>
+            )}
+          </div>
+          {/* small arrow */}
+          <div
+            className="mx-auto w-2.5 h-2.5 rotate-45 -mt-1.5 bg-white/40 border-r border-b border-white/50"
+            style={{ backdropFilter: 'blur(8px)' }}
+          />
         </div>
       )}
     </div>
