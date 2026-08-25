@@ -1,8 +1,8 @@
 'use client';
 
-import { signIn } from 'next-auth/react';
-import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { signIn, useSession } from 'next-auth/react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Suspense, useEffect } from 'react';
 
 function GoogleIcon() {
   return (
@@ -17,7 +17,24 @@ function GoogleIcon() {
 
 function LoginContent() {
   const params = useSearchParams();
+  const router = useRouter();
+  const { status } = useSession();
   const callbackUrl = params.get('callbackUrl') || '/';
+
+  // Already signed in → go home (or original destination)
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.replace(callbackUrl);
+    }
+  }, [status, callbackUrl, router]);
+
+  if (status === 'loading' || status === 'authenticated') {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <p className="text-sm text-slate-500">載入中…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center">
