@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Layers, BookOpen, Pencil, ArrowLeft, CheckCircle2, Volume2, RefreshCw, Trash2, List } from 'lucide-react';
+import { Layers, BookOpen, Pencil, ArrowLeft, CheckCircle2, Volume2, RefreshCw, Trash2, List, Globe } from 'lucide-react';
 import { FlashcardPlayer } from '@/components/flashcard/FlashcardPlayer';
 import { ClozeExercise } from '@/components/cloze/ClozeExercise';
 import { QuizRunner } from '@/components/quiz/QuizRunner';
@@ -20,6 +20,7 @@ export default function DeckStudyPage() {
   const [activeTab, setActiveTab] = useState<StudyTab>('flashcards');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
 
   const fetchDeck = async () => {
     try {
@@ -68,6 +69,38 @@ export default function DeckStudyPage() {
       const utterance = new SpeechSynthesisUtterance(word);
       utterance.lang = 'en-US';
       window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  const handleTogglePublic = async () => {
+    if (!deck) return;
+    const next = !deck.isPublic;
+    setPublishing(true);
+    try {
+      const res = await fetch(`/api/decks/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPublic: next }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setDeck(prev =>
+          prev
+            ? {
+                ...prev,
+                isPublic: data.deck.isPublic,
+                publishedAt: data.deck.publishedAt,
+              }
+            : null
+        );
+      } else {
+        alert(data.error || 'Failed to update sharing');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to update sharing');
+    } finally {
+      setPublishing(false);
     }
   };
 
@@ -123,6 +156,11 @@ export default function DeckStudyPage() {
             <h1 className="text-2xl sm:text-3xl font-black text-[#0a192f] tracking-tight">
               {deck.title}
             </h1>
+            {deck.isPublic && (
+              <span className="text-[11px] px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold inline-flex items-center gap-1">
+                <Globe className="w-3 h-3" /> Public
+              </span>
+            )}
           </div>
 
           {deck.description && (
@@ -138,14 +176,29 @@ export default function DeckStudyPage() {
           </div>
         </div>
 
-        <button
-          onClick={handleDeleteDeck}
-          title="Delete deck"
-          className="liquid-glass liquid-glass-hover text-slate-600 hover:text-slate-800 p-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5"
-        >
-          <Trash2 className="w-4 h-4" />
-          <span>Delete</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={handleTogglePublic}
+            disabled={publishing}
+            title={deck.isPublic ? 'Remove from public library' : 'Share to public library'}
+            className={`liquid-glass liquid-glass-hover p-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 ${
+              deck.isPublic ? 'text-emerald-800' : 'text-slate-600'
+            }`}
+          >
+            <Globe className="w-4 h-4" />
+            <span>{publishing ? '…' : deck.isPublic ? 'Public' : 'Share'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleDeleteDeck}
+            title="Delete deck"
+            className="liquid-glass liquid-glass-hover text-slate-600 hover:text-slate-800 p-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5"
+          >
+            <Trash2 className="w-4 h-4" />
+            <span>Delete</span>
+          </button>
+        </div>
       </div>
 
       <div className="no-print flex flex-wrap items-center gap-2 border-b border-black/10 pb-4">
