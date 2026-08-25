@@ -105,7 +105,6 @@
       inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
   }
 
-  /* White surface + black text — wins over dark-mode white text */
   .chip-light,
   .chip-light * {
     background-color: #ffffff !important;
@@ -238,7 +237,6 @@ body select[class*="border-[#0a192f]"]:focus {
   border-color: rgba(0, 0, 0, 0.45) !important;
 }
 
-/* ========== Dark mode: pure white text ========== */
 [data-theme="dark"] body {
   background: var(--background);
   color: #ffffff;
@@ -274,7 +272,6 @@ body select[class*="border-[#0a192f]"]:focus {
   border-color: rgba(255, 255, 255, 0.35) !important;
 }
 
-/* Override common gray/navy utility classes → pure white */
 [data-theme="dark"] [class*="text-[#0a192f]"],
 [data-theme="dark"] [class*="text-[#1e3a8a]"],
 [data-theme="dark"] .text-slate-900,
@@ -300,7 +297,6 @@ body select[class*="border-[#0a192f]"]:focus {
   color: #ffffff !important;
 }
 
-/* Light chips / Public button: force black text on white */
 [data-theme="dark"] .chip-light,
 [data-theme="dark"] .chip-light *,
 [data-theme="dark"] [class*="bg-white/90"],
@@ -316,96 +312,46 @@ body select[class*="border-[#0a192f]"]:focus {
   background-color: rgba(255, 255, 255, 0.92) !important;
 }
 
-/*
- * Word import panel: always light card + black text.
- * Prevents dark-mode global rules from turning inputs into white-on-white.
- */
-.word-import-panel,
-.word-import-panel .bg-white,
-.word-import-panel .bg-slate-50,
-.word-import-panel .bg-slate-100 {
-  background-color: #ffffff !important;
-}
-
-.word-import-panel .bg-slate-100 {
-  background-color: #f1f5f9 !important;
-}
-
-.word-import-panel:hover,
-.word-import-panel .hover\:bg-slate-50:hover {
-  background-color: #f8fafc !important;
+/* Word import panel: navy background + white text */
+.word-import-panel {
+  background-color: #0a192f !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
 .word-import-panel,
 .word-import-panel span,
 .word-import-panel label,
 .word-import-panel p,
-.word-import-panel .text-black,
-.word-import-panel .text-slate-600,
-.word-import-panel .text-slate-500 {
-  color: #0a192f !important;
+.word-import-panel .text-white {
+  color: #ffffff !important;
 }
 
 .word-import-panel input,
 .word-import-panel textarea {
-  background-color: #ffffff !important;
-  color: #0a192f !important;
-  border-color: rgba(0, 0, 0, 0.25) !important;
-  caret-color: #0a192f;
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  caret-color: #ffffff;
 }
 
 .word-import-panel input:hover,
 .word-import-panel input:focus,
 .word-import-panel textarea:hover,
 .word-import-panel textarea:focus {
-  background-color: #ffffff !important;
-  color: #0a192f !important;
-  border-color: rgba(0, 0, 0, 0.45) !important;
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.45) !important;
 }
 
 .word-import-panel input::placeholder,
 .word-import-panel textarea::placeholder {
-  color: #94a3b8 !important;
+  color: rgba(255, 255, 255, 0.4) !important;
 }
 
-/* Navy buttons inside the panel keep white text */
-.word-import-panel button[class*="bg-[#0a192f]"],
-.word-import-panel button[class*="bg-[#0a192f]"] * {
-  color: #ffffff !important;
-}
-
-[data-theme="dark"] .word-import-panel,
-[data-theme="dark"] .word-import-panel .bg-white,
-[data-theme="dark"] .word-import-panel .bg-slate-50 {
-  background-color: #ffffff !important;
-}
-
-[data-theme="dark"] .word-import-panel .bg-slate-100 {
-  background-color: #f1f5f9 !important;
-}
-
-[data-theme="dark"] .word-import-panel .hover\:bg-slate-50:hover {
-  background-color: #f8fafc !important;
-}
-
-[data-theme="dark"] .word-import-panel,
-[data-theme="dark"] .word-import-panel span,
-[data-theme="dark"] .word-import-panel .text-black,
-[data-theme="dark"] .word-import-panel .text-slate-600,
-[data-theme="dark"] .word-import-panel .text-slate-500,
-[data-theme="dark"] .word-import-panel input,
-[data-theme="dark"] .word-import-panel textarea {
+/* Light buttons inside dark panel keep dark text */
+.word-import-panel button.bg-white,
+.word-import-panel button[class*="bg-white"] {
   color: #0a192f !important;
-}
-
-[data-theme="dark"] .word-import-panel input,
-[data-theme="dark"] .word-import-panel textarea {
-  background-color: #ffffff !important;
-}
-
-[data-theme="dark"] .word-import-panel button[class*="bg-[#0a192f]"],
-[data-theme="dark"] .word-import-panel button[class*="bg-[#0a192f]"] * {
-  color: #ffffff !important;
 }
 
 .perspective-1000 {
