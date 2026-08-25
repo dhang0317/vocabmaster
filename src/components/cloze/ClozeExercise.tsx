@@ -15,8 +15,11 @@ interface TranslatePopup {
   translated: string | null;
   loading: boolean;
   error: string | null;
+  /** viewport X of selection center */
   x: number;
+  /** viewport Y to anchor (top of selection if placeAbove, bottom if placeBelow) */
   y: number;
+  placeAbove: boolean;
 }
 
 export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseProps) {
@@ -62,14 +65,10 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
 
     const onMouseDown = (e: MouseEvent) => {
       const target = e.target as Node;
-      if (
-        popupRef.current &&
-        !popupRef.current.contains(target) &&
-        articleRef.current &&
-        !articleRef.current.contains(target)
-      ) {
-        closePopup();
-      }
+      if (popupRef.current?.contains(target)) return;
+      // Allow re-selecting inside article without immediately closing
+      if (articleRef.current?.contains(target)) return;
+      closePopup();
     };
 
     document.addEventListener('keydown', onKeyDown);
@@ -80,73 +79,97 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
     };
   }, [popup, closePopup]);
 
-  const fetchTranslation = useCallback(async (text: string, x: number, y: number) => {
-    if (translateAbortRef.current) {
-      translateAbortRef.current.abort();
+  // After popup renders / content changes, nudge it fully into the viewport
+  useEffect(() => {
+    if (!popup || !popupRef.current) return;
+
+    const el = popupRef.current;
+    const rect = el.getBoundingClientRect();
+    const pad = 8;
+    let dx = 0;
+    let dy = 0;
+
+    if (rect.left < pad) dx = pad - rect.left;
+    if (rect.right > window.innerWidth - pad) dx = window.innerWidth - pad - rect.right;
+    if (rect.top < pad) dy = pad - rect.top;
+    if (rect.bottom > window.innerHeight - pad) dy = window.innerHeight - pad - rect.bottom;
+
+    if (dx !== 0 || dy !== 0) {
+      el.style.transform = `translate(calc(-50% + ${dx}px), ${popup.placeAbove ? `calc(-100% + ${dy}px)` : `${dy}px`})`;
     }
-    const controller = new AbortController();
-    translateAbortRef.current = controller;
+  }, [popup]);
 
-    setPopup({
-      text,
-      translated: null,
-      loading: true,
-      error: null,
-      x,
-      y,
-    });
+  const fetchTranslation = useCallback(
+    async (text: string, x: number, y: number, placeAbove: boolean) => {
+      if (translateAbortRef.current) {
+        translateAbortRef.current.abort();
+      }
+      const controller = new AbortController();
+      translateAbortRef.current = controller;
 
-    try {
-      const res = await fetch('/api/translate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, target: 'zh-TW' }),
-        signal: controller.signal,
+      setPopup({
+        text,
+        translated: null,
+        loading: true,
+        error: null,
+        x,
+        y,
+        placeAbove,
       });
-      const data = await res.json();
 
-      if (controller.signal.aborted) return;
+      try {
+        const res = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, target: 'zh-TW' }),
+          signal: controller.signal,
+        });
+        const data = await res.json();
 
-      if (!res.ok || !data.success) {
+        if (controller.signal.aborted) return;
+
+        if (!res.ok || !data.success) {
+          setPopup(prev =>
+            prev
+              ? {
+                  ...prev,
+                  loading: false,
+                  error: data.error || '翻譯失敗',
+                }
+              : null
+          );
+          return;
+        }
+
         setPopup(prev =>
           prev
             ? {
                 ...prev,
                 loading: false,
-                error: data.error || '翻譯失敗',
+                translated: data.translated,
+                error: null,
               }
             : null
         );
-        return;
+      } catch (err: unknown) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        setPopup(prev =>
+          prev
+            ? {
+                ...prev,
+                loading: false,
+                error: err instanceof Error ? err.message : '翻譯失敗',
+              }
+            : null
+        );
+      } finally {
+        if (translateAbortRef.current === controller) {
+          translateAbortRef.current = null;
+        }
       }
-
-      setPopup(prev =>
-        prev
-          ? {
-              ...prev,
-              loading: false,
-              translated: data.translated,
-              error: null,
-            }
-          : null
-      );
-    } catch (err: unknown) {
-      if (err instanceof DOMException && err.name === 'AbortError') return;
-      setPopup(prev =>
-        prev
-          ? {
-              ...prev,
-              loading: false,
-              error: err instanceof Error ? err.message : '翻譯失敗',
-            }
-          : null
-      );
-    } finally {
-      if (translateAbortRef.current === controller) {
-        translateAbortRef.current = null;
-      }
-    }
-  }, []);
+    },
+    []
+  );
 
   const handleArticleMouseUp = useCallback(() => {
     const selection = window.getSelection();
@@ -155,18 +178,15 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
     }
 
     const text = selection.toString().trim();
-    // Ignore empty / pure whitespace / very long selections
     if (!text || text.length < 1 || text.length > 200) {
       return;
     }
 
-    // Ensure selection is inside the article content area
     const anchorNode = selection.anchorNode;
     if (!anchorNode || !articleRef.current.contains(anchorNode)) {
       return;
     }
 
-    // Don't trigger when selecting inside an input (blank field)
     const anchorEl =
       anchorNode.nodeType === Node.ELEMENT_NODE
         ? (anchorNode as Element)
@@ -178,11 +198,15 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
     const range = selection.getRangeAt(0);
     const rect = range.getBoundingClientRect();
 
-    // Position popup above the selection, centered
+    // Viewport coordinates (position: fixed)
     const x = rect.left + rect.width / 2;
-    const y = rect.top + window.scrollY;
+    const spaceAbove = rect.top;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    // Prefer above; if less than ~90px, place below
+    const placeAbove = spaceAbove >= 90 || spaceAbove >= spaceBelow;
+    const y = placeAbove ? rect.top - 6 : rect.bottom + 6;
 
-    fetchTranslation(text, x, y);
+    fetchTranslation(text, x, y, placeAbove);
   }, [fetchTranslation]);
 
   const handleSelectWordFromBank = (word: string) => {
@@ -275,8 +299,14 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
         const blankId = parseInt(match[1], 10);
         const blankData = article.blanks.find(b => b.id === blankId);
         const userVal = userAnswers[blankId] || '';
-        const isCorrect = isChecked && blankData && userVal.trim().toLowerCase() === blankData.word.trim().toLowerCase();
-        const isWrong = isChecked && blankData && userVal.trim().toLowerCase() !== blankData.word.trim().toLowerCase();
+        const isCorrect =
+          isChecked &&
+          blankData &&
+          userVal.trim().toLowerCase() === blankData.word.trim().toLowerCase();
+        const isWrong =
+          isChecked &&
+          blankData &&
+          userVal.trim().toLowerCase() !== blankData.word.trim().toLowerCase();
         const isActive = activeBlankId === blankId;
 
         return (
@@ -298,7 +328,7 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
                 type="text"
                 value={userVal}
                 onFocus={() => setActiveBlankId(blankId)}
-                onChange={(e) => handleInputChange(blankId, e.target.value)}
+                onChange={e => handleInputChange(blankId, e.target.value)}
                 placeholder="____"
                 disabled={isChecked}
                 className="bg-transparent border-none outline-none text-center font-bold text-sm !text-black placeholder-slate-400 w-24"
@@ -306,7 +336,7 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
               {blankData && (
                 <button
                   type="button"
-                  onClick={(e) => {
+                  onClick={e => {
                     e.stopPropagation();
                     handleToggleHint(blankId);
                   }}
@@ -457,59 +487,72 @@ export function ClozeExercise({ article: initialArticle, words }: ClozeExerciseP
         </div>
       )}
 
-      {/* Floating translation popup */}
+      {/* Floating translation popup — fixed to viewport, auto-flips above/below */}
       {popup && (
         <div
           ref={popupRef}
-          className="fixed z-50 pointer-events-auto"
+          className="fixed z-[100] pointer-events-auto"
           style={{
-            left: Math.min(Math.max(popup.x, 120), typeof window !== 'undefined' ? window.innerWidth - 120 : popup.x),
-            top: Math.max(popup.y - 8, 12),
-            transform: 'translate(-50%, -100%)',
+            left: Math.min(Math.max(popup.x, 140), window.innerWidth - 140),
+            top: popup.y,
+            transform: popup.placeAbove ? 'translate(-50%, -100%)' : 'translate(-50%, 0)',
           }}
         >
-          <div className="liquid-glass liquid-glass-menu rounded-2xl shadow-xl border border-white/50 min-w-[160px] max-w-[280px] px-3.5 py-3 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-start justify-between gap-2 mb-1.5">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                <Languages className="w-3 h-3" />
-                <span>Google 翻譯</span>
+          <div className="flex flex-col items-center">
+            {/* arrow when below */}
+            {!popup.placeAbove && (
+              <div
+                className="w-2.5 h-2.5 rotate-45 mb-[-5px] bg-white/50 border-l border-t border-white/50"
+                style={{ backdropFilter: 'blur(8px)' }}
+              />
+            )}
+
+            <div className="liquid-glass liquid-glass-menu rounded-2xl shadow-xl border border-white/50 min-w-[180px] max-w-[300px] px-3.5 py-3">
+              <div className="flex items-start justify-between gap-2 mb-1.5">
+                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  <Languages className="w-3 h-3 shrink-0" />
+                  <span>Google 翻譯</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={closePopup}
+                  className="p-0.5 rounded-lg text-slate-400 hover:text-[#0a192f] hover:bg-white/40 transition shrink-0"
+                  title="關閉"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={closePopup}
-                className="p-0.5 rounded-lg text-slate-400 hover:text-[#0a192f] hover:bg-white/40 transition"
-                title="關閉"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+
+              <p className="text-xs font-bold text-[#0a192f] break-words leading-snug mb-1">
+                {popup.text}
+              </p>
+
+              {popup.loading && (
+                <div className="flex items-center gap-1.5 text-xs text-slate-500 py-1">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>翻譯中…</span>
+                </div>
+              )}
+
+              {popup.error && (
+                <p className="text-xs text-red-600 font-medium py-0.5">{popup.error}</p>
+              )}
+
+              {popup.translated && !popup.loading && (
+                <p className="text-sm font-bold text-[#0a192f] font-cjk leading-relaxed border-t border-black/10 pt-1.5 mt-0.5 break-words">
+                  {popup.translated}
+                </p>
+              )}
             </div>
 
-            <p className="text-xs font-bold text-[#0a192f] break-words leading-snug mb-1">
-              {popup.text}
-            </p>
-
-            {popup.loading && (
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 py-1">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>翻譯中…</span>
-              </div>
-            )}
-
-            {popup.error && (
-              <p className="text-xs text-red-600 font-medium py-0.5">{popup.error}</p>
-            )}
-
-            {popup.translated && !popup.loading && (
-              <p className="text-sm font-bold text-[#0a192f] font-cjk leading-relaxed border-t border-black/8 pt-1.5 mt-0.5">
-                {popup.translated}
-              </p>
+            {/* arrow when above */}
+            {popup.placeAbove && (
+              <div
+                className="w-2.5 h-2.5 rotate-45 mt-[-5px] bg-white/50 border-r border-b border-white/50"
+                style={{ backdropFilter: 'blur(8px)' }}
+              />
             )}
           </div>
-          {/* small arrow */}
-          <div
-            className="mx-auto w-2.5 h-2.5 rotate-45 -mt-1.5 bg-white/40 border-r border-b border-white/50"
-            style={{ backdropFilter: 'blur(8px)' }}
-          />
         </div>
       )}
     </div>
