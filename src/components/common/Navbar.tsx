@@ -10,7 +10,6 @@ import {
   Sun,
   MessageSquare,
   RefreshCw,
-  ChevronDown,
 } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import { ApiKeyModal } from './ApiKeyModal';
@@ -24,7 +23,6 @@ export function Navbar() {
 
   const initial = (session?.user?.name || session?.user?.email || '?').charAt(0).toUpperCase();
 
-  // Load theme preference
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const stored = localStorage.getItem('theme') as 'light' | 'dark' | null;
@@ -35,7 +33,6 @@ export function Navbar() {
     document.documentElement.setAttribute('data-theme', preferred);
   }, []);
 
-  // Close menu on outside click
   useEffect(() => {
     if (!menuOpen) return;
     const onPointerDown = (e: MouseEvent) => {
@@ -86,25 +83,23 @@ export function Navbar() {
                 <button
                   type="button"
                   onClick={() => setMenuOpen((v) => !v)}
-                  className="flex items-center gap-1.5 rounded-full pl-0.5 pr-1.5 py-0.5 border border-black/30 hover:border-black transition bg-white"
+                  className="rounded-full border border-black/30 hover:border-black transition bg-white p-0.5"
                   aria-expanded={menuOpen}
                   aria-haspopup="menu"
+                  title={session.user?.email || 'Account menu'}
                 >
                   {session.user?.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={session.user.image}
                       alt={session.user.name || session.user.email || 'user'}
-                      className="w-8 h-8 rounded-full border border-black/20 object-cover"
+                      className="w-8 h-8 rounded-full object-cover"
                     />
                   ) : (
                     <span className="w-8 h-8 rounded-full bg-[#0a192f] text-white flex items-center justify-center text-xs font-black border border-black">
                       {initial}
                     </span>
                   )}
-                  <ChevronDown
-                    className={`w-4 h-4 text-slate-600 transition-transform ${menuOpen ? 'rotate-180' : ''}`}
-                  />
                 </button>
 
                 {menuOpen && (
@@ -112,7 +107,6 @@ export function Navbar() {
                     role="menu"
                     className="absolute right-0 mt-2 w-64 rounded-2xl bg-white border-2 border-[#0a192f] shadow-lg py-2 z-50 overflow-hidden"
                   >
-                    {/* User info */}
                     <div className="px-4 py-3 border-b border-[#0a192f]/15">
                       <p className="text-sm font-bold text-[#0a192f] truncate">
                         {session.user?.name || 'User'}
@@ -133,7 +127,7 @@ export function Navbar() {
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#0a192f] hover:bg-slate-100 transition text-left"
                       >
                         <Key className="w-4 h-4 shrink-0" />
-                        <span>API Key 設定</span>
+                        <span>API Key settings</span>
                       </button>
 
                       <button
@@ -147,7 +141,7 @@ export function Navbar() {
                         ) : (
                           <Sun className="w-4 h-4 shrink-0" />
                         )}
-                        <span>{theme === 'light' ? '深色模式' : '淺色模式'}</span>
+                        <span>{theme === 'light' ? 'Dark mode' : 'Light mode'}</span>
                       </button>
 
                       <button
@@ -157,7 +151,7 @@ export function Navbar() {
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#0a192f] hover:bg-slate-100 transition text-left"
                       >
                         <MessageSquare className="w-4 h-4 shrink-0" />
-                        <span>意見回饋</span>
+                        <span>Feedback</span>
                       </button>
 
                       <button
@@ -167,7 +161,7 @@ export function Navbar() {
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#0a192f] hover:bg-slate-100 transition text-left"
                       >
                         <RefreshCw className="w-4 h-4 shrink-0" />
-                        <span>切換帳號</span>
+                        <span>Switch account</span>
                       </button>
                     </div>
 
@@ -179,7 +173,7 @@ export function Navbar() {
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition text-left"
                       >
                         <LogOut className="w-4 h-4 shrink-0" />
-                        <span>登出</span>
+                        <span>Log out</span>
                       </button>
                     </div>
                   </div>
@@ -193,7 +187,7 @@ export function Navbar() {
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm transition border bg-black text-white border-black hover:bg-slate-800"
               >
                 <LogIn className="w-4 h-4" />
-                <span>登入</span>
+                <span>Log in</span>
               </Link>
             )}
           </nav>
