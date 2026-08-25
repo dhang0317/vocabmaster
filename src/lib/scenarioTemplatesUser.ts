@@ -6,8 +6,9 @@ import { USER_SCENARIO_TEMPLATES_B1 } from './scenarioTemplatesUserB1';
 import { USER_SCENARIO_TEMPLATES_C0 } from './scenarioTemplatesUserC0';
 import { USER_SCENARIO_TEMPLATES_C1 } from './scenarioTemplatesUserC1';
 import { USER_SCENARIO_TEMPLATES_C2 } from './scenarioTemplatesUserC2';
+import { USER_SCENARIO_TEMPLATES_C3 } from './scenarioTemplatesUserC3';
 
-/** User-expanded set (batch2 upload in progress: C0-C2 live) */
+/** User-expanded set (batch2: C0-C3 live, more uploading) */
 export const USER_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
   ...USER_SCENARIO_TEMPLATES_A0,
   ...USER_SCENARIO_TEMPLATES_A1,
@@ -16,4 +17,5 @@ export const USER_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
   ...USER_SCENARIO_TEMPLATES_C0,
   ...USER_SCENARIO_TEMPLATES_C1,
   ...USER_SCENARIO_TEMPLATES_C2,
+  ...USER_SCENARIO_TEMPLATES_C3,
 ];
