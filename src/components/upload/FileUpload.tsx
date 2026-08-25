@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, Trash2, Plus, AlertCircle, FileSpreadsheet, RefreshCw } from 'lucide-react';
+import { Upload, FileText, Trash2, Plus, AlertCircle, RefreshCw } from 'lucide-react';
 import { RawWordInput } from '@/types';
 import { parseRawText, parseCSV, parseExcel } from '@/lib/parseWords';
 
@@ -161,7 +161,7 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
         </div>
       )}
 
-      {/* File Dropzone */}
+      {/* File Dropzone — title only */}
       {activeTab === 'file' && (
         <div
           onDragOver={(e) => {
@@ -171,7 +171,7 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-200 ${
+          className={`border-2 border-dashed rounded-2xl px-6 py-8 text-center cursor-pointer transition-all duration-200 ${
             isDragging
               ? 'border-[#0a192f] bg-slate-100 scale-[0.99]'
               : 'border-[#0a192f] bg-white hover:bg-slate-50'
@@ -188,24 +188,16 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
               }
             }}
           />
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-100 border-2 border-[#0a192f] flex items-center justify-center text-[#0a192f] mb-4">
-            {isProcessing ? (
-              <RefreshCw className="w-6 h-6 animate-spin text-[#0a192f]" />
-            ) : (
-              <FileSpreadsheet className="w-6 h-6" />
-            )}
-          </div>
-          <h4 className="text-base font-extrabold text-[#0a192f] mb-1">
-            Click here or drag a word file to upload
-          </h4>
-          <p className="text-xs text-slate-600 max-w-sm mx-auto mb-3">
-            Supports CSV, Excel (.xlsx/.xls), and plain TXT files. Word, definition, and example columns are detected automatically.
-          </p>
-          <div className="inline-flex items-center gap-3 text-[11px] text-slate-500 font-medium">
-            <span>• Multi-column CSV</span>
-            <span>• Standard Excel sheets</span>
-            <span>• One word per line</span>
-          </div>
+          {isProcessing ? (
+            <div className="flex items-center justify-center gap-2 text-[#0a192f]">
+              <RefreshCw className="w-5 h-5 animate-spin" />
+              <span className="text-sm font-bold">Processing…</span>
+            </div>
+          ) : (
+            <h4 className="text-base font-extrabold text-[#0a192f]">
+              Click here or drag a word file to upload
+            </h4>
+          )}
         </div>
       )}
 
