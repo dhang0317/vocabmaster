@@ -11,10 +11,12 @@ model Deck {
   id          String         @id @default(uuid())
   title       String
   description String?
+  isPublic    Boolean        @default(false)
+  publishedAt DateTime?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
-  userId     String?
-  user       User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId      String?
+  user        User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
   words       Word[]
   articles    ClozeArticle[]
   quizzes     QuizQuestion[]
@@ -36,11 +38,11 @@ model Word {
   deckId      String
   word        String
   phonetic    String?
-  pos         String?  // part of speech (n., v., adj., etc.)
-  translation String   // Traditional Chinese translation
-  definition  String?  // English definition
-  example     String?  // Example sentence
-  exampleZh   String?  // Example sentence translation
+  pos         String?
+  translation String
+  definition  String?
+  example     String?
+  exampleZh   String?
   isMastered  Boolean  @default(false)
   createdAt   DateTime @default(now())
 
@@ -51,9 +53,9 @@ model ClozeArticle {
   id          String   @id @default(uuid())
   deckId      String
   title       String
-  content     String   // Story text with [blank_1], [blank_2] or [word] markers
-  contentZh   String?  // Full Chinese translation
-  blanksJson  String   // JSON array of blanks: [{ id: 1, word: "ephemeral", hint: "lasting very short time", options: [...] }]
+  content     String
+  contentZh   String?
+  blanksJson  String
   createdAt   DateTime @default(now())
 
   deck Deck @relation(fields: [deckId], references: [id], onDelete: Cascade)
@@ -62,24 +64,24 @@ model ClozeArticle {
 model QuizQuestion {
   id          String   @id @default(uuid())
   deckId      String
-  question    String   // The question sentence or stem
-  questionZh  String?  // Question translation
-  targetWord  String   // The vocabulary being tested
-  optionsJson String   // JSON array of options: ["option A", "option B", "option C", "option D"]
-  correctIdx  Int      // Index of correct option (0-3)
-  explanation String?  // Explanation why this is correct and why others are wrong
+  question    String
+  questionZh  String?
+  targetWord  String
+  optionsJson String
+  correctIdx  Int
+  explanation String?
   createdAt   DateTime @default(now())
 
   deck Deck @relation(fields: [deckId], references: [id], onDelete: Cascade)
 }
 
 model QuizResult {
-  id         String   @id @default(uuid())
-  deckId     String
-  score      Int
-  total      Int
-  answersJson String  // JSON array of user responses & correctness
-  createdAt  DateTime @default(now())
+  id          String   @id @default(uuid())
+  deckId      String
+  score       Int
+  total       Int
+  answersJson String
+  createdAt   DateTime @default(now())
 
   deck Deck @relation(fields: [deckId], references: [id], onDelete: Cascade)
 }
