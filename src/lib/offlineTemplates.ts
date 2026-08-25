@@ -199,7 +199,6 @@ const DISTRACTOR_POOL: Record<'n' | 'v' | 'adj' | 'adv' | 'other', string[]> = {
   other: ['however', 'therefore', 'instead', 'although', 'meanwhile', 'otherwise'],
 };
 
-/** Level-flavored sentence stems for cloze-style quiz items (POS-aware). */
 const QUIZ_STEMS: Record<
   GenerationLevel,
   Record<'n' | 'v' | 'adj' | 'adv' | 'other', { en: string; zh: string }[]>
@@ -210,7 +209,7 @@ const QUIZ_STEMS: Record<
       { en: 'Please write one sentence using the word _____.', zh: '請用_____這個字寫一個句子。' },
     ],
     v: [
-      { en: 'Can you _____ this word in a short sentence?', zh: '你能用_____造一個短句嗎？' },
+      { en: 'Can you _____ this idea in a short sentence?', zh: '你能用_____表達這個想法嗎？' },
       { en: 'Students should _____ the answer carefully.', zh: '學生應該仔細_____答案。' },
     ],
     adj: [
@@ -221,7 +220,7 @@ const QUIZ_STEMS: Record<
       { en: 'Please speak _____ so everyone can hear you.', zh: '請_____說話，好讓大家都能聽到。' },
       { en: 'He finished the work _____.', zh: '他_____完成了工作。' },
     ],
-    other: [{ en: 'Choose the best word: _____.', zh: '選出最適合的字：_____。' }],
+    other: [{ en: 'Choose the best word to complete the sentence: _____.', zh: '選出最能完成句子的字：_____。' }],
   },
   highschool: {
     n: [
@@ -392,7 +391,21 @@ export function buildOfflineBlanks(words: GeneratedWord[]): ClozeBlank[] {
   });
 }
 
-type QuizKind = 'meaning' | 'cloze' | 'example' | 'definition';
+type QuizKind = 'cloze' | 'example' | 'definition';
+
+function buildClozeQuestion(
+  w: GeneratedWord,
+  level: GenerationLevel,
+  stemIndex: number
+): { question: string; questionZh: string } {
+  const pos = normalizePos(w.pos);
+  const stems = QUIZ_STEMS[level]?.[pos] || QUIZ_STEMS.highschool[pos];
+  const stem = stems[stemIndex % stems.length];
+  let question = stem.en.includes('_____') ? stem.en : `${stem.en} _____`;
+  if (!question.includes('_____')) question = `${question} _____`;
+  const questionZh = stem.zh.includes('_____') ? stem.zh : `${stem.zh}（_____）`;
+  return { question, questionZh };
+}
 
 function buildOneQuiz(
   w: GeneratedWord,
@@ -420,43 +433,20 @@ function buildOneQuiz(
       questionZh =
         w.exampleZh && w.exampleZh.trim()
           ? `（依例句）選出正確單字：${w.exampleZh.trim()}`
-          : `依例句語境，選出正確單字（意思：${meaning}）。`;
+          : `依例句語境，選出正確單字。`;
     }
   }
 
-  if (!question && kind === 'cloze') {
-    const stems = QUIZ_STEMS[level]?.[pos] || QUIZ_STEMS.highschool[pos];
-    const stem = stems[stemIndex % stems.length];
-    question = stem.en.includes('_____') ? stem.en : stem.en.replace(/\.?$/, ' _____.');
-    // ensure blank present
-    if (!question.includes('_____')) question = `${question} _____`;
-    questionZh = stem.zh.includes('_____') ? stem.zh : `${stem.zh}（_____）`;
-  }
-
   if (!question && kind === 'definition' && w.definition && w.definition.trim().length > 5) {
-    question = `Which word matches this definition: "${w.definition.trim()}"?`;
-    questionZh = `哪一個單字符合此定義：「${w.definition.trim()}」？（中文：${meaning}）`;
+    // Prefer embedding definition into a cloze-style prompt, not "match this meaning"
+    question = `Based on this definition — "${w.definition.trim()}" — choose the word that best completes a related sentence: _____.`;
+    questionZh = `根據定義「${w.definition.trim()}」，選出最合適的單字填入空格。`;
   }
 
   if (!question) {
-    // meaning (default)
-    const meaningStems = [
-      {
-        en: `Which word best matches this meaning: "${meaning}"?`,
-        zh: `哪一個單字最符合「${meaning}」的意思？`,
-      },
-      {
-        en: `Select the word that means "${meaning}".`,
-        zh: `選出意思為「${meaning}」的單字。`,
-      },
-      {
-        en: `"${meaning}" is best expressed by which word?`,
-        zh: `「${meaning}」最接近下列哪個單字？`,
-      },
-    ];
-    const m = meaningStems[stemIndex % meaningStems.length];
-    question = m.en;
-    questionZh = m.zh;
+    const cloze = buildClozeQuestion(w, level, stemIndex);
+    question = cloze.question;
+    questionZh = cloze.questionZh;
   }
 
   return {
@@ -469,15 +459,12 @@ function buildOneQuiz(
   };
 }
 
-/**
- * Offline quizzes: rotate question types so items feel less repetitive.
- * - meaning / definition / context cloze (level + POS) / user example
- */
+/** Offline quizzes: cloze (level+POS), user example, or definition-based cloze — no pure meaning-match. */
 export function buildOfflineQuizzes(
   words: GeneratedWord[],
   level: GenerationLevel = 'highschool'
 ): GeneratedQuiz[] {
-  const kinds: QuizKind[] = ['meaning', 'cloze', 'definition', 'example'];
+  const kinds: QuizKind[] = ['cloze', 'example', 'definition'];
 
   const quizzes = words.map((w, i) => {
     const kind = kinds[i % kinds.length];
