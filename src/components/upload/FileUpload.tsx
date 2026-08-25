@@ -122,11 +122,8 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
             type="button"
             onClick={() => setActiveTab('file')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition border-2 ${
-              activeTab === 'file'
-                ? 'bg-[#0a192f] text-white border-[#0a192f]'
-                : 'bg-white text-[#0a192f] border-[#0a192f]/30 hover:border-[#0a192f]'
+              activeTab === 'file' ? 'upload-btn-dark' : 'upload-btn-light'
             }`}
-            style={activeTab === 'file' ? { color: '#ffffff' } : { color: '#0a192f' }}
           >
             <Upload className="w-4 h-4" />
             Upload file (CSV / Excel / TXT)
@@ -135,11 +132,8 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
             type="button"
             onClick={() => setActiveTab('text')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition border-2 ${
-              activeTab === 'text'
-                ? 'bg-[#0a192f] text-white border-[#0a192f]'
-                : 'bg-white text-[#0a192f] border-[#0a192f]/30 hover:border-[#0a192f]'
+              activeTab === 'text' ? 'upload-btn-dark' : 'upload-btn-light'
             }`}
-            style={activeTab === 'text' ? { color: '#ffffff' } : { color: '#0a192f' }}
           >
             <FileText className="w-4 h-4" />
             Paste text
@@ -149,8 +143,7 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
         <button
           type="button"
           onClick={handleLoadSample}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-white border-2 border-[#0a192f] hover:bg-slate-100 transition shadow-sm"
-          style={{ color: '#0a192f' }}
+          className="upload-btn-light flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border-2 transition shadow-sm"
         >
           Load sample words
         </button>
@@ -172,10 +165,8 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-2xl px-6 py-8 text-center cursor-pointer transition-all duration-200 ${
-            isDragging
-              ? 'border-[#0a192f] bg-slate-100 scale-[0.99]'
-              : 'border-[#0a192f] bg-white hover:bg-slate-50'
+          className={`upload-surface border-2 border-dashed rounded-2xl px-6 py-8 text-center cursor-pointer transition-all duration-200 ${
+            isDragging ? 'scale-[0.99]' : ''
           }`}
         >
           <input
@@ -190,12 +181,12 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
             }}
           />
           {isProcessing ? (
-            <div className="flex items-center justify-center gap-2" style={{ color: '#0a192f' }}>
+            <div className="flex items-center justify-center gap-2">
               <RefreshCw className="w-5 h-5 animate-spin" />
               <span className="text-sm font-bold">Processing…</span>
             </div>
           ) : (
-            <h4 className="text-base font-extrabold" style={{ color: '#0a192f' }}>
+            <h4 className="text-base font-extrabold">
               Click here or drag a word file to upload
             </h4>
           )}
@@ -209,15 +200,13 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
             onChange={(e) => setInputText(e.target.value)}
             placeholder={`Enter one word per line, or separate fields with commas or tabs, for example:\nephemeral, short-lived, adj.\nresilient, able to recover quickly\nmeticulous\npragmatic - practical`}
             rows={5}
-            className="w-full rounded-2xl border-2 border-[#0a192f] bg-white px-4 py-3 text-sm font-mono placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0a192f]/20"
-            style={{ color: '#0a192f' }}
+            className="upload-surface w-full rounded-2xl border-2 px-4 py-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#0a192f]/20"
           />
           <button
             type="button"
             onClick={handleTextSubmit}
             disabled={!inputText.trim()}
-            className="px-5 py-2.5 rounded-xl text-sm font-bold bg-[#0a192f] hover:bg-[#132c5b] disabled:opacity-50 transition shadow-sm border border-[#0a192f]"
-            style={{ color: '#ffffff' }}
+            className="upload-btn-dark px-5 py-2.5 rounded-xl text-sm font-bold disabled:opacity-50 transition shadow-sm border"
           >
             Add to word list
           </button>
@@ -276,7 +265,7 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
                   onChange={(e) => handleWordChange(idx, 'word', e.target.value)}
                   placeholder="Word"
                   className={`${fieldClass} w-1/4 font-bold`}
-                  style={{ color: '#ffffff' }}
+                  style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
                 />
 
                 <input
@@ -285,7 +274,7 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
                   onChange={(e) => handleWordChange(idx, 'pos', e.target.value)}
                   placeholder="POS"
                   className={`${fieldClass} w-16 text-xs text-center px-2`}
-                  style={{ color: '#ffffff' }}
+                  style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
                 />
 
                 <input
@@ -294,7 +283,7 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
                   onChange={(e) => handleWordChange(idx, 'translation', e.target.value)}
                   placeholder="Definition (optional)"
                   className={`${fieldClass} flex-1`}
-                  style={{ color: '#ffffff' }}
+                  style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
                 />
 
                 <button
