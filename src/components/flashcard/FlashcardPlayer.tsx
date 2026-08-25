@@ -139,6 +139,8 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
   }, [initialWords]);
 
   const currentWord = words[currentIndex] || null;
+  const hasPrev = currentIndex > 0;
+  const hasNext = currentIndex < words.length - 1;
 
   const handleNext = useCallback(() => {
     if (navigating.current || currentIndex >= words.length - 1) return;
@@ -349,18 +351,50 @@ export function FlashcardPlayer({ words: initialWords, onToggleMastered }: Flash
         {/* Deep stack layers (decorative) */}
         <div
           aria-hidden
-          className="absolute inset-x-6 inset-y-4 rounded-3xl liquid-glass opacity-40"
-          style={{ transform: 'translateY(14px) scale(0.94)', zIndex: 0 }}
+          className="absolute inset-x-8 inset-y-4 rounded-3xl liquid-glass opacity-40"
+          style={{ transform: 'translateY(14px) scale(0.92)', zIndex: 0 }}
         />
         <div
           aria-hidden
-          className="absolute inset-x-3 inset-y-2 rounded-3xl liquid-glass opacity-55"
-          style={{ transform: 'translateY(8px) scale(0.97)', zIndex: 1 }}
+          className="absolute inset-x-5 inset-y-2 rounded-3xl liquid-glass opacity-55"
+          style={{ transform: 'translateY(8px) scale(0.96)', zIndex: 1 }}
         />
+
+        {/* Previous page peek (no labels) */}
+        {hasPrev && (
+          <button
+            type="button"
+            onClick={handlePrev}
+            aria-label="上一張"
+            title="上一張"
+            className="absolute left-0 top-3 bottom-3 w-[22%] sm:w-[18%] rounded-2xl liquid-glass border border-white/40 shadow-md overflow-hidden transition hover:brightness-105"
+            style={{
+              zIndex: 2,
+              transform: 'perspective(900px) rotateY(18deg) translateX(-6%) scale(0.94)',
+              transformOrigin: 'right center',
+            }}
+          />
+        )}
+
+        {/* Next page peek (no labels) */}
+        {hasNext && (
+          <button
+            type="button"
+            onClick={handleNext}
+            aria-label="下一張"
+            title="下一張"
+            className="absolute right-0 top-3 bottom-3 w-[22%] sm:w-[18%] rounded-2xl liquid-glass border border-white/40 shadow-md overflow-hidden transition hover:brightness-105"
+            style={{
+              zIndex: 2,
+              transform: 'perspective(900px) rotateY(-18deg) translateX(6%) scale(0.94)',
+              transformOrigin: 'left center',
+            }}
+          />
+        )}
 
         {/* Current card (center, flippable + swipeable) */}
         <div
-          className="absolute inset-x-0 top-0 bottom-0 perspective-1000 cursor-grab active:cursor-grabbing"
+          className="absolute inset-x-[14%] sm:inset-x-[16%] top-0 bottom-0 perspective-1000 cursor-grab active:cursor-grabbing"
           style={{
             zIndex: 5,
             transform: mainTransform,
