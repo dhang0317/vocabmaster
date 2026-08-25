@@ -18,6 +18,10 @@ const SAMPLE_WORDS: RawWordInput[] = [
   { word: 'eloquent', translation: 'fluent and persuasive', pos: 'adj.', example: 'She made an eloquent speech in defense of human rights.' },
 ];
 
+/** Solid light field — beats dark-mode global white text overrides */
+const fieldClass =
+  'rounded-lg border border-black/25 bg-white px-3 py-1.5 text-sm text-black placeholder:text-slate-400 focus:outline-none focus:border-black/50 focus:ring-1 focus:ring-black/20';
+
 export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps) {
   const [words, setWords] = useState<RawWordInput[]>(initialWords);
   const [inputText, setInputText] = useState('');
@@ -211,13 +215,9 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
           <textarea
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder={`Enter one word per line, or separate fields with commas or tabs, for example:
-ephemeral, short-lived, adj.
-resilient, able to recover quickly
-meticulous
-pragmatic - practical`}
+            placeholder={`Enter one word per line, or separate fields with commas or tabs, for example:\nephemeral, short-lived, adj.\nresilient, able to recover quickly\nmeticulous\npragmatic - practical`}
             rows={5}
-            className="w-full px-4 py-3 rounded-2xl bg-white border-2 border-[#0a192f] text-[#0a192f] placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#0a192f]/20 font-mono"
+            className={`${fieldClass} w-full font-mono`}
           />
           <button
             type="button"
@@ -230,13 +230,13 @@ pragmatic - practical`}
         </div>
       )}
 
-      {/* Vocabulary Table Preview */}
+      {/* Vocabulary Table Preview — always light surface for readable fields */}
       {words.length > 0 && (
-        <div className="rounded-2xl border-2 border-[#0a192f] bg-white overflow-hidden shadow-sm">
-          <div className="flex items-center justify-between px-5 py-3.5 bg-slate-100 border-b-2 border-[#0a192f]">
+        <div className="word-import-panel rounded-2xl border border-black/15 bg-white overflow-hidden shadow-sm">
+          <div className="flex items-center justify-between px-5 py-3.5 bg-slate-100 border-b border-black/10">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-black text-[#0a192f]">Imported words</span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-white text-[#0a192f] border border-[#0a192f] font-bold">
+              <span className="text-sm font-black text-black">Imported words</span>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#0a192f] text-white font-bold">
                 {words.length} words
               </span>
             </div>
@@ -244,7 +244,7 @@ pragmatic - practical`}
               <button
                 type="button"
                 onClick={handleAddNewRow}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-[#0a192f] border border-[#0a192f] hover:bg-slate-50 transition"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#0a192f] text-white hover:bg-[#132c5b] transition"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Add word row
@@ -252,7 +252,7 @@ pragmatic - practical`}
               <button
                 type="button"
                 onClick={handleClearAll}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-red-600 hover:bg-red-50 transition border border-red-300"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-red-700 bg-white hover:bg-red-50 transition border border-red-300"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Clear
@@ -260,42 +260,42 @@ pragmatic - practical`}
             </div>
           </div>
 
-          <div className="max-h-80 overflow-y-auto divide-y divide-[#0a192f]/10">
+          <div className="max-h-80 overflow-y-auto divide-y divide-black/8 bg-white">
             {words.map((item, idx) => (
-              <div key={idx} className="flex items-center gap-3 px-5 py-2.5 hover:bg-slate-50 transition">
-                <span className="text-xs font-mono font-bold text-slate-500 w-6">{idx + 1}</span>
-                
-                {/* Word */}
+              <div
+                key={idx}
+                className="flex items-center gap-3 px-5 py-2.5 bg-white hover:bg-slate-50 transition"
+              >
+                <span className="text-xs font-mono font-bold text-slate-600 w-6">{idx + 1}</span>
+
                 <input
                   type="text"
                   value={item.word}
                   onChange={(e) => handleWordChange(idx, 'word', e.target.value)}
                   placeholder="Word"
-                  className="w-1/4 px-3 py-1.5 rounded-lg bg-white border border-[#0a192f]/40 text-sm font-bold text-[#0a192f] focus:outline-none focus:border-[#0a192f]"
+                  className={`${fieldClass} w-1/4 font-bold`}
                 />
 
-                {/* POS */}
                 <input
                   type="text"
                   value={item.pos || ''}
                   onChange={(e) => handleWordChange(idx, 'pos', e.target.value)}
-                  placeholder="Part of speech"
-                  className="w-16 px-2 py-1.5 rounded-lg bg-white border border-[#0a192f]/40 text-xs text-slate-700 focus:outline-none focus:border-[#0a192f] text-center"
+                  placeholder="POS"
+                  className={`${fieldClass} w-16 text-xs text-center px-2`}
                 />
 
-                {/* Translation */}
                 <input
                   type="text"
                   value={item.translation || ''}
                   onChange={(e) => handleWordChange(idx, 'translation', e.target.value)}
-                  placeholder="Definition (optional; auto-completed)"
-                  className="flex-1 px-3 py-1.5 rounded-lg bg-white border border-[#0a192f]/40 text-sm text-[#0a192f] focus:outline-none focus:border-[#0a192f]"
+                  placeholder="Definition (optional)"
+                  className={`${fieldClass} flex-1`}
                 />
 
                 <button
                   type="button"
                   onClick={() => handleRemoveWord(idx)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition"
                   title="Delete"
                 >
                   <Trash2 className="w-4 h-4" />
