@@ -2,11 +2,44 @@
   "meta": {
     "version": "context-engine-1000",
     "count": 630,
-    "note": "Full words array is too large for single GitHub API push in this session. Download context_engine_1000.zip from repo root or use the local artifacts/context_engine_1000.json. Seed script is ready: node prisma/context-engine-seed-1000.js",
-    "domains": {"workplace": 146, "academic": 119, "daily": 123, "science": 135, "travel": 107},
-    "pos": {"verb": 223, "adj": 124, "noun": 283},
-    "cefr": {"B1": 254, "B2": 273, "A2": 67, "C1": 25, "A1": 11}
+    "domains": {
+      "workplace": 146,
+      "academic": 119,
+      "daily": 123,
+      "science": 135,
+      "travel": 107
+    },
+    "pos": {
+      "verb": 223,
+      "adj": 124,
+      "noun": 283
+    },
+    "cefr": {
+      "B1": 254,
+      "B2": 273,
+      "A2": 67,
+      "C1": 25,
+      "A1": 11
+    },
+    "description": "Full Context Engine vocabulary package (Phase 1 + Phase 2): Word + Sense + Slot + Grammar + Example"
   },
-  "slots_extra": [],
-  "words": []
+  "slots_extra": [
+    ["VERB_NEGOTIATION", "協商或談判", "VERB"],
+    ["VERB_EVALUATION", "評估或判斷", "VERB"],
+    ["VERB_CREATION", "創造或產生", "VERB"],
+    ["VERB_MOVEMENT", "移動或轉移", "VERB"],
+    ["ADJ_DIFFICULTY", "難度或複雜度", "ADJ"],
+    ["ADJ_PROBABILITY", "可能性或確定性", "ADJ"],
+    ["ADJ_SIZE_SCALE", "規模或大小", "ADJ"],
+    ["NOUN_EVENT", "事件或活動", "NOUN"],
+    ["NOUN_LOCATION", "地點或場所", "NOUN"],
+    ["NOUN_DOCUMENT", "文件或資料", "NOUN"]
+  ],
+  "grammar_patterns_extra": [],
+  "words": [],
+  "parts": [
+    "context_engine_1000_part1.json",
+    "context_engine_1000_part2.json",
+    "context_engine_1000_part3.json"
+  ]
 }
