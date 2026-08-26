@@ -86,6 +86,41 @@ export const ALL_SEMANTIC_TAGS: SemanticTag[] = [
   'conflict',
 ];
 
+/** Chinese labels for each semantic tag (used by SemanticTagEditor UI) */
+export const TAG_LABELS_ZH: Record<SemanticTag, string> = {
+  emotion: '情緒',
+  evaluation: '評價',
+  state_change: '狀態變化',
+  communication: '溝通',
+  process: '過程',
+  cognitive: '認知',
+  quantity: '數量',
+  time: '時間',
+  cause_effect: '因果',
+  social: '社交',
+  physical: '物理',
+  abstract: '抽象',
+  action: '動作',
+  positive: '正向',
+  negative: '負向',
+  place: '地點',
+  role: '角色',
+  object: '物件',
+  description: '描述',
+  sequence: '先後順序',
+  duration: '持續時間',
+  frequency: '頻率',
+  intensity: '強度',
+  quality: '品質',
+  importance: '重要性',
+  perception: '感知',
+  reasoning: '推理',
+  request: '請求',
+  inform: '告知',
+  cooperation: '合作',
+  conflict: '衝突',
+};
+
 /** Grouped for UI (label + tags) */
 export const TAG_GROUPS: { key: string; labelZh: string; tags: SemanticTag[] }[] = [
   {
@@ -280,7 +315,7 @@ export function inferSemanticTags(
   }
 
   const positive =
-    /thrive|enhanc|benefit|succeed|prosper|flourish|optim|advantage|gain|strengthen/;
+    /improv|enhanc|benefit|succeed|prosper|flourish|optim|advantage|gain|strengthen/;
   if (positive.test(blob)) tags.add('positive');
   const negative =
     /declin|fail|risk|threaten|damage|harm|loss|weak|poor|bad|disadvantage/;
