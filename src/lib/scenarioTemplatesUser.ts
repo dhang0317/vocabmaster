@@ -19,8 +19,23 @@ import { USER_SCENARIO_TEMPLATES_C12 } from './scenarioTemplatesUserC12';
 import { USER_SCENARIO_TEMPLATES_C13 } from './scenarioTemplatesUserC13';
 import { USER_SCENARIO_TEMPLATES_D0 } from './scenarioTemplatesUserD0';
 import { USER_SCENARIO_TEMPLATES_D1 } from './scenarioTemplatesUserD1';
+import { USER_SCENARIO_TEMPLATES_E0 } from './scenarioTemplatesUserE0';
+import { USER_SCENARIO_TEMPLATES_E1 } from './scenarioTemplatesUserE1';
+import { USER_SCENARIO_TEMPLATES_E2 } from './scenarioTemplatesUserE2';
+import { USER_SCENARIO_TEMPLATES_E3 } from './scenarioTemplatesUserE3';
+import { USER_SCENARIO_TEMPLATES_E4 } from './scenarioTemplatesUserE4';
+import { USER_SCENARIO_TEMPLATES_E5 } from './scenarioTemplatesUserE5';
+import { USER_SCENARIO_TEMPLATES_E6 } from './scenarioTemplatesUserE6';
+import { USER_SCENARIO_TEMPLATES_E7 } from './scenarioTemplatesUserE7';
+import { USER_SCENARIO_TEMPLATES_E8 } from './scenarioTemplatesUserE8';
+import { USER_SCENARIO_TEMPLATES_E9 } from './scenarioTemplatesUserE9';
+import { USER_SCENARIO_TEMPLATES_E10 } from './scenarioTemplatesUserE10';
+import { USER_SCENARIO_TEMPLATES_E11 } from './scenarioTemplatesUserE11';
+import { USER_SCENARIO_TEMPLATES_E12 } from './scenarioTemplatesUserE12';
+import { USER_SCENARIO_TEMPLATES_E13 } from './scenarioTemplatesUserE13';
+import { USER_SCENARIO_TEMPLATES_E14 } from './scenarioTemplatesUserE14';
 
-/** Full user-expanded set (prior + batch2 + batch3/40 = ~232) */
+/** Full user-expanded set (prior + batch2/3 + batch4/298) */
 export const USER_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
   ...USER_SCENARIO_TEMPLATES_A0,
   ...USER_SCENARIO_TEMPLATES_A1,
@@ -42,4 +57,19 @@ export const USER_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
   ...USER_SCENARIO_TEMPLATES_C13,
   ...USER_SCENARIO_TEMPLATES_D0,
   ...USER_SCENARIO_TEMPLATES_D1,
+  ...USER_SCENARIO_TEMPLATES_E0,
+  ...USER_SCENARIO_TEMPLATES_E1,
+  ...USER_SCENARIO_TEMPLATES_E2,
+  ...USER_SCENARIO_TEMPLATES_E3,
+  ...USER_SCENARIO_TEMPLATES_E4,
+  ...USER_SCENARIO_TEMPLATES_E5,
+  ...USER_SCENARIO_TEMPLATES_E6,
+  ...USER_SCENARIO_TEMPLATES_E7,
+  ...USER_SCENARIO_TEMPLATES_E8,
+  ...USER_SCENARIO_TEMPLATES_E9,
+  ...USER_SCENARIO_TEMPLATES_E10,
+  ...USER_SCENARIO_TEMPLATES_E11,
+  ...USER_SCENARIO_TEMPLATES_E12,
+  ...USER_SCENARIO_TEMPLATES_E13,
+  ...USER_SCENARIO_TEMPLATES_E14,
 ];
