@@ -39,11 +39,12 @@ async function main() {
   }
 
   for (const [name, pattern] of patterns) {
-    await prisma.grammarPattern.upsert({
-      where: { id: name },
-      update: { pattern },
-      create: { id: name, name, pattern },
-    });
+    const existing = await prisma.grammarPattern.findFirst({ where: { name } });
+    if (existing) {
+      await prisma.grammarPattern.update({ where: { id: existing.id }, data: { pattern } });
+    } else {
+      await prisma.grammarPattern.create({ data: { name, pattern } });
+    }
   }
 
   console.log(`Context Engine seeded: ${slots.length} semantic slots, ${patterns.length} grammar patterns.`);
