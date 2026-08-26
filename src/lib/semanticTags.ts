@@ -35,22 +35,22 @@ export type SemanticTag =
   | 'object'
   | 'description'
   // Fine — time family
-  | 'sequence' // subsequent, previous, prior, next
-  | 'duration' // prolonged, brief, temporary, permanent
-  | 'frequency' // constant, continuous, occasional, rare
+  | 'sequence'
+  | 'duration'
+  | 'frequency'
   // Fine — evaluation family
-  | 'intensity' // severe, mild, extreme, intolerable
-  | 'quality' // accurate, precise, vague, reliable
-  | 'importance' // crucial, essential, minor, major
+  | 'intensity'
+  | 'quality'
+  | 'importance'
   // Fine — cognitive family
-  | 'perception' // notice, recognize, spot, perceive, identify
-  | 'reasoning' // analyze, conclude, infer, assume, assess
+  | 'perception'
+  | 'reasoning'
   // Fine — communication family
-  | 'request' // propose, suggest, request, ask
-  | 'inform' // announce, inform, explain, describe, report
+  | 'request'
+  | 'inform'
   // Fine — social family
-  | 'cooperation' // collaborate, cooperate, support, assist
-  | 'conflict'; // argue, oppose, dispute
+  | 'cooperation'
+  | 'conflict';
 
 export const ALL_SEMANTIC_TAGS: SemanticTag[] = [
   'emotion',
@@ -119,82 +119,46 @@ export const TAG_GROUPS: { key: string; labelZh: string; tags: SemanticTag[] }[]
     tags: ['social', 'cooperation', 'conflict'],
   },
   {
-    key: 'change',
-    labelZh: '變化與因果',
-    tags: ['state_change', 'cause_effect', 'process', 'action'],
+    key: 'process',
+    labelZh: '過程/動作',
+    tags: ['process', 'action', 'state_change', 'cause_effect', 'physical'],
   },
   {
-    key: 'world',
-    labelZh: '人事物地',
-    tags: ['physical', 'description', 'abstract', 'object', 'place', 'role'],
+    key: 'other',
+    labelZh: '其他',
+    tags: ['abstract', 'place', 'role', 'object', 'description'],
   },
 ];
 
-export const TAG_LABELS_ZH: Record<SemanticTag, string> = {
-  emotion: '情緒',
-  evaluation: '評價',
-  state_change: '狀態變化',
-  communication: '溝通',
-  process: '流程',
-  cognitive: '認知',
-  quantity: '程度/數量',
-  time: '時間',
-  cause_effect: '因果',
-  social: '社交',
-  physical: '物理',
-  abstract: '抽象',
-  action: '動作',
-  positive: '正面',
-  negative: '負面',
-  place: '地點',
-  role: '角色',
-  object: '物件',
-  description: '描述',
-  sequence: '先後順序',
-  duration: '持續長短',
-  frequency: '頻率',
-  intensity: '強度',
-  quality: '品質',
-  importance: '重要性',
-  perception: '感知/辨認',
-  reasoning: '推理/分析',
-  request: '請求/提議',
-  inform: '告知/說明',
-  cooperation: '合作',
-  conflict: '衝突',
-};
-
-/** Normalize free-form POS strings into a stable key */
-export function normalizePos(pos?: string): PosKey {
-  const p = (pos || '').toLowerCase().trim();
-  if (/^n\\b|noun|n\\./.test(p)) return 'n';
-  if (/^v\\b|verb|v\\./.test(p)) return 'v';
-  if (/adj|a\\./.test(p)) return 'adj';
-  if (/adv/.test(p)) return 'adv';
+export function normalizePos(pos?: string | null): PosKey {
+  if (!pos) return 'other';
+  const p = pos.toLowerCase().trim();
+  if (/^n\b|noun|n\./.test(p) || p === 'n') return 'n';
+  if (/^v\b|verb|v\./.test(p) || p === 'v') return 'v';
+  if (/^adj\b|adjective|adj\./.test(p) || p === 'adj' || p === 'a') return 'adj';
+  if (/^adv\b|adverb|adv\./.test(p) || p === 'adv') return 'adv';
   return 'other';
 }
 
-function isSemanticTag(t: string): t is SemanticTag {
-  return (ALL_SEMANTIC_TAGS as string[]).includes(t);
-}
-
 /**
- * Infer semantic tags for a word.
- * Priority: explicitTags (user) > common-word dictionary > heuristics.
+ * Infer semantic tags for a vocabulary item.
+ * Priority: user tags > commonWordTags dictionary > heuristics.
  */
 export function inferSemanticTags(
   word: string,
-  pos?: string,
-  definition?: string,
-  explicitTags?: string[]
+  pos?: string | null,
+  definition?: string | null,
+  userTags?: string[] | null
 ): SemanticTag[] {
-  // 1) User-provided tags win
-  if (explicitTags && explicitTags.length > 0) {
-    const cleaned = explicitTags.map(t => t.trim().toLowerCase()).filter(isSemanticTag);
-    if (cleaned.length > 0) return Array.from(new Set(cleaned));
+  // 1) User-selected tags win
+  if (userTags && userTags.length > 0) {
+    const valid = userTags.filter((t): t is SemanticTag =>
+      (ALL_SEMANTIC_TAGS as string[]).includes(t)
+    );
+    if (valid.length > 0) return valid;
   }
 
-  const w = word.toLowerCase().trim();
+  const w = (word || '').toLowerCase().trim();
 
   // 2) Hand-curated dictionary
   if (COMMON_WORD_TAGS[w]) {
@@ -208,8 +172,16 @@ export function inferSemanticTags(
   const blob = `${w} ${def}`;
 
   const emotionWords =
-    /anxio|delight|frustrat|angr|happ|sad|nervous|calm|excit|fear|worri|confiden|embarrass|proud|guilt|lonely|optim|pessim|joy|grief|shame|relief|irritat/;
+    /anxio|delight|frustrat|angr|happ|sad|nervous|calm|excit|fear|worri|confiden|embarrass|proud|guilt|lonely|optim|pessim|joy|grief|shame|relief|irritat|pleased|cheerful|upset|annoy|disappoint|miserab|furious|glad/;
   if (emotionWords.test(blob)) tags.add('emotion');
+
+  // Polarity for emotion / evaluation words
+  const posEmo =
+    /happ|delight|glad|cheer|joy|pleased|content|proud|confiden|optim|excit|relief|relieved|calm/;
+  const negEmo =
+    /anxio|frustrat|angr|sad|nervous|fear|worri|embarrass|guilt|lonely|pessim|grief|shame|irritat|upset|annoy|disappoint|miserab|furious|bored|boring/;
+  if (posEmo.test(blob)) tags.add('positive');
+  if (negEmo.test(blob)) tags.add('negative');
 
   if (
     posKey === 'adj' &&
@@ -239,7 +211,7 @@ export function inferSemanticTags(
   const communication =
     /negotiat|convey|articulat|propos|suggest|argu|discuss|express|communicat|persuad|inform|announc|emphas|request|explain|describ|report/;
   if (communication.test(blob)) tags.add('communication');
-  if (/propos|suggest|request|ask\\b|appeal|petition/.test(blob)) tags.add('request');
+  if (/propos|suggest|request|ask\b|appeal|petition/.test(blob)) tags.add('request');
   if (/inform|announc|explain|describ|report|notify|declar/.test(blob)) tags.add('inform');
 
   const process =
@@ -248,9 +220,9 @@ export function inferSemanticTags(
   if (posKey === 'v') tags.add('action');
 
   const cognitive =
-    /analy[sz]|perceiv|assum|conclud|infer|reason|consider|evaluat|assess|judg|think|believ|recogn|realis|interpret|notic|spot\\b|identify|recall|remember/;
+    /analy[sz]|perceiv|assum|conclud|infer|reason|consider|evaluat|assess|judg|think|believ|recogn|realis|interpret|notic|spot\b|identify|recall|remember/;
   if (cognitive.test(blob)) tags.add('cognitive');
-  if (/notic|spot\\b|perceiv|recogn|identify|observ|detect/.test(blob)) {
+  if (/notic|spot\b|perceiv|recogn|identify|observ|detect/.test(blob)) {
     tags.add('perception');
     tags.add('cognitive');
   }
@@ -266,7 +238,7 @@ export function inferSemanticTags(
   const time =
     /temporar|prolong|eventual|immediat|gradual|sudden|permanent|brief|lasting|previous|current|subsequent|prior|constant|continuous|occasional|frequent|rare/;
   if (time.test(blob)) tags.add('time');
-  if (/subsequent|previous|prior|following|preceding|next\\b|former|latter/.test(blob)) {
+  if (/subsequent|previous|prior|following|preceding|next\b|former|latter/.test(blob)) {
     tags.add('sequence');
     tags.add('time');
   }
@@ -331,6 +303,7 @@ export function inferSemanticTags(
 /**
  * Score how well a word's tags match a required slot tag list (higher = better).
  * Fine tags count equally; partial overlap still scores.
+ * Opposite polarity (positive vs negative) is hard-rejected.
  */
 export function matchScore(
   wordTags: SemanticTag[],
@@ -368,6 +341,18 @@ export function matchScore(
   ];
   for (const t of required) {
     if (fine.includes(t) && wordTags.includes(t)) score += 0.25;
+  }
+
+  // Polarity: reward agreement, strongly penalize conflict (happy ≠ no empty seats)
+  const reqNeg = required.includes('negative');
+  const reqPos = required.includes('positive');
+  const wordNeg = wordTags.includes('negative');
+  const wordPos = wordTags.includes('positive');
+  if ((reqNeg && wordPos) || (reqPos && wordNeg)) {
+    return 0; // hard reject opposite polarity
+  }
+  if ((reqNeg && wordNeg) || (reqPos && wordPos)) {
+    score += 0.35;
   }
 
   return score;
