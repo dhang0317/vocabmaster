@@ -34,8 +34,9 @@ import { USER_SCENARIO_TEMPLATES_E11 } from './scenarioTemplatesUserE11';
 import { USER_SCENARIO_TEMPLATES_E12 } from './scenarioTemplatesUserE12';
 import { USER_SCENARIO_TEMPLATES_E13 } from './scenarioTemplatesUserE13';
 import { USER_SCENARIO_TEMPLATES_E14 } from './scenarioTemplatesUserE14';
+import { USER_SCENARIO_TEMPLATES_F0 } from './scenarioTemplatesUserF0';
 
-/** Full user-expanded set (prior + batch2/3 + batch4/298) */
+/** Full user-expanded set (prior + batch2/3 + batch4 + F0/100) */
 export const USER_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
   ...USER_SCENARIO_TEMPLATES_A0,
   ...USER_SCENARIO_TEMPLATES_A1,
@@ -72,4 +73,5 @@ export const USER_SCENARIO_TEMPLATES: ScenarioTemplate[] = [
   ...USER_SCENARIO_TEMPLATES_E12,
   ...USER_SCENARIO_TEMPLATES_E13,
   ...USER_SCENARIO_TEMPLATES_E14,
+  ...USER_SCENARIO_TEMPLATES_F0,
 ];
