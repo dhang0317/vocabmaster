@@ -3,93 +3,93 @@ import type { ScenarioTemplate } from './scenarioTemplates';
 /** bulk F1 group 11 */
 export const USER_SCENARIO_TEMPLATES_F1g11: ScenarioTemplate[] = [
   {
-    id: 'academic_presentation_skills_04',
-    title: 'Presentation Skills',
-    titleZh: '口頭報告技巧',
-    level: ['highschool', 'toeic'],
-    domain: 'academic',
+    id: 'workplace_supply_chain_14',
+    title: 'Supply Chain',
+    titleZh: '供應鏈風險管理',
+    level: ['toefl_ielts', 'advanced'],
+    domain: 'workplace',
     content:
-      'Delivering effective presentations requires speakers to {{s1}} audience engagement techniques carefully. Instructors will {{s2}} students about structuring slides with clear visual hierarchy. Presenters must {{s3}} nonverbal cues from listeners to adjust speaking pace. Maintaining {{s4}} eye contact builds credibility during formal academic talks. Consistent practice will {{s5}} nervous speakers into confident public communicators.',
+      'Global supply chain logistics require managers to {{s1}} geopolitical risks and transport bottlenecks. Procurement officers will {{s2}} suppliers regarding revised inventory buffers and safety standards. Preventing {{s3}} shortages requires companies to diversify raw material vendor networks. Operations leaders must {{s4}} emerging bottleneck indicators along shipping lines. Adaptive inventory management will {{s5}} consistent manufacturing output during disruptions.',
     contentZh:
-      '口頭報告技巧',
+      '供應鏈風險管理',
     slots: [
       { id: 's1', pos: 'v', tags: ['reasoning', 'cognitive'] },
       { id: 's2', pos: 'v', tags: ['inform', 'communication'] },
-      { id: 's3', pos: 'v', tags: ['perception', 'cognitive'] },
-      { id: 's4', pos: 'adj', tags: ['quality', 'evaluation'] },
+      { id: 's3', pos: 'adj', tags: ['intensity', 'evaluation'] },
+      { id: 's4', pos: 'v', tags: ['perception', 'cognitive'] },
+      { id: 's5', pos: 'v', tags: ['cause_effect'] },
+    ],
+  },
+  {
+    id: 'workplace_intellectual_property_15',
+    title: 'Intellectual Property',
+    titleZh: '智慧財產權保護',
+    level: ['toefl_ielts', 'advanced'],
+    domain: 'workplace',
+    content:
+      'Protecting intellectual property rights requires legal counsel to {{s1}} patent documentation meticulously. Corporate attorneys will {{s2}} research teams concerning patent filing procedures and boundaries. Safeguarding trade secrets is {{s3}} for maintaining commercial competitiveness in tech sectors. Companies will legally {{s4}} injunctions against competitors engaging in unfair practice. Firm legal protection will {{s5}} robust defense against market infringement.',
+    contentZh:
+      '智慧財產權保護',
+    slots: [
+      { id: 's1', pos: 'v', tags: ['reasoning', 'cognitive'] },
+      { id: 's2', pos: 'v', tags: ['inform', 'communication'] },
+      { id: 's3', pos: 'adj', tags: ['importance', 'evaluation'] },
+      { id: 's4', pos: 'v', tags: ['request', 'communication'] },
+      { id: 's5', pos: 'v', tags: ['cause_effect'] },
+    ],
+  },
+  {
+    id: 'workplace_digital_transformation_16',
+    title: 'Digital Transformation',
+    titleZh: '企業數位化轉型',
+    level: ['toefl_ielts', 'advanced'],
+    domain: 'workplace',
+    content:
+      'Embarking on digital transformation mandates leaders to {{s1}} outdated legacy IT infrastructure. Chief Technology Officers must {{s2}} stakeholders on cloud migration benefits and timelines. Successful deployment requires departments to {{s3}} on cross-functional software integration. It is {{s4}} to train staff effectively on newly adopted digital workflows. Enterprise-wide digitization will {{s5}} operational agility across global business operations.',
+    contentZh:
+      '企業數位化轉型',
+    slots: [
+      { id: 's1', pos: 'v', tags: ['state_change'] },
+      { id: 's2', pos: 'v', tags: ['inform', 'communication'] },
+      { id: 's3', pos: 'v', tags: ['cooperation', 'social'] },
+      { id: 's4', pos: 'adj', tags: ['importance', 'evaluation'] },
+      { id: 's5', pos: 'v', tags: ['cause_effect'] },
+    ],
+  },
+  {
+    id: 'workplace_esg_compliance_17',
+    title: 'Esg Compliance',
+    titleZh: '永續經營合規',
+    level: ['toefl_ielts', 'advanced'],
+    domain: 'workplace',
+    content:
+      'Implementing environmental governance mandates companies to {{s1}} investors regarding carbon emission metrics. Sustainability officers must {{s2}} environmental footprints across all manufacturing facilities. Demonstrating a {{s3}} commitment to green energy enhances institutional investor trust. Enterprise management will {{s4}} with environmental agencies on green compliance audits. Sustainable operational strategies will {{s5}} corporate reputation within modern global markets.',
+    contentZh:
+      '永續經營合規',
+    slots: [
+      { id: 's1', pos: 'v', tags: ['inform', 'communication'] },
+      { id: 's2', pos: 'v', tags: ['reasoning', 'cognitive'] },
+      { id: 's3', pos: 'adj', tags: ['quality', 'evaluation'] },
+      { id: 's4', pos: 'v', tags: ['cooperation', 'social'] },
       { id: 's5', pos: 'v', tags: ['state_change'] },
     ],
   },
   {
-    id: 'academic_peer_feedback_05',
-    title: 'Peer Feedback',
-    titleZh: '同儕互評回饋',
-    level: ['highschool', 'toeic'],
-    domain: 'academic',
+    id: 'workplace_cross_cultural_18',
+    title: 'Cross Cultural',
+    titleZh: '跨文化團隊管理',
+    level: ['toefl_ielts', 'advanced'],
+    domain: 'workplace',
     content:
-      'Providing constructive peer feedback requires students to {{s1}} strengths and weaknesses objectively. Reviewers will {{s2}} authors about specific areas needing improvement or clarification. Writers should {{s3}} feedback comments without taking criticism personally. Establishing a {{s4}} peer review culture improves overall class writing quality. Thoughtful critique will {{s5}} better revision outcomes for academic assignments.',
+      'Managing multinational teams requires managers to {{s1}} subtle cultural communication nuances. Leaders should {{s2}} team members about diverse business etiquette and expectations. Promoting cross-cultural understanding helps to {{s3}} mutual respect among colleagues. It is {{s4}} to establish inclusive decision-making frameworks across international offices. Effective management will {{s5}} multicultural teams into high-performing collaborative units.',
     contentZh:
-      '同儕互評回饋',
+      '跨文化團隊管理',
     slots: [
-      { id: 's1', pos: 'v', tags: ['reasoning', 'cognitive'] },
+      { id: 's1', pos: 'v', tags: ['perception', 'cognitive'] },
       { id: 's2', pos: 'v', tags: ['inform', 'communication'] },
-      { id: 's3', pos: 'v', tags: ['process'] },
-      { id: 's4', pos: 'adj', tags: ['quality', 'evaluation'] },
-      { id: 's5', pos: 'v', tags: ['cause_effect'] },
-    ],
-  },
-  {
-    id: 'science_lab_safety_01',
-    title: 'Lab Safety',
-    titleZh: '實驗室安全規範',
-    level: ['highschool', 'toeic'],
-    domain: 'science',
-    content:
-      'Following laboratory safety protocols is {{s1}} when handling chemical reagents carefully. Supervisors will {{s2}} students regarding proper protective equipment requirements. Researchers must {{s3}} potential hazards before beginning experimental procedures. Maintaining a {{s4}} workspace prevents accidental contamination of samples. Strict safety adherence will {{s5}} a secure environment for scientific investigation.',
-    contentZh:
-      '實驗室安全規範',
-    slots: [
-      { id: 's1', pos: 'adj', tags: ['importance', 'evaluation'] },
-      { id: 's2', pos: 'v', tags: ['inform', 'communication'] },
-      { id: 's3', pos: 'v', tags: ['perception', 'cognitive'] },
-      { id: 's4', pos: 'adj', tags: ['quality', 'evaluation'] },
-      { id: 's5', pos: 'v', tags: ['cause_effect'] },
-    ],
-  },
-  {
-    id: 'science_data_collection_02',
-    title: 'Data Collection',
-    titleZh: '科學數據蒐集',
-    level: ['highschool', 'toeic'],
-    domain: 'science',
-    content:
-      'Accurate data collection requires researchers to {{s1}} measurement instruments carefully before use. Lab technicians will {{s2}} team members about standardized recording procedures. Scientists must {{s3}} anomalies that could indicate equipment calibration errors. Maintaining {{s4}} documentation ensures reproducibility of experimental findings. Rigorous data practices will {{s5}} reliable conclusions for scientific publications.',
-    contentZh:
-      '科學數據蒐集',
-    slots: [
-      { id: 's1', pos: 'v', tags: ['process'] },
-      { id: 's2', pos: 'v', tags: ['inform', 'communication'] },
-      { id: 's3', pos: 'v', tags: ['perception', 'cognitive'] },
-      { id: 's4', pos: 'adj', tags: ['quality', 'evaluation'] },
-      { id: 's5', pos: 'v', tags: ['cause_effect'] },
-    ],
-  },
-  {
-    id: 'science_hypothesis_testing_03',
-    title: 'Hypothesis Testing',
-    titleZh: '假說驗證方法',
-    level: ['highschool', 'toeic'],
-    domain: 'science',
-    content:
-      'Testing scientific hypotheses requires researchers to {{s1}} experimental variables systematically. Principal investigators will {{s2}} the team about expected outcomes and controls. Analysts must {{s3}} statistical significance before accepting or rejecting hypotheses. Designing a {{s4}} experimental protocol strengthens the validity of research conclusions. Sound methodology will {{s5}} credible advances in scientific understanding.',
-    contentZh:
-      '假說驗證方法',
-    slots: [
-      { id: 's1', pos: 'v', tags: ['reasoning', 'cognitive'] },
-      { id: 's2', pos: 'v', tags: ['inform', 'communication'] },
-      { id: 's3', pos: 'v', tags: ['reasoning', 'cognitive'] },
-      { id: 's4', pos: 'adj', tags: ['quality', 'evaluation'] },
-      { id: 's5', pos: 'v', tags: ['cause_effect'] },
+      { id: 's3', pos: 'v', tags: ['cause_effect'] },
+      { id: 's4', pos: 'adj', tags: ['importance', 'evaluation'] },
+      { id: 's5', pos: 'v', tags: ['state_change'] },
     ],
   },
 ];
