@@ -120,25 +120,25 @@ const verbFrames = {
 
 const adjectiveFrames = {
   ADJ_DURATION: [
-    'The repair is only {w}, so we will need another solution later.',
-    'The team made a {w} arrangement while the office was being renovated.',
-    'The change was expected to be {w}, not a long-term solution.',
-    'The patient experienced a {w} improvement after the treatment.',
-    'The company offered a {w} position during the busy season.',
+    'The arrangement is {w} rather than permanent.',
+    'The change was described as {w} by the manager.',
+    'The position is {w} and will end after the busy season.',
+    'The effect is {w} and should disappear over time.',
     'The road closure is {w}, according to the latest notice.',
-    'The equipment is being used for a {w} period.',
-    'The agreement was intended to be {w} while both sides negotiated.',
-    'The project created a {w} need for additional staff.',
-    'The building will remain closed for a {w} period.',
+    'The agreement remains {w} while both sides negotiate.',
+    'The equipment is available on a {w} basis.',
+    'The team made a {w} adjustment to the schedule.',
+    'The solution was designed to meet a {w} need.',
     'The policy was introduced as a {w} measure.',
-    'The effect was not {w} and disappeared after several days.'
+    'The building will remain closed for a {w} period.',
+    'The manager warned that the arrangement might not be {w}.'
   ],
   ADJ_IMPORTANCE: [
     'The study provides {w} evidence for the proposed explanation.',
     'The manager emphasized the {w} role of communication.',
     'Researchers found a {w} difference between the two groups.',
     'The report identifies several {w} factors.',
-    'It is {w} to check the information before sharing it.',
+    'The issue is {w} to the success of the project.',
     'The training has a {w} effect on workplace safety.',
     'The results show a {w} change in performance.',
     'The team discussed the most {w} part of the project.',
@@ -205,6 +205,12 @@ const adjectiveFrames = {
   ]
 };
 
+const variantPhrases = [
+  '',
+  ' The example comes from a typical learning context.',
+  ' This situation is common in real-world communication.'
+];
+
 async function main() {
   const candidates = await prisma.slotCandidate.findMany({
     include: { sense: { include: { word: true } }, slot: true },
@@ -221,7 +227,7 @@ async function main() {
 
     for (let variant = 0; variant < 3; variant++) {
       for (let i = 0; i < frames.length; i++) {
-        const content = frames[i].replace(/\{w\}/g, word.word);
+        const content = frames[i].replace(/\{w\}/g, word.word) + variantPhrases[variant];
         const id = `ce-expand-${word.id}-${i}-${variant}`;
         if (seen.has(id)) continue;
         seen.add(id);
