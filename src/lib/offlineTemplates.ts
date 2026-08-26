@@ -27,89 +27,6 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-type Frame = { en: (blank: string, word: string, zh: string) => string; zh: (word: string, zh: string) => string };
-
-const FRAMES: Record<'n' | 'v' | 'adj' | 'adv' | 'other', Frame[]> = {
-  n: [
-    {
-      en: b => `The report highlighted the importance of ${b} in this situation.`,
-      zh: (_w, zh) => `報告強調了「${zh}」在此情境中的重要性。`,
-    },
-    {
-      en: b => `Without enough ${b}, the team could not finish the project on time.`,
-      zh: (_w, zh) => `若沒有足夠的「${zh}」，團隊就無法準時完成專案。`,
-    },
-    {
-      en: b => `Experts said ${b} would continue to shape decisions this year.`,
-      zh: (_w, zh) => `專家表示，「${zh}」今年仍會影響許多決策。`,
-    },
-    {
-      en: b => `She took careful notes on every detail related to ${b}.`,
-      zh: (_w, zh) => `她仔細記錄了與「${zh}」有關的每個細節。`,
-    },
-  ],
-  v: [
-    {
-      en: b => `Managers must ${b} the new policy before next Monday.`,
-      zh: (_w, zh) => `主管必須在下週一前${zh}這項新政策。`,
-    },
-    {
-      en: b => `If we ${b} carefully, we can avoid the same mistake.`,
-      zh: (_w, zh) => `若我們仔細${zh}，就能避免重蹈覆轍。`,
-    },
-    {
-      en: b => `The company decided to ${b} its strategy after the meeting.`,
-      zh: (_w, zh) => `會議之後，公司決定${zh}既有策略。`,
-    },
-    {
-      en: b => `Students were asked to ${b} the main idea in their own words.`,
-      zh: (_w, zh) => `老師要求學生用自己的話${zh}主旨。`,
-    },
-  ],
-  adj: [
-    {
-      en: b => `The results were more ${b} than anyone expected.`,
-      zh: (_w, zh) => `結果比任何人預期的都更${zh}。`,
-    },
-    {
-      en: b => `A ${b} approach helped the team solve the problem faster.`,
-      zh: (_w, zh) => `一個${zh}的做法幫助團隊更快解決問題。`,
-    },
-    {
-      en: b => `His answer was clear, careful, and ${b}.`,
-      zh: (_w, zh) => `他的回答清楚、謹慎，而且${zh}。`,
-    },
-    {
-      en: b => `They needed a ${b} plan before investing more money.`,
-      zh: (_w, zh) => `在投入更多資金前，他們需要一個${zh}的計畫。`,
-    },
-  ],
-  adv: [
-    {
-      en: b => `She spoke ${b}, and everyone in the room understood her point.`,
-      zh: (_w, zh) => `她${zh}地說明，全場都聽懂了重點。`,
-    },
-    {
-      en: b => `The system updated ${b} during the night.`,
-      zh: (_w, zh) => `系統在夜間${zh}完成更新。`,
-    },
-    {
-      en: b => `If you prepare ${b}, the interview will feel much easier.`,
-      zh: (_w, zh) => `若你${zh}準備，面試會輕鬆許多。`,
-    },
-  ],
-  other: [
-    {
-      en: b => `In this context, ${b} plays a key role.`,
-      zh: (_w, zh) => `在這個語境中，「${zh}」扮演關鍵角色。`,
-    },
-    {
-      en: b => `People often misunderstand what ${b} really means.`,
-      zh: (_w, zh) => `人們常誤解「${zh}」的真正意思。`,
-    },
-  ],
-};
-
 const DISTRACTOR_POOL: Record<'n' | 'v' | 'adj' | 'adv' | 'other', string[]> = {
   n: ['strategy', 'resource', 'challenge', 'outcome', 'process', 'demand', 'benefit', 'risk', 'policy', 'budget'],
   v: ['improve', 'reduce', 'manage', 'support', 'require', 'produce', 'measure', 'adjust', 'consider', 'maintain'],
@@ -167,7 +84,7 @@ const QUIZ_STEMS: Record<
     ],
     v: [
       { en: 'All staff must _____ the new safety guidelines by Friday.', zh: '全體同仁須於週五前_____新的安全規範。' },
-      { en: 'The team will _____ the proposal during tomorrow’s meeting.', zh: '團隊將在明天會議中_____這份提案。' },
+      { en: 'The team will _____ the proposal during tomorrow\'s meeting.', zh: '團隊將在明天會議中_____這份提案。' },
     ],
     adj: [
       { en: 'We need a _____ solution that fits the current schedule.', zh: '我們需要一個符合目前時程的_____方案。' },
@@ -181,7 +98,7 @@ const QUIZ_STEMS: Record<
   },
   toefl_ielts: {
     n: [
-      { en: 'The passage discusses the _____ behind the researchers’ approach.', zh: '文章討論研究者方法背後的_____。' },
+      { en: 'The passage discusses the _____ behind the researchers\' approach.', zh: '文章討論研究者方法背後的_____。' },
       { en: 'A key _____ in the study is the limited sample size.', zh: '本研究的一個關鍵_____是樣本數有限。' },
     ],
     v: [
@@ -238,47 +155,24 @@ function pickDistractors(w: GeneratedWord, all: GeneratedWord[]): string[] {
   return unique.slice(0, 3);
 }
 
-/** Append leftover words using classic POS frames so no word is dropped */
-function appendLeftoverFrames(
-  leftovers: GeneratedWord[],
-  startBlankId: number,
-  allWords: GeneratedWord[]
-): { en: string; zh: string; blanks: ClozeBlank[]; glossary: GlossaryEntry[] } {
-  if (leftovers.length === 0) {
-    return { en: '', zh: '', blanks: [], glossary: [] };
-  }
-
-  const enParts: string[] = [];
-  const zhParts: string[] = [];
-  const blanks: ClozeBlank[] = [];
-  const glossary: GlossaryEntry[] = [];
-
-  leftovers.forEach((w, i) => {
-    const blankId = startBlankId + i;
-    const blank = `[blank_${blankId}]`;
-    const zh = zhOf(w);
-    const pos = normalizePos(w.pos);
-    const pool = FRAMES[pos];
-    const frame = pool[i % pool.length];
-    enParts.push(frame.en(blank, w.word, zh));
-    zhParts.push(frame.zh(w.word, zh));
-
-    const unique = pickDistractors(w, allWords);
-    blanks.push({
-      id: blankId,
-      word: w.word,
-      hint: `${zh} (${w.pos || pos})`,
-      options: shuffle([w.word, unique[0], unique[1], unique[2]]),
-    });
-    glossary.push({ en: w.word, zh, sense: `詞性 ${w.pos || pos}` });
+/**
+ * Renumber blanks in a second article so ids continue after the first article.
+ */
+function renumberBlanks(
+  content: string,
+  blanks: ClozeBlank[],
+  startId: number
+): { content: string; blanks: ClozeBlank[] } {
+  let next = content;
+  const newBlanks: ClozeBlank[] = [];
+  blanks.forEach((b, i) => {
+    const oldMarker = `[blank_${b.id}]`;
+    const newId = startId + i;
+    const newMarker = `[blank_${newId}]`;
+    next = next.split(oldMarker).join(newMarker);
+    newBlanks.push({ ...b, id: newId });
   });
-
-  return {
-    en: ' ' + enParts.join(' '),
-    zh: zhParts.join(''),
-    blanks,
-    glossary,
-  };
+  return { content: next, blanks: newBlanks };
 }
 
 export interface OfflineArticleResult {
@@ -291,44 +185,79 @@ export interface OfflineArticleResult {
 }
 
 /**
- * Single entry point for offline cloze articles.
- * Uses scenario templates + semantic matching; leftover words get POS frames.
- * Story and blanks are always consistent.
+ * Offline cloze articles — quality first.
+ *
+ * 1. Match words into a coherent scenario template.
+ * 2. For leftovers, try a *second* scenario (never stitch "plays a key role" junk).
+ * 3. Words that still don't fit are omitted from the article (better short+good than long+absurd).
  */
 export function buildOfflineArticle(
   words: GeneratedWord[],
   level: GenerationLevel = 'highschool'
 ): OfflineArticleResult {
-  const scenario = buildScenarioStory(words, level);
-  const leftover = appendLeftoverFrames(
-    scenario.leftoverWords,
-    scenario.blanks.length + 1,
-    words
-  );
+  const primary = buildScenarioStory(words, level);
 
-  const content = (scenario.content + leftover.en).trim();
-  const contentZh = (scenario.contentZh + leftover.zh).trim();
-  const blanks = [...scenario.blanks, ...leftover.blanks];
+  let content = primary.content.trim();
+  let contentZh = primary.contentZh.trim();
+  let blanks = [...primary.blanks];
+  let glossaryExtra = [...primary.glossaryExtra];
+  let templateId = primary.templateId;
 
-  const glossaryExtra: GlossaryEntry[] = [
-    ...scenario.glossaryExtra,
-    ...leftover.glossary,
-    { en: 'importance', zh: '重要性' },
-    { en: 'situation', zh: '情境' },
-    { en: 'project', zh: '專案' },
-    { en: 'policy', zh: '政策' },
-    { en: 'strategy', zh: '策略' },
-    { en: 'outcome', zh: '結果' },
-    { en: 'confidence', zh: '信心' },
-  ];
+  // Second pass: try another scenario for leftovers (academic words etc.)
+  if (primary.leftoverWords.length > 0) {
+    const secondary = buildScenarioStory(primary.leftoverWords, level);
+
+    // Only append if at least half the leftover slots got a real match
+    const secondaryFill =
+      secondary.placedWords.length / Math.max(1, primary.leftoverWords.length);
+
+    if (secondary.placedWords.length > 0 && secondaryFill >= 0.4) {
+      const ren = renumberBlanks(
+        secondary.content,
+        secondary.blanks,
+        blanks.length + 1
+      );
+      content = `${content} ${ren.content}`.trim();
+      contentZh = `${contentZh}${secondary.contentZh}`.trim();
+      blanks = [...blanks, ...ren.blanks];
+      glossaryExtra = [...glossaryExtra, ...secondary.glossaryExtra];
+      templateId = `${primary.templateId}+${secondary.templateId}`;
+    }
+    // else: drop unmatched leftovers — do NOT append generic frames
+  }
+
+  // Safety: if primary produced nothing usable, return a minimal honest message
+  if (!content || blanks.length === 0) {
+    const w = words[0];
+    const zh = w ? zhOf(w) : '';
+    return {
+      title: '練習提示',
+      content:
+        'These words did not match any scenario template well enough to build a natural article. Try adding more everyday words, or set semantic tags manually when creating the deck.',
+      contentZh:
+        '這些單字與現有情境範本的語意匹配不足，無法組成自然文章。建議加入較生活化的單字，或在建立牌組時手動設定語意標籤。',
+      blanks: w
+        ? [
+            {
+              id: 1,
+              word: w.word,
+              hint: `${zh} (${w.pos || 'n'})`,
+              options: shuffle([w.word, 'strategy', 'process', 'outcome']),
+            },
+          ]
+        : [],
+      glossaryExtra: w ? [{ en: w.word, zh, sense: '未能匹配情境' }] : [],
+      templateId: 'no_match',
+    };
+  }
 
   return {
-    title: scenario.title,
+    title: primary.title,
     content,
     contentZh,
     blanks,
     glossaryExtra,
-    templateId: scenario.templateId,
+    templateId,
   };
 }
 
