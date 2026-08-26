@@ -3,53 +3,35 @@ import type { ScenarioTemplate } from './scenarioTemplates';
 /** bulk F1 group 10 */
 export const USER_SCENARIO_TEMPLATES_F1g10: ScenarioTemplate[] = [
   {
-    id: 'health_sleep_quality_04',
-    title: 'Sleep Quality',
-    titleZh: '睡眠品質改善',
+    id: 'health_sleep_hygiene_04',
+    title: 'Sleep Hygiene',
+    titleZh: '睡眠衛生習慣',
     level: ['highschool', 'toeic'],
     domain: 'daily',
     content:
-      'Improving sleep quality requires people to {{s1}} caffeine intake during evenings. Sleep specialists will {{s2}} patients regarding healthy bedtime routines and habits. Creating a {{s3}} sleeping environment supports deeper restful recovery cycles. Individuals must {{s4}} signs of chronic insomnia before seeking medical treatment. Consistent sleep patterns will {{s5}} cognitive performance during demanding workdays.',
+      'Maintaining healthy sleeping habits guarantees a {{s1}} night of restorative rest. Physicians often {{s2}} patients to avoid digital screens before bedtime. Establishing fixed sleeping times will {{s3}} internal circadian rhythms for the body. It is {{s4}} to keep bedrooms dark, quiet, and cool. Quality restorative sleep will {{s5}} enhanced cognitive sharpness during daily activities.',
     contentZh:
-      '睡眠品質改善',
+      '睡眠衛生習慣',
     slots: [
-      { id: 's1', pos: 'v', tags: ['process'] },
+      { id: 's1', pos: 'adj', tags: ['quality', 'evaluation'] },
       { id: 's2', pos: 'v', tags: ['inform', 'communication'] },
-      { id: 's3', pos: 'adj', tags: ['quality', 'evaluation'] },
-      { id: 's4', pos: 'v', tags: ['perception', 'cognitive'] },
+      { id: 's3', pos: 'v', tags: ['state_change'] },
+      { id: 's4', pos: 'adj', tags: ['evaluation'] },
       { id: 's5', pos: 'v', tags: ['cause_effect'] },
     ],
   },
   {
-    id: 'health_physical_therapy_05',
-    title: 'Physical Therapy',
-    titleZh: '復健物理治療',
+    id: 'health_first_aid_05',
+    title: 'First Aid',
+    titleZh: '急救常識應變',
     level: ['highschool', 'toeic'],
     domain: 'daily',
     content:
-      'Recovering from sports injuries requires a {{s1}} rehabilitation program with specialists. Physical therapists will {{s2}} patients about gradual mobility exercises for recovery. Patients must {{s3}} with therapists to achieve full joint flexibility restoration. It is {{s4}} to avoid overexertion during early recovery stages carefully. Dedicated rehabilitation will {{s5}} athletes back to competitive physical condition.',
+      'Knowing standard first aid procedures is an {{s1}} skill for safety. In emergencies, bystanders must {{s2}} medical dispatchers about victim condition. Rescuers must {{s3}} signs of life before administering cardiopulmonary resuscitation. Proper training ensures a {{s4}} response during severe medical emergencies. Immediate first aid intervention can {{s5}} survival chances until paramedics arrive.',
     contentZh:
-      '復健物理治療',
+      '急救常識應變',
     slots: [
-      { id: 's1', pos: 'adj', tags: ['quality', 'evaluation'] },
-      { id: 's2', pos: 'v', tags: ['inform', 'communication'] },
-      { id: 's3', pos: 'v', tags: ['cooperation', 'social'] },
-      { id: 's4', pos: 'adj', tags: ['importance', 'evaluation'] },
-      { id: 's5', pos: 'v', tags: ['state_change'] },
-    ],
-  },
-  {
-    id: 'academic_study_group_01',
-    title: 'Study Group',
-    titleZh: '課業研討小組',
-    level: ['highschool', 'toeic'],
-    domain: 'academic',
-    content:
-      'Joining a study group allows students to {{s1}} difficult course materials together. Tutors will {{s2}} members about effective note-taking strategies before exams. Participants should {{s3}} complex theoretical concepts through group discussion sessions. Maintaining a {{s4}} collaborative atmosphere encourages active academic participation. Group learning consistently will {{s5}} individual academic performance across subject areas.',
-    contentZh:
-      '課業研討小組',
-    slots: [
-      { id: 's1', pos: 'v', tags: ['reasoning', 'cognitive'] },
+      { id: 's1', pos: 'adj', tags: ['importance', 'evaluation'] },
       { id: 's2', pos: 'v', tags: ['inform', 'communication'] },
       { id: 's3', pos: 'v', tags: ['perception', 'cognitive'] },
       { id: 's4', pos: 'adj', tags: ['quality', 'evaluation'] },
@@ -57,39 +39,57 @@ export const USER_SCENARIO_TEMPLATES_F1g10: ScenarioTemplate[] = [
     ],
   },
   {
-    id: 'academic_library_research_02',
-    title: 'Library Research',
-    titleZh: '圖書館文獻查閱',
-    level: ['highschool', 'toeic'],
-    domain: 'academic',
+    id: 'workplace_strategic_planning_11',
+    title: 'Strategic Planning',
+    titleZh: '企業戰略規劃',
+    level: ['toefl_ielts', 'advanced'],
+    domain: 'workplace',
     content:
-      'Conducting thorough library research requires students to {{s1}} relevant academic sources carefully. Librarians will {{s2}} researchers about accessing online journal databases effectively. Scholars must {{s3}} source credibility before citing references in formal papers. It is {{s4}} to organize research notes systematically for efficient writing. Comprehensive literature reviews will {{s5}} stronger academic arguments in scholarly publications.',
+      'Strategic organizational planning requires executives to {{s1}} emerging market dynamics and global economic volatility. Leadership must {{s2}} regional heads regarding overarching multi-year growth targets. To sustain competitive advantage, companies must {{s3}} with innovative technology vendors. It is {{s4}} to conduct thorough feasibility assessments before launching global expansion initiatives. Such forward-thinking leadership will {{s5}} structural efficiency across international operations.',
     contentZh:
-      '圖書館文獻查閱',
+      '企業戰略規劃',
     slots: [
       { id: 's1', pos: 'v', tags: ['reasoning', 'cognitive'] },
       { id: 's2', pos: 'v', tags: ['inform', 'communication'] },
-      { id: 's3', pos: 'v', tags: ['perception', 'cognitive'] },
+      { id: 's3', pos: 'v', tags: ['cooperation', 'social'] },
       { id: 's4', pos: 'adj', tags: ['importance', 'evaluation'] },
+      { id: 's5', pos: 'v', tags: ['state_change'] },
+    ],
+  },
+  {
+    id: 'workplace_merger_acquisition_12',
+    title: 'Merger Acquisition',
+    titleZh: '企業併購併整合',
+    level: ['toefl_ielts', 'advanced'],
+    domain: 'workplace',
+    content:
+      'Executing a corporate merger demands a {{s1}} due diligence process across all involved entities. Legal advisors must {{s2}} compliance frameworks to mitigate post-acquisition liability risks. Executives need to {{s3}} staff regarding corporate restructurings and operational synergies. Managing cultural differences requires leaders to {{s4}} employee concerns across both merging organizations. Seamless operational integration will ultimately {{s5}} market expansion and shareholder value.',
+    contentZh:
+      '企業併購併整合',
+    slots: [
+      { id: 's1', pos: 'adj', tags: ['quality', 'evaluation'] },
+      { id: 's2', pos: 'v', tags: ['reasoning', 'cognitive'] },
+      { id: 's3', pos: 'v', tags: ['inform', 'communication'] },
+      { id: 's4', pos: 'v', tags: ['perception', 'cognitive'] },
       { id: 's5', pos: 'v', tags: ['cause_effect'] },
     ],
   },
   {
-    id: 'academic_essay_writing_03',
-    title: 'Essay Writing',
-    titleZh: '學術論文寫作',
-    level: ['highschool', 'toeic'],
-    domain: 'academic',
+    id: 'workplace_crisis_management_13',
+    title: 'Crisis Management',
+    titleZh: '企業危機處理',
+    level: ['toefl_ielts', 'advanced'],
+    domain: 'workplace',
     content:
-      'Writing a persuasive academic essay demands a {{s1}} logical structure and clear thesis. Instructors will {{s2}} students regarding proper citation formats and style guides. Writers should {{s3}} counterarguments to strengthen their overall analytical positions. Developing {{s4}} paragraph transitions improves readability throughout the essay. Rigorous revision practices will {{s5}} draft manuscripts into polished academic submissions.',
+      'During major corporate public relations crises, PR directors must {{s1}} media outlets with utmost clarity. Spokespersons need to {{s2}} public Sentiment before delivering official corporate responses. Addressing severe reputational damage requires a {{s3}} strategy to rebuild public trust. Companies must {{s4}} with regulatory investigators during formal compliance inquiries. Prompt accountability will {{s5}} long-term brand restoration among consumers and partners.',
     contentZh:
-      '學術論文寫作',
+      '企業危機處理',
     slots: [
-      { id: 's1', pos: 'adj', tags: ['quality', 'evaluation'] },
-      { id: 's2', pos: 'v', tags: ['inform', 'communication'] },
-      { id: 's3', pos: 'v', tags: ['reasoning', 'cognitive'] },
-      { id: 's4', pos: 'adj', tags: ['evaluation'] },
-      { id: 's5', pos: 'v', tags: ['state_change'] },
+      { id: 's1', pos: 'v', tags: ['inform', 'communication'] },
+      { id: 's2', pos: 'v', tags: ['reasoning', 'cognitive'] },
+      { id: 's3', pos: 'adj', tags: ['quality', 'evaluation'] },
+      { id: 's4', pos: 'v', tags: ['cooperation', 'social'] },
+      { id: 's5', pos: 'v', tags: ['cause_effect'] },
     ],
   },
 ];
