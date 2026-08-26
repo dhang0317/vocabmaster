@@ -86,5 +86,5 @@ export const USER_SCENARIO_TEMPLATES_F0g00: ScenarioTemplate[] = [
       { id: 's3', pos: 'adj', tags: ['duration', 'time'] },
       { id: 's4', pos: 'v', tags: ['communication'] },
     ],
-  },
+  }
 ];
