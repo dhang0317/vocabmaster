@@ -3,11 +3,13 @@
  * - Expanded SemanticSlots (34) + GrammarPatterns (280+)
  * - ~630 words with Sense / SlotCandidate / SenseExample
  * - Context sentences per word
+ * - Supports split part files when main JSON has "parts" array
  *
  * Usage (from project root, with DATABASE_URL set):
  *   node prisma/context-engine-seed-1000.js
  *
- * Requires: context_engine_1000.json next to this file, or set CONTEXT_ENGINE_JSON path.
+ * Requires: context_engine_1000.json (+ optional part1/2/3) next to this file,
+ * or set CONTEXT_ENGINE_JSON path.
  */
 const { PrismaClient } = require('@prisma/client');
 const fs = require('fs');
@@ -147,6 +149,39 @@ function loadCorpus() {
   for (const p of candidates) {
     if (fs.existsSync(p)) {
       const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+      let words = data.words || [];
+
+      // Support split parts (for large packages that exceed single-file push limits)
+      if ((!words.length || data.parts) && data.parts) {
+        const dir = path.dirname(p);
+        for (const partName of data.parts) {
+          const partPath = path.join(dir, partName);
+          if (fs.existsSync(partPath)) {
+            const partData = JSON.parse(fs.readFileSync(partPath, 'utf8'));
+            const partWords = partData.words || [];
+            words = words.concat(partWords);
+            console.log(`  + loaded ${partWords.length} words from ${partName}`);
+          } else {
+            console.warn(`  ! missing part: ${partPath}`);
+          }
+        }
+        data.words = words;
+      }
+
+      // Fallback: auto-discover part files if words still empty
+      if (!words.length) {
+        const dir = path.dirname(p);
+        for (let i = 1; i <= 10; i++) {
+          const partPath = path.join(dir, `context_engine_1000_part${i}.json`);
+          if (!fs.existsSync(partPath)) break;
+          const partData = JSON.parse(fs.readFileSync(partPath, 'utf8'));
+          const partWords = partData.words || [];
+          words = words.concat(partWords);
+          console.log(`  + auto-loaded ${partWords.length} words from part${i}`);
+        }
+        data.words = words;
+      }
+
       console.log(`Loaded ${data.words?.length ?? 0} words from ${p}`);
       return data;
     }
@@ -162,11 +197,13 @@ async function main() {
   const data = loadCorpus();
   const corpus = data.words || [];
 
-  // Merge slots from BASE + JSON extras
+  // Merge extra slots from JSON if present
   const allSlots = [...BASE_SLOTS];
-  if (data.slots_extra) {
-    for (const s of data.slots_extra) {
-      if (!allSlots.find((x) => x[0] === s[0])) allSlots.push(s);
+  const seenSlotCodes = new Set(BASE_SLOTS.map((s) => s[0]));
+  for (const s of data.slots_extra || []) {
+    if (Array.isArray(s) && s[0] && !seenSlotCodes.has(s[0])) {
+      allSlots.push(s);
+      seenSlotCodes.add(s[0]);
     }
   }
 
@@ -179,14 +216,13 @@ async function main() {
     });
   }
 
-  // Merge patterns from BASE + JSON extras
+  // Merge extra patterns from JSON
   const allPatterns = [...BASE_PATTERNS];
-  const extraPatterns = data.grammar_patterns_extra || data.patterns_extra || [];
-  for (const p of extraPatterns) {
-    const name = Array.isArray(p) ? p[0] : p.name || p;
-    const pattern = Array.isArray(p) ? (p[1] || p[0]) : (p.pattern || p);
-    if (!allPatterns.find((x) => x[0] === name)) {
-      allPatterns.push([name, pattern]);
+  const seenPatternNames = new Set(BASE_PATTERNS.map((p) => p[0]));
+  for (const p of data.grammar_patterns_extra || data.patterns_extra || []) {
+    if (Array.isArray(p) && p[0] && !seenPatternNames.has(p[0])) {
+      allPatterns.push(p);
+      seenPatternNames.add(p[0]);
     }
   }
 
