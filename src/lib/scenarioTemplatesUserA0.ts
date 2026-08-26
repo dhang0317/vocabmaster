@@ -12,9 +12,9 @@ export const USER_SCENARIO_TEMPLATES_A0: ScenarioTemplate[] = [
       "As automated algorithmic systems expand across healthcare, academic panels must {{s1}} potential biases embedded in machine learning datasets. Overlooking these errors can {{s2}} serious ethical dilemmas in diagnostic accuracy. University scholars are encouraging computer engineers to {{s3}} with legal ethicists to establish robust evaluation standards before deploying algorithms publicly.",
     contentZh: "人工智慧倫理與審查機制",
     slots: [
-      { id: "s1", pos: "v", tags: ["cognitive"] },
+      { id: "s1", pos: "v", tags: ["reasoning", "cognitive"] },
       { id: "s2", pos: "v", tags: ["cause_effect"] },
-      { id: "s3", pos: "v", tags: ["social"] },
+      { id: "s3", pos: "v", tags: ["cooperation", "social"] },
     ],
   },
   {
@@ -27,10 +27,10 @@ export const USER_SCENARIO_TEMPLATES_A0: ScenarioTemplate[] = [
       "At the international summit, scholars met to {{s1}} the ethical implications of autonomous decision-making systems. Panelists highlighted a {{s2}} shift in regulatory standards, urging software engineers to {{s3}} closely with ethicists. Addressing algorithmic bias is considered {{s4}} to preventing widespread social inequality as modern technologies evolve rapidly.",
     contentZh: "人工智慧倫理學術研討會",
     slots: [
-      { id: "s1", pos: "v", tags: ["cognitive"] },
-      { id: "s2", pos: "adj", tags: ["evaluation"] },
-      { id: "s3", pos: "v", tags: ["social"] },
-      { id: "s4", pos: "adj", tags: ["evaluation"] },
+      { id: "s1", pos: "v", tags: ["reasoning", "cognitive"] },
+      { id: "s2", pos: "adj", tags: ["importance", "evaluation"] },
+      { id: "s3", pos: "v", tags: ["cooperation", "social"] },
+      { id: "s4", pos: "adj", tags: ["importance", "evaluation"] },
     ],
   },
   {
@@ -43,10 +43,10 @@ export const USER_SCENARIO_TEMPLATES_A0: ScenarioTemplate[] = [
       "As artificial intelligence systems become integrated into healthcare, scholars must {{s1}} the implicit biases present in algorithmic training data. Failing to evaluate these risk factors could {{s2}} severe ethical concerns regarding patient diagnostics. Academic institutions are urging engineers to {{s3}} with bioethicists to construct {{s4}} evaluation frameworks before deploying medical software publicly.",
     contentZh: "人工智慧倫理與審查機制",
     slots: [
-      { id: "s1", pos: "v", tags: ["cognitive"] },
+      { id: "s1", pos: "v", tags: ["reasoning", "cognitive"] },
       { id: "s2", pos: "v", tags: ["cause_effect"] },
-      { id: "s3", pos: "v", tags: ["social"] },
-      { id: "s4", pos: "adj", tags: ["evaluation"] },
+      { id: "s3", pos: "v", tags: ["cooperation", "social"] },
+      { id: "s4", pos: "adj", tags: ["quality", "evaluation"] },
     ],
   },
   {
@@ -60,8 +60,8 @@ export const USER_SCENARIO_TEMPLATES_A0: ScenarioTemplate[] = [
     contentZh: "生物多樣性學術研究觀察",
     slots: [
       { id: "s1", pos: "v", tags: ["cause_effect"] },
-      { id: "s2", pos: "v", tags: ["cognitive"] },
-      { id: "s3", pos: "adj", tags: ["evaluation"] },
+      { id: "s2", pos: "v", tags: ["reasoning", "cognitive"] },
+      { id: "s3", pos: "adj", tags: ["importance", "evaluation"] },
       { id: "s4", pos: "adj", tags: ["quantity"] },
     ],
   },
@@ -75,9 +75,9 @@ export const USER_SCENARIO_TEMPLATES_A0: ScenarioTemplate[] = [
       "Cognitive researchers set out to {{s1}} how early multilingual exposure alters neural processing speed during language acquisition tasks. The empirical evidence unveiled a {{s2}} distinction in cognitive flexibility that prior studies had consistently failed to capture. Scholars believe these insights will prove {{s3}} for formulating modern immersion curricula across public school districts.",
     contentZh: "語言學實證研究發現",
     slots: [
-      { id: "s1", pos: "v", tags: ["cognitive"] },
-      { id: "s2", pos: "adj", tags: ["evaluation"] },
-      { id: "s3", pos: "adj", tags: ["evaluation"] },
+      { id: "s1", pos: "v", tags: ["reasoning", "cognitive"] },
+      { id: "s2", pos: "adj", tags: ["importance", "evaluation"] },
+      { id: "s3", pos: "adj", tags: ["importance", "evaluation"] },
     ],
   },
   {
@@ -91,8 +91,8 @@ export const USER_SCENARIO_TEMPLATES_A0: ScenarioTemplate[] = [
     contentZh: "學術研究與數據觀察",
     slots: [
       { id: "s1", pos: "v", tags: ["cause_effect"] },
-      { id: "s2", pos: "v", tags: ["cognitive"] },
-      { id: "s3", pos: "adj", tags: ["evaluation"] },
+      { id: "s2", pos: "v", tags: ["reasoning", "cognitive"] },
+      { id: "s3", pos: "adj", tags: ["importance", "evaluation"] },
       { id: "s4", pos: "adj", tags: ["quantity"] },
     ],
   },
@@ -106,8 +106,8 @@ export const USER_SCENARIO_TEMPLATES_A0: ScenarioTemplate[] = [
       "Construction work on our building's elevator caused a {{s1}} inconvenience for elderly residents living on upper floors. Rather than venting frustration online, neighbors chose to {{s2}} with the building committee during an open meeting. The contractors agreed to adjust their working hours, leading to an immediate {{s3}} among all homeowners.",
     contentZh: "社區公設整修溝通協調",
     slots: [
-      { id: "s1", pos: "adj", tags: ["evaluation"] },
-      { id: "s2", pos: "v", tags: ["social"] },
+      { id: "s1", pos: "adj", tags: ["intensity", "evaluation"] },
+      { id: "s2", pos: "v", tags: ["communication", "request"] },
       { id: "s3", pos: "n", tags: ["emotion"] },
     ],
   },
@@ -121,8 +121,8 @@ export const USER_SCENARIO_TEMPLATES_A0: ScenarioTemplate[] = [
       "Deciding to bake sourdough bread from scratch, I took time to carefully {{s1}} the dough until it reached the right texture. The recipe called for {{s2}} adjustments in oven temperature to achieve a crispy crust. Seeing the golden loaf bake successfully brought a strong sense of {{s3}} to my entire family at breakfast.",
     contentZh: "假日廚藝嘗試與家庭時光",
     slots: [
-      { id: "s1", pos: "v", tags: ["physical"] },
-      { id: "s2", pos: "adj", tags: ["evaluation"] },
+      { id: "s1", pos: "v", tags: ["physical", "action"] },
+      { id: "s2", pos: "adj", tags: ["quality", "evaluation"] },
       { id: "s3", pos: "n", tags: ["emotion"] },
     ],
   },
@@ -136,8 +136,8 @@ export const USER_SCENARIO_TEMPLATES_A0: ScenarioTemplate[] = [
       "My neighbor occasionally plays loud music late at night, creating a {{s1}} disturbance for the whole floor. Rather than filing a formal complaint, I decided to {{s2}} with him directly about the issue. He understood the concern right away and agreed to lower the volume, helping us maintain a peaceful environment.",
     contentZh: "鄰居生活噪音溝通",
     slots: [
-      { id: "s1", pos: "adj", tags: ["evaluation"] },
-      { id: "s2", pos: "v", tags: ["social"] },
+      { id: "s1", pos: "adj", tags: ["intensity", "evaluation"] },
+      { id: "s2", pos: "v", tags: ["communication", "request"] },
     ],
   },
   {
@@ -150,8 +150,8 @@ export const USER_SCENARIO_TEMPLATES_A0: ScenarioTemplate[] = [
       "My neighbor tends to play loud music late at night, which causes a {{s1}} disturbance for everyone on our floor. Instead of getting angry, I chose to {{s2}} with him personally to discuss the matter. He apologized immediately and agreed to reduce the volume. I was glad we could handle the issue without any harsh conflict.",
     contentZh: "鄰居之間的溝通問題",
     slots: [
-      { id: "s1", pos: "adj", tags: ["evaluation"] },
-      { id: "s2", pos: "v", tags: ["social"] },
+      { id: "s1", pos: "adj", tags: ["intensity", "evaluation"] },
+      { id: "s2", pos: "v", tags: ["communication", "request"] },
     ],
   },
   {
@@ -164,7 +164,7 @@ export const USER_SCENARIO_TEMPLATES_A0: ScenarioTemplate[] = [
       "While riding the subway during morning rush hour, I saw a commuter leave his leather wallet on the seat. I reacted without hesitation to {{s1}} the wallet and rush after him on the platform. Handing it back brought a look of profound {{s2}} to his face. Helping a stranger brightened my morning completely.",
     contentZh: "捷運上的遺失物善舉",
     slots: [
-      { id: "s1", pos: "v", tags: ["physical"] },
+      { id: "s1", pos: "v", tags: ["physical", "action"] },
       { id: "s2", pos: "n", tags: ["emotion"] },
     ],
   },
@@ -178,7 +178,7 @@ export const USER_SCENARIO_TEMPLATES_A0: ScenarioTemplate[] = [
       "While taking the bus home yesterday, I happened to glance up and {{s1}} a childhood friend sitting across from me. Meeting after nearly ten years was a completely {{s2}} surprise. We spent the rest of the ride catching up on old memories with genuine {{s3}}.",
     contentZh: "公車上的意外重逢",
     slots: [
-      { id: "s1", pos: "v", tags: ["cognitive"] },
+      { id: "s1", pos: "v", tags: ["perception", "cognitive"] },
       { id: "s2", pos: "adj", tags: ["evaluation"] },
       { id: "s3", pos: "n", tags: ["emotion"] },
     ],
@@ -193,7 +193,7 @@ export const USER_SCENARIO_TEMPLATES_A0: ScenarioTemplate[] = [
       "While taking the MRT home during rush hour yesterday, I happened to glance up and {{s1}} an old classmate from junior high school. Spotting her in the crowded train car was a completely {{s2}} coincidence. We spent the remainder of the commute catching up on old times, filling the carriage with warm laughter and genuine {{s3}}.",
     contentZh: "捷運車廂內的多年重逢",
     slots: [
-      { id: "s1", pos: "v", tags: ["cognitive"] },
+      { id: "s1", pos: "v", tags: ["perception", "cognitive"] },
       { id: "s2", pos: "adj", tags: ["evaluation"] },
       { id: "s3", pos: "n", tags: ["emotion"] },
     ],
@@ -208,9 +208,9 @@ export const USER_SCENARIO_TEMPLATES_A0: ScenarioTemplate[] = [
       "Local volunteers gathered over the weekend to {{s1}} modular raised garden beds in our public park. Urban gardens provide a {{s2}} venue for neighbors to get together and learn about sustainable living. Participating in harvest events helps {{s3}} isolated community members, building genuine friendships while improving neighborhood green space for everyone.",
     contentZh: "社區共融綠植農場推廣",
     slots: [
-      { id: "s1", pos: "v", tags: ["physical"] },
-      { id: "s2", pos: "adj", tags: ["evaluation"] },
-      { id: "s3", pos: "v", tags: ["social"] },
+      { id: "s1", pos: "v", tags: ["physical", "action"] },
+      { id: "s2", pos: "adj", tags: ["quality", "evaluation"] },
+      { id: "s3", pos: "v", tags: ["cooperation", "social"] },
     ],
   },
   {
@@ -223,9 +223,9 @@ export const USER_SCENARIO_TEMPLATES_A0: ScenarioTemplate[] = [
       "Local residents gathered over the weekend to {{s1}} wooden planter boxes for a new community garden. Creating shared green spaces provides a {{s2}} opportunity for neighbors to meet and relax outdoors. Working together helped {{s3}} isolated community members, replacing loneliness with a warm feeling of connection.",
     contentZh: "社區共享花園志工活動",
     slots: [
-      { id: "s1", pos: "v", tags: ["physical"] },
-      { id: "s2", pos: "adj", tags: ["evaluation"] },
-      { id: "s3", pos: "v", tags: ["social"] },
+      { id: "s1", pos: "v", tags: ["physical", "action"] },
+      { id: "s2", pos: "adj", tags: ["quality", "evaluation"] },
+      { id: "s3", pos: "v", tags: ["cooperation", "social"] },
     ],
   },
   {
@@ -238,9 +238,9 @@ export const USER_SCENARIO_TEMPLATES_A0: ScenarioTemplate[] = [
       "The initial experiment produced mixed results, so the team designed a {{s1}} study with a larger sample. In the {{s2}} analysis, researchers found a clearer pattern than before. These {{s3}} findings helped them revise the original hypothesis and plan the next stage of work.",
     contentZh: "初步實驗結果不一，因此團隊設計了後續研究。在後續分析中發現更清楚的模式。",
     slots: [
-      { id: "s1", pos: "adj", tags: ["time"] },
-      { id: "s2", pos: "adj", tags: ["time"] },
-      { id: "s3", pos: "adj", tags: ["time"] },
+      { id: "s1", pos: "adj", tags: ["sequence", "time"] },
+      { id: "s2", pos: "adj", tags: ["sequence", "time"] },
+      { id: "s3", pos: "adj", tags: ["sequence", "time"] },
     ],
   },
   {
@@ -253,9 +253,9 @@ export const USER_SCENARIO_TEMPLATES_A0: ScenarioTemplate[] = [
       "After the client rejected the first proposal, we scheduled a {{s1}} meeting to address their concerns. During that session, the team presented a revised timeline and budget. The {{s2}} discussion was more productive, and both sides agreed on the next steps. A short summary was sent to everyone the {{s3}} morning.",
     contentZh: "客戶退回初版提案後，我們安排了後續會議處理疑慮。",
     slots: [
-      { id: "s1", pos: "adj", tags: ["time"] },
-      { id: "s2", pos: "adj", tags: ["evaluation"] },
-      { id: "s3", pos: "adj", tags: ["time"] },
+      { id: "s1", pos: "adj", tags: ["sequence", "time"] },
+      { id: "s2", pos: "adj", tags: ["quality", "evaluation"] },
+      { id: "s3", pos: "adj", tags: ["sequence", "time"] },
     ],
   },
 ];
