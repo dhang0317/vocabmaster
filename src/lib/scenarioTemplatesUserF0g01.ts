@@ -24,7 +24,7 @@ export const USER_SCENARIO_TEMPLATES_F0g01: ScenarioTemplate[] = [
     title: 'Grocery List',
     titleZh: '超市採買清單',
     level: ['elementary', 'highschool'],
-    domain: 'daily',
+    domain: 'shopping',
     content:
       'Making a shopping list helps shoppers avoid unnecessary spending at stores. People can {{s1}} discounts on seasonal produce near store entrances. Comparing prices carefully serves as an {{s2}} habit for household budgeting. Cashiers will {{s3}} customers about membership point rewards during checkout. Taking a {{s4}} moment to review receipts ensures pricing accuracy before leaving.',
     contentZh:
@@ -41,7 +41,7 @@ export const USER_SCENARIO_TEMPLATES_F0g01: ScenarioTemplate[] = [
     title: 'Daily Walking',
     titleZh: '日常散步健身',
     level: ['elementary', 'highschool'],
-    domain: 'daily',
+    domain: 'health',
     content:
       'Walking every day offers surprising benefits for overall body wellness. Doctors frequently {{s1}} patients that light physical activity reduces stress. Taking a {{s2}} stroll after dinner supports healthy digestion for most people. Individuals often {{s3}} improved energy levels after maintaining this routine for weeks. Staying active remains an {{s4}} goal for maintaining good long-term health.',
     contentZh:
@@ -86,5 +86,5 @@ export const USER_SCENARIO_TEMPLATES_F0g01: ScenarioTemplate[] = [
       { id: 's3', pos: 'v', tags: ['request', 'communication'] },
       { id: 's4', pos: 'adj', tags: ['evaluation'] },
     ],
-  },
+  }
 ];
