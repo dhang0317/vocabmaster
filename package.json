@@ -9,10 +9,11 @@
     "lint": "next lint",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
-    "context:seed": "prisma db push --accept-data-loss && node prisma/context-engine-seed.js && node prisma/context-engine-expand.js && node prisma/context-engine-10k.js",
+    "context:seed": "prisma db push --accept-data-loss && node prisma/context-engine-seed.js && node prisma/context-engine-expand.js",
     "context:seed:core": "node prisma/context-engine-seed.js",
     "context:seed:expand": "node prisma/context-engine-expand.js",
-    "context:seed:10k": "node prisma/context-engine-10k.js"
+    "context:seed:10k": "node prisma/context-engine-10k.js",
+    "context:generate:1m": "node prisma/context-engine-million.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
