@@ -46,7 +46,12 @@ model Word {
   isMastered  Boolean  @default(false)
   createdAt   DateTime @default(now())
 
-  deck Deck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  deck         Deck           @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  senses       Sense[]
+  sentenceUses SentenceWord[]
+
+  @@index([word])
+  @@index([deckId])
 }
 
 model ClozeArticle {
@@ -85,4 +90,222 @@ model QuizResult {
   createdAt   DateTime @default(now())
 
   deck Deck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+}
+
+// =========================
+// Context Engine V2
+// =========================
+
+model Sense {
+  id          String   @id @default(uuid())
+  wordId      String
+  translation String
+  definition  String?
+  cefr        String?
+  domain      String?
+  register    String?
+  createdAt   DateTime @default(now())
+
+  word        Word           @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  examples    SenseExample[]
+  candidates  SlotCandidate[]
+
+  @@index([wordId])
+  @@index([domain])
+  @@index([cefr])
+}
+
+model SenseExample {
+  id          String @id @default(uuid())
+  senseId     String
+  content     String
+  translation String?
+
+  sense Sense @relation(fields: [senseId], references: [id], onDelete: Cascade)
+
+  @@index([senseId])
+}
+
+model SemanticSlot {
+  id          String @id @default(uuid())
+  code        String @unique
+  name        String
+  pos         String
+  description String?
+
+  candidates SlotCandidate[]
+  templates  TemplateSlot[]
+
+  createdAt DateTime @default(now())
+}
+
+model SlotCandidate {
+  id                String @id @default(uuid())
+  slotId            String
+  senseId           String
+  priority          Int    @default(0)
+  weight            Float  @default(1)
+  minCEFR           String?
+  maxCEFR           String?
+  grammarPatternId  String?
+
+  slot           SemanticSlot   @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  sense          Sense          @relation(fields: [senseId], references: [id], onDelete: Cascade)
+  grammarPattern GrammarPattern? @relation(fields: [grammarPatternId], references: [id], onDelete: SetNull)
+
+  @@unique([slotId, senseId])
+  @@index([slotId])
+  @@index([senseId])
+  @@index([grammarPatternId])
+}
+
+model GrammarPattern {
+  id          String @id @default(uuid())
+  name        String
+  pattern     String
+  description String?
+
+  candidates SlotCandidate[]
+  templateSlots TemplateSlot[]
+
+  createdAt DateTime @default(now())
+
+  @@index([name])
+}
+
+model Template {
+  id             String @id @default(uuid())
+  title          String
+  theme          String
+  difficulty     String
+  content        String
+  wordCount      Int?
+  sentenceCount  Int?
+  situation      String?
+  register       String?
+  qualityScore   Float?
+  createdAt      DateTime @default(now())
+
+  slots      TemplateSlot[]
+  tags       TemplateTag[]
+  instances  ContextInstance[]
+  sentences  Sentence[]
+  articles   Article[]
+
+  @@index([theme])
+  @@index([difficulty])
+  @@index([qualityScore])
+}
+
+model TemplateSlot {
+  id                String @id @default(uuid())
+  templateId        String
+  slotId            String
+  placeholder       String
+  position          Int
+  required          Boolean @default(true)
+  grammarPatternId  String?
+
+  template       Template        @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  slot           SemanticSlot    @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  grammarPattern GrammarPattern? @relation(fields: [grammarPatternId], references: [id], onDelete: SetNull)
+
+  @@unique([templateId, placeholder])
+  @@index([templateId])
+  @@index([slotId])
+}
+
+model ContextTag {
+  id   String @id @default(uuid())
+  name String @unique
+
+  templates TemplateTag[]
+}
+
+model TemplateTag {
+  templateId String
+  tagId      String
+
+  template Template  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  tag      ContextTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([templateId, tagId])
+  @@index([tagId])
+}
+
+model ContextInstance {
+  id            String @id @default(uuid())
+  templateId    String
+  content       String
+  translation   String?
+  difficulty    String
+  theme         String
+  qualityScore  Float?
+  createdAt     DateTime @default(now())
+
+  template  Template   @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  sentences Sentence[]
+  articles  Article[]
+
+  @@index([templateId])
+  @@index([theme, difficulty])
+  @@index([qualityScore])
+}
+
+model Sentence {
+  id                String @id @default(uuid())
+  content           String
+  translation       String?
+  difficulty        String?
+  theme             String?
+  sourceType        String?
+  templateId        String?
+  contextInstanceId String?
+  qualityScore      Float?
+  createdAt         DateTime @default(now())
+
+  template       Template?        @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  contextInstance ContextInstance? @relation(fields: [contextInstanceId], references: [id], onDelete: SetNull)
+  words          SentenceWord[]
+
+  @@index([templateId])
+  @@index([contextInstanceId])
+  @@index([theme, difficulty])
+  @@index([qualityScore])
+}
+
+model SentenceWord {
+  sentenceId String
+  wordId     String
+  isTarget   Boolean @default(false)
+  position   Int?
+
+  sentence Sentence @relation(fields: [sentenceId], references: [id], onDelete: Cascade)
+  word     Word     @relation(fields: [wordId], references: [id], onDelete: Cascade)
+
+  @@id([sentenceId, wordId])
+  @@index([wordId])
+}
+
+model Article {
+  id                String @id @default(uuid())
+  title             String
+  content           String
+  translation       String?
+  theme             String
+  difficulty        String
+  wordCount         Int
+  sentenceCount     Int
+  templateId        String?
+  contextInstanceId String?
+  qualityScore      Float?
+  createdAt         DateTime @default(now())
+
+  template        Template?        @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  contextInstance ContextInstance? @relation(fields: [contextInstanceId], references: [id], onDelete: SetNull)
+
+  @@index([templateId])
+  @@index([contextInstanceId])
+  @@index([theme, difficulty])
+  @@index([qualityScore])
 }
