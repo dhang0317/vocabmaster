@@ -106,13 +106,16 @@ model Sense {
   register    String?
   createdAt   DateTime @default(now())
 
-  word        Word           @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  word        Word             @relation(fields: [wordId], references: [id], onDelete: Cascade)
   examples    SenseExample[]
   candidates  SlotCandidate[]
+  collocations Collocation[]
+  contexts    SenseContext[]
 
   @@index([wordId])
   @@index([domain])
   @@index([cefr])
+  @@index([cefr, domain, register])
 }
 
 model SenseExample {
@@ -124,6 +127,25 @@ model SenseExample {
   sense Sense @relation(fields: [senseId], references: [id], onDelete: Cascade)
 
   @@index([senseId])
+}
+
+model Collocation {
+  id          String   @id @default(uuid())
+  senseId     String
+  pattern     String
+  type        String?
+  register    String?
+  domain      String?
+  frequency   Int      @default(0)
+  confidence  Float    @default(0)
+  createdAt   DateTime @default(now())
+
+  sense Sense @relation(fields: [senseId], references: [id], onDelete: Cascade)
+
+  @@unique([senseId, pattern])
+  @@index([pattern])
+  @@index([senseId, frequency])
+  @@index([domain, register])
 }
 
 model SemanticSlot {
@@ -149,12 +171,12 @@ model SlotCandidate {
   maxCEFR           String?
   grammarPatternId  String?
 
-  slot           SemanticSlot   @relation(fields: [slotId], references: [id], onDelete: Cascade)
-  sense          Sense          @relation(fields: [senseId], references: [id], onDelete: Cascade)
+  slot           SemanticSlot    @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  sense          Sense           @relation(fields: [senseId], references: [id], onDelete: Cascade)
   grammarPattern GrammarPattern? @relation(fields: [grammarPatternId], references: [id], onDelete: SetNull)
 
   @@unique([slotId, senseId])
-  @@index([slotId])
+  @@index([slotId, priority, weight])
   @@index([senseId])
   @@index([grammarPatternId])
 }
@@ -173,6 +195,41 @@ model GrammarPattern {
   @@index([name])
 }
 
+model ContextProfile {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  theme       String
+  domain      String?
+  situation   String?
+  setting     String?
+  intent      String?
+  audience    String?
+  register    String?
+  cefr        String?
+  description String?
+  createdAt   DateTime @default(now())
+
+  senses      SenseContext[]
+  templates   TemplateContext[]
+  sentences   SentenceContext[]
+
+  @@index([theme, cefr])
+  @@index([domain, register])
+  @@index([setting, intent])
+}
+
+model SenseContext {
+  senseId         String
+  contextProfileId String
+  relevance       Float @default(1)
+
+  sense          Sense         @relation(fields: [senseId], references: [id], onDelete: Cascade)
+  contextProfile ContextProfile @relation(fields: [contextProfileId], references: [id], onDelete: Cascade)
+
+  @@id([senseId, contextProfileId])
+  @@index([contextProfileId, relevance])
+}
+
 model Template {
   id             String @id @default(uuid())
   title          String
@@ -188,13 +245,25 @@ model Template {
 
   slots      TemplateSlot[]
   tags       TemplateTag[]
+  contexts   TemplateContext[]
   instances  ContextInstance[]
   sentences  Sentence[]
   articles   Article[]
 
-  @@index([theme])
-  @@index([difficulty])
-  @@index([qualityScore])
+  @@index([theme, difficulty, qualityScore])
+  @@index([register, qualityScore])
+}
+
+model TemplateContext {
+  templateId      String
+  contextProfileId String
+  relevance       Float @default(1)
+
+  template       Template       @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  contextProfile ContextProfile @relation(fields: [contextProfileId], references: [id], onDelete: Cascade)
+
+  @@id([templateId, contextProfileId])
+  @@index([contextProfileId, relevance])
 }
 
 model TemplateSlot {
@@ -211,7 +280,7 @@ model TemplateSlot {
   grammarPattern GrammarPattern? @relation(fields: [grammarPatternId], references: [id], onDelete: SetNull)
 
   @@unique([templateId, placeholder])
-  @@index([templateId])
+  @@index([templateId, position])
   @@index([slotId])
 }
 
@@ -248,8 +317,7 @@ model ContextInstance {
   articles  Article[]
 
   @@index([templateId])
-  @@index([theme, difficulty])
-  @@index([qualityScore])
+  @@index([theme, difficulty, qualityScore])
 }
 
 model Sentence {
@@ -261,17 +329,56 @@ model Sentence {
   sourceType        String?
   templateId        String?
   contextInstanceId String?
+  normalizedKey     String? @unique
   qualityScore      Float?
+  grammarScore      Float?
+  naturalnessScore  Float?
+  meaningScore      Float?
+  contextScore      Float?
+  cefrScore         Float?
+  diversityScore    Float?
   createdAt         DateTime @default(now())
 
-  template       Template?        @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  template        Template?        @relation(fields: [templateId], references: [id], onDelete: SetNull)
   contextInstance ContextInstance? @relation(fields: [contextInstanceId], references: [id], onDelete: SetNull)
-  words          SentenceWord[]
+  contexts        SentenceContext[]
+  quality         SentenceQuality?
+  words           SentenceWord[]
 
   @@index([templateId])
   @@index([contextInstanceId])
-  @@index([theme, difficulty])
-  @@index([qualityScore])
+  @@index([theme, difficulty, qualityScore])
+  @@index([qualityScore, contextScore, naturalnessScore])
+  @@index([sourceType])
+}
+
+model SentenceContext {
+  sentenceId       String
+  contextProfileId String
+  relevance        Float @default(1)
+
+  sentence       Sentence       @relation(fields: [sentenceId], references: [id], onDelete: Cascade)
+  contextProfile ContextProfile @relation(fields: [contextProfileId], references: [id], onDelete: Cascade)
+
+  @@id([sentenceId, contextProfileId])
+  @@index([contextProfileId, relevance])
+}
+
+model SentenceQuality {
+  sentenceId       String   @id
+  grammarScore     Float
+  naturalnessScore Float
+  meaningScore     Float
+  contextScore     Float
+  cefrScore        Float
+  diversityScore   Float
+  overallScore     Float
+  validatorVersion String?
+  reviewedAt       DateTime @default(now())
+
+  sentence Sentence @relation(fields: [sentenceId], references: [id], onDelete: Cascade)
+
+  @@index([overallScore])
 }
 
 model SentenceWord {
@@ -284,7 +391,7 @@ model SentenceWord {
   word     Word     @relation(fields: [wordId], references: [id], onDelete: Cascade)
 
   @@id([sentenceId, wordId])
-  @@index([wordId])
+  @@index([wordId, isTarget, sentenceId])
 }
 
 model Article {
@@ -306,6 +413,5 @@ model Article {
 
   @@index([templateId])
   @@index([contextInstanceId])
-  @@index([theme, difficulty])
-  @@index([qualityScore])
+  @@index([theme, difficulty, qualityScore])
 }
