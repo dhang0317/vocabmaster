@@ -6,9 +6,10 @@ on:
       action:
         description: Database action
         required: true
-        default: prepare
+        default: seed-core
         type: choice
         options:
+          - seed-core
           - prepare
           - quality
           - generate-1m
@@ -16,7 +17,8 @@ on:
 jobs:
   context-engine:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # GitHub-hosted max is 360 minutes (6 hours). Was 30 and cancelled mid-seed.
+    timeout-minutes: 360
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,7 +26,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
@@ -33,11 +35,36 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
-      - name: Prepare database and seed corpus
+      # ── seed-core / prepare (split for clearer logs) ──
+      - name: Prisma db push
+        if: inputs.action == 'prepare' || inputs.action == 'seed-core'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx prisma db push
+
+      - name: Context taxonomy / context seed
         if: inputs.action == 'prepare'
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: npm run context:prepare
+        run: node prisma/context-engine-context-seed.js
+
+      - name: Core word seed
+        if: inputs.action == 'prepare' || inputs.action == 'seed-core'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node prisma/context-engine-seed.js
+
+      - name: Expand seed
+        if: inputs.action == 'prepare'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node prisma/context-engine-expand.js
+
+      - name: 10k seed
+        if: inputs.action == 'prepare'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node prisma/context-engine-10k.js
 
       - name: Run quality pipeline
         if: inputs.action == 'quality'
