@@ -1,0 +1,7 @@
+{
+  "themes": ["daily", "workplace", "academic", "travel", "technology", "science", "social", "health", "environment", "business", "media", "culture"],
+  "registers": ["neutral", "informal", "formal", "professional", "academic"],
+  "settings": ["home", "school", "university", "office", "meeting", "email", "presentation", "interview", "store", "restaurant", "airport", "hotel", "hospital", "laboratory", "online"],
+  "intents": ["inform", "request", "explain", "compare", "describe", "decide", "persuade", "agree", "disagree", "warn", "recommend", "solve", "report", "plan"],
+  "cefr": ["A1", "A2", "B1", "B2", "C1", "C2"]
+}
