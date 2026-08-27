@@ -1,0 +1,56 @@
+name: Context Engine Database
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Database action
+        required: true
+        default: prepare
+        type: choice
+        options:
+          - prepare
+          - quality
+          - generate-1m
+
+jobs:
+  context-engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Prepare database and seed corpus
+        if: inputs.action == 'prepare'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npm run context:prepare
+
+      - name: Run quality pipeline
+        if: inputs.action == 'quality'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npm run context:quality
+
+      - name: Generate 1M AI corpus
+        if: inputs.action == 'generate-1m'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-2.5-flash' }}
+          CONTEXT_TARGET: 1000000
+          CONTEXT_BATCH_SIZE: 25
+        run: npm run context:generate:1m
