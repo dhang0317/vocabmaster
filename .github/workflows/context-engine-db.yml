@@ -1,0 +1,83 @@
+name: Context Engine Database
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Database action
+        required: true
+        default: prepare
+        type: choice
+        options:
+          - prepare
+          - seed-core
+          - quality
+          - generate-1m
+
+jobs:
+  context-engine:
+    runs-on: ubuntu-latest
+    # Full prepare (push + multi seed scripts) can exceed 30m on cold DB
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      # ── prepare: step-by-step (same as npm run context:prepare) ──
+      - name: Prisma db push
+        if: inputs.action == 'prepare' || inputs.action == 'seed-core'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx prisma db push
+
+      - name: Context taxonomy / context seed
+        if: inputs.action == 'prepare'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node prisma/context-engine-context-seed.js
+
+      - name: Core word seed
+        if: inputs.action == 'prepare' || inputs.action == 'seed-core'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node prisma/context-engine-seed.js
+
+      - name: Expand seed
+        if: inputs.action == 'prepare'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node prisma/context-engine-expand.js
+
+      - name: 10k seed
+        if: inputs.action == 'prepare'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node prisma/context-engine-10k.js
+
+      - name: Run quality pipeline
+        if: inputs.action == 'quality'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npm run context:quality
+
+      - name: Generate 1M AI corpus
+        if: inputs.action == 'generate-1m'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-2.5-flash' }}
+          CONTEXT_TARGET: 1000000
+          CONTEXT_BATCH_SIZE: 25
+        run: npm run context:generate:1m
