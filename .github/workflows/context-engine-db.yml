@@ -6,19 +6,19 @@ on:
       action:
         description: Database action
         required: true
-        default: prepare
+        default: seed-core
         type: choice
         options:
-          - prepare
           - seed-core
+          - prepare
           - quality
           - generate-1m
 
 jobs:
   context-engine:
     runs-on: ubuntu-latest
-    # Full prepare (push + multi seed scripts) can exceed 30m on cold DB
-    timeout-minutes: 120
+    # GitHub-hosted max is 360 minutes (6 hours). Was 30 and cancelled mid-seed.
+    timeout-minutes: 360
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,7 +35,7 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
-      # ── prepare: step-by-step (same as npm run context:prepare) ──
+      # ── seed-core / prepare (split for clearer logs) ──
       - name: Prisma db push
         if: inputs.action == 'prepare' || inputs.action == 'seed-core'
         env:
