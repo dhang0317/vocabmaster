@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles, Check, RefreshCw, AlertCircle } from 'lucide-react';
+import { Sparkles, Check, RefreshCw, AlertCircle, WifiOff } from 'lucide-react';
 import { FileUpload } from '@/components/upload/FileUpload';
+import { SemanticTagEditor } from '@/components/upload/SemanticTagEditor';
 import {
   RawWordInput,
   GeneratedWord,
@@ -19,6 +20,8 @@ export default function CreateDeckPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [level, setLevel] = useState<GenerationLevel>('highschool');
+  /** Prefer offline so generation works without Gemini quota */
+  const [useOffline, setUseOffline] = useState(true);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -62,7 +65,8 @@ export default function CreateDeckPage() {
         body: JSON.stringify({
           words,
           level,
-          apiKey: storedKey,
+          apiKey: useOffline ? '' : storedKey,
+          forceOffline: useOffline,
         }),
       });
 
@@ -117,6 +121,9 @@ export default function CreateDeckPage() {
 
   const hasGenerated = generatedWords.length > 0;
 
+  const fieldClass =
+    'w-full px-4 py-2.5 rounded-xl bg-white/40 border border-white/50 text-[#0a192f] placeholder-slate-400 text-sm focus:outline-none focus:border-white/80 font-medium transition-colors';
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-12">
       <div className="space-y-1">
@@ -127,13 +134,13 @@ export default function CreateDeckPage() {
       </div>
 
       {error && (
-        <div className="p-4 rounded-2xl bg-red-50 border-2 border-red-300 text-red-700 text-sm flex items-center gap-2">
+        <div className="p-4 rounded-2xl bg-red-50/80 border border-red-300 text-red-700 text-sm flex items-center gap-2">
           <AlertCircle className="w-5 h-5 flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
-      <div className="p-6 sm:p-8 rounded-3xl bg-white border-2 border-[#0a192f] space-y-6 shadow-sm">
+      <div className="liquid-glass p-6 sm:p-8 rounded-3xl space-y-6">
         <h2 className="text-lg font-black text-[#0a192f] flex items-center gap-2">
           <span className="w-6 h-6 rounded-full bg-[#0a192f] text-white flex items-center justify-center text-xs font-mono font-bold">
             1
@@ -141,9 +148,10 @@ export default function CreateDeckPage() {
           Upload words
         </h2>
         <FileUpload onWordsLoaded={setWords} initialWords={words} />
+        <SemanticTagEditor words={words} onChange={setWords} />
       </div>
 
-      <div className="p-6 sm:p-8 rounded-3xl bg-white border-2 border-[#0a192f] space-y-6 shadow-sm">
+      <div className="liquid-glass p-6 sm:p-8 rounded-3xl space-y-6">
         <h2 className="text-lg font-black text-[#0a192f] flex items-center gap-2">
           <span className="w-6 h-6 rounded-full bg-[#0a192f] text-white flex items-center justify-center text-xs font-mono font-bold">
             2
@@ -159,7 +167,7 @@ export default function CreateDeckPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Unit 1"
-              className="w-full px-4 py-2.5 rounded-xl bg-white border-2 border-[#0a192f] text-[#0a192f] placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#0a192f]/20 font-medium"
+              className={fieldClass}
             />
           </div>
 
@@ -168,7 +176,7 @@ export default function CreateDeckPage() {
             <select
               value={level}
               onChange={(e) => setLevel(e.target.value as GenerationLevel)}
-              className="w-full px-4 py-2.5 rounded-xl bg-white border-2 border-[#0a192f] text-[#0a192f] text-sm focus:outline-none focus:ring-2 focus:ring-[#0a192f]/20 font-bold"
+              className={`${fieldClass} font-bold`}
             >
               <option value="elementary">Elementary</option>
               <option value="highschool">High School</option>
@@ -185,8 +193,43 @@ export default function CreateDeckPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Optional notes"
-              className="w-full px-4 py-2.5 rounded-xl bg-white border-2 border-[#0a192f] text-[#0a192f] placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#0a192f]/20 font-medium"
+              className={fieldClass}
             />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="block text-xs font-bold text-[#0a192f] mb-2">Generation mode</label>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setUseOffline(true)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold border-2 transition ${
+                  useOffline
+                    ? 'bg-[#0a192f] text-white border-[#0a192f]'
+                    : 'bg-white text-[#0a192f] border-[#0a192f]/30'
+                }`}
+              >
+                <WifiOff className="w-4 h-4" />
+                Offline（不連 AI）
+              </button>
+              <button
+                type="button"
+                onClick={() => setUseOffline(false)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold border-2 transition ${
+                  !useOffline
+                    ? 'bg-[#0a192f] text-white border-[#0a192f]'
+                    : 'bg-white text-[#0a192f] border-[#0a192f]/30'
+                }`}
+              >
+                <Sparkles className="w-4 h-4" />
+                AI（Gemini）
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-slate-600">
+              {useOffline
+                ? '使用情境庫 + 語意匹配生成文章、填空與測驗，不消耗 API 額度。'
+                : '使用 Gemini 生成較自然的文章（需 API Key，且受免費額度限制）。'}
+            </p>
           </div>
         </div>
 
@@ -194,7 +237,7 @@ export default function CreateDeckPage() {
           <button
             onClick={handleGenerate}
             disabled={words.length === 0 || isGenerating}
-            className="w-full py-4 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] disabled:opacity-50 text-white font-black text-base flex items-center justify-center gap-2 shadow-md transition transform hover:-translate-y-0.5 border-2 border-[#0a192f]"
+            className="w-full py-4 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] disabled:opacity-50 text-white font-black text-base flex items-center justify-center gap-2 shadow-md transition transform hover:-translate-y-0.5"
             style={{ color: '#ffffff' }}
           >
             {isGenerating ? (
@@ -204,8 +247,8 @@ export default function CreateDeckPage() {
               </>
             ) : (
               <>
-                <Sparkles className="w-5 h-5" />
-                <span>Generate materials</span>
+                {useOffline ? <WifiOff className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
+                <span>{useOffline ? 'Generate offline' : 'Generate with AI'}</span>
               </>
             )}
           </button>
@@ -213,7 +256,7 @@ export default function CreateDeckPage() {
       </div>
 
       {hasGenerated && (
-        <div className="p-6 sm:p-8 rounded-3xl bg-white border-2 border-[#0a192f] space-y-6 shadow-sm animate-in fade-in duration-300">
+        <div className="liquid-glass p-6 sm:p-8 rounded-3xl space-y-6 animate-in fade-in duration-300">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-mono font-bold">
@@ -221,32 +264,39 @@ export default function CreateDeckPage() {
               </span>
               <h2 className="text-lg font-black text-[#0a192f]">Preview</h2>
             </div>
-            <span className="text-xs text-[#0a192f] font-bold bg-slate-100 px-3 py-1 rounded-full border border-[#0a192f]/30">
+            <span className="text-xs text-[#0a192f] font-bold bg-white/40 px-3 py-1 rounded-full border border-white/50">
               {generatedWords.length} words · {generatedQuizzes.length} quizzes
             </span>
           </div>
 
-          <div className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-bold ${
-            generationSource === 'ai'
-              ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
-              : 'bg-amber-50 border-amber-300 text-amber-800'
-          }`}>
-            <span className={`w-2.5 h-2.5 rounded-full ${generationSource === 'ai' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+          <div
+            className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-bold ${
+              generationSource === 'ai'
+                ? 'bg-emerald-50/80 border-emerald-300 text-emerald-800'
+                : 'bg-sky-50/80 border-sky-300 text-sky-900'
+            }`}
+          >
+            <span
+              className={`w-2.5 h-2.5 rounded-full ${generationSource === 'ai' ? 'bg-emerald-500' : 'bg-sky-500'}`}
+            />
             {generationSource === 'ai'
-              ? 'AI online generation — questions were generated by Gemini.'
-              : `Offline fallback — ${fallbackReason || 'check your API Key or network connection.'}`}
+              ? 'AI generation — materials created by Gemini.'
+              : 'Offline generation — scenario template + semantic matching (no API used).'}
+            {fallbackReason && generationSource === 'offline' && useOffline === false && (
+              <span className="font-normal opacity-80">（{fallbackReason}）</span>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4 rounded-2xl bg-slate-50 border border-[#0a192f]/30 space-y-1">
+            <div className="p-4 rounded-2xl bg-white/30 border border-white/40 space-y-1">
               <span className="text-xs font-bold text-slate-500">Words</span>
               <p className="text-sm font-black text-[#0a192f]">{generatedWords.length}</p>
             </div>
-            <div className="p-4 rounded-2xl bg-slate-50 border border-[#0a192f]/30 space-y-1">
+            <div className="p-4 rounded-2xl bg-white/30 border border-white/40 space-y-1">
               <span className="text-xs font-bold text-slate-500">Article</span>
               <p className="text-sm font-black text-[#0a192f]">{generatedArticle?.title || 'None'}</p>
             </div>
-            <div className="p-4 rounded-2xl bg-slate-50 border border-[#0a192f]/30 space-y-1">
+            <div className="p-4 rounded-2xl bg-white/30 border border-white/40 space-y-1">
               <span className="text-xs font-bold text-slate-500">Quizzes</span>
               <p className="text-sm font-black text-[#0a192f]">{generatedQuizzes.length}</p>
             </div>
@@ -256,7 +306,7 @@ export default function CreateDeckPage() {
             <button
               onClick={handleSaveDeck}
               disabled={isSaving}
-              className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] disabled:opacity-50 text-white font-black text-sm shadow-md transition transform hover:-translate-y-0.5 border border-[#0a192f]"
+              className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] disabled:opacity-50 text-white font-black text-sm shadow-md transition transform hover:-translate-y-0.5"
               style={{ color: '#ffffff' }}
             >
               {isSaving ? (

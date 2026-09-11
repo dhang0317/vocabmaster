@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getCurrentUserId } from '@/lib/session';
 
-// GET single deck with full relation data
+// GET single deck with full relation data (owner only)
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
+  }
   try {
     const { id } = params;
     const deck = await prisma.deck.findUnique({
@@ -18,16 +23,19 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       },
     });
 
-    if (!deck) {
-      return NextResponse.json({ error: '找不到該題庫' }, { status: 404 });
+    if (!deck || deck.userId !== userId) {
+      return NextResponse.json({ error: 'Deck not found' }, { status: 404 });
     }
 
-    // Format JSON fields
     const formattedDeck = {
       ...deck,
       articles: deck.articles.map(a => ({
         ...a,
         blanks: JSON.parse(a.blanksJson || '[]'),
+        glossary: JSON.parse(
+          // glossaryJson may be missing on older rows before migration
+          (a as { glossaryJson?: string | null }).glossaryJson || '[]'
+        ),
       })),
       quizzes: deck.quizzes.map(q => ({
         ...q,
@@ -38,32 +46,86 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json({ success: true, deck: formattedDeck });
   } catch (error: any) {
     console.error('Error fetching deck:', error);
-    return NextResponse.json({ error: error.message || '獲取題庫失敗' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Failed to load deck' }, { status: 500 });
   }
 }
 
-// DELETE a deck
+// DELETE a deck (owner only)
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
+  }
   try {
     const { id } = params;
+    const deck = await prisma.deck.findUnique({
+      where: { id },
+      select: { userId: true },
+    });
+    if (!deck || deck.userId !== userId) {
+      return NextResponse.json({ error: 'Deck not found' }, { status: 404 });
+    }
     await prisma.deck.delete({
       where: { id },
     });
-    return NextResponse.json({ success: true, message: '題庫已成功刪除' });
+    return NextResponse.json({ success: true, message: 'Deck deleted' });
   } catch (error: any) {
     console.error('Error deleting deck:', error);
-    return NextResponse.json({ error: error.message || '刪除題庫失敗' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Failed to delete deck' }, { status: 500 });
   }
 }
 
-// PATCH update word status (e.g. toggle isMastered)
+// PATCH — toggle word mastered OR publish/unpublish deck (owner only)
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
+  }
   try {
     const body = await req.json();
+    const { id } = params;
+
+    // Publish / unpublish deck
+    if (typeof body.isPublic === 'boolean') {
+      const deck = await prisma.deck.findUnique({
+        where: { id },
+        select: { userId: true },
+      });
+      if (!deck || deck.userId !== userId) {
+        return NextResponse.json({ error: 'Deck not found' }, { status: 404 });
+      }
+
+      const updated = await prisma.deck.update({
+        where: { id },
+        data: {
+          isPublic: body.isPublic,
+          publishedAt: body.isPublic ? new Date() : null,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        deck: {
+          id: updated.id,
+          isPublic: updated.isPublic,
+          publishedAt: updated.publishedAt,
+        },
+      });
+    }
+
+    // Toggle word mastered
     const { wordId, isMastered } = body;
 
     if (!wordId || typeof isMastered !== 'boolean') {
-      return NextResponse.json({ error: '無效的更新參數' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid update parameters' }, { status: 400 });
+    }
+
+    const word = await prisma.word.findUnique({
+      where: { id: wordId },
+      include: { deck: { select: { userId: true } } },
+    });
+    if (!word || word.deck.userId !== userId) {
+      return NextResponse.json({ error: 'Word not found' }, { status: 404 });
     }
 
     const updatedWord = await prisma.word.update({
@@ -73,7 +135,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
     return NextResponse.json({ success: true, word: updatedWord });
   } catch (error: any) {
-    console.error('Error updating word:', error);
-    return NextResponse.json({ error: error.message || '更新單字失敗' }, { status: 500 });
+    console.error('Error updating:', error);
+    return NextResponse.json({ error: error.message || 'Update failed' }, { status: 500 });
   }
 }

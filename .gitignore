@@ -1,0 +1,26 @@
+# dependencies
+node_modules
+
+# next.js
+.next
+out
+
+# env files (secrets - kept in Vercel project settings, NOT pushed to git)
+.env
+.env.local
+.env.production
+.env.development
+
+# vercel
+.vercel
+
+# database
+dev.db
+dev.db-journal
+*.db
+*.db-journal
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*

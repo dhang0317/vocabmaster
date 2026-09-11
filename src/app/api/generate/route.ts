@@ -5,11 +5,12 @@ import { RawWordInput, GenerationLevel } from '@/types';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { words, level, apiKey, action } = body as {
+    const { words, level, apiKey, action, forceOffline } = body as {
       words: RawWordInput[];
       level?: GenerationLevel;
       apiKey?: string;
       action?: string;
+      forceOffline?: boolean;
     };
 
     if (!words || !Array.isArray(words) || words.length === 0) {
@@ -21,7 +22,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, translations });
     }
 
-    const generated = await generateLearningMaterials(words, level || 'highschool', apiKey);
+    // forceOffline: skip Gemini entirely (no API key / no quota needed)
+    const key = forceOffline ? '' : apiKey;
+    const generated = await generateLearningMaterials(words, level || 'highschool', key);
     return NextResponse.json({ success: true, data: generated });
   } catch (error: any) {
     console.error('Error generating materials:', error);
