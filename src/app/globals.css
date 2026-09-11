@@ -1,0 +1,307 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Baskervville Fontiko";
+  src: url('./fonts/Baskervville-fontiko/Baskervville-Regular.ttf') format('truetype');
+  font-weight: 200 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Baskervville Fontiko";
+  src: url('./fonts/Baskervville-fontiko/Baskervville-Italic.ttf') format('truetype');
+  font-weight: 200 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #000000;
+  }
+
+  [data-theme="dark"] {
+    --background: #0a0f1d;
+    --foreground: #ffffff;
+  }
+}
+
+@layer utilities {
+  .liquid-glass {
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    box-shadow:
+      0 4px 24px -1px rgba(0, 0, 0, 0.04),
+      0 2px 8px -1px rgba(0, 0, 0, 0.02),
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.8),
+      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.03);
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  [data-theme="dark"] .liquid-glass {
+    background: rgba(15, 23, 42, 0.65) !important;
+    backdrop-filter: blur(28px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow:
+      0 4px 24px -1px rgba(0, 0, 0, 0.35),
+      0 2px 8px -1px rgba(0, 0, 0, 0.2),
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.15),
+      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.2) !important;
+  }
+
+  .liquid-glass-hover {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .liquid-glass-hover:hover {
+    background: rgba(255, 255, 255, 0.6);
+    border-color: rgba(255, 255, 255, 0.8);
+    box-shadow:
+      0 8px 32px -2px rgba(0, 0, 0, 0.06),
+      0 4px 12px -1px rgba(0, 0, 0, 0.03),
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.95),
+      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.04);
+  }
+
+  [data-theme="dark"] .liquid-glass-hover:hover {
+    background: rgba(30, 41, 59, 0.75) !important;
+    border-color: rgba(255, 255, 255, 0.22) !important;
+    box-shadow:
+      0 8px 32px -2px rgba(0, 0, 0, 0.5),
+      0 4px 12px -1px rgba(0, 0, 0, 0.3),
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.25),
+      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .liquid-glass-menu {
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(36px) saturate(190%);
+    -webkit-backdrop-filter: blur(36px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow:
+      0 12px 40px -4px rgba(0, 0, 0, 0.08),
+      0 4px 16px -2px rgba(0, 0, 0, 0.04),
+      inset 0 1px 2px 0 rgba(255, 255, 255, 0.9);
+  }
+
+  [data-theme="dark"] .liquid-glass-menu {
+    background: rgba(15, 23, 42, 0.85) !important;
+    backdrop-filter: blur(36px) saturate(190%) !important;
+    -webkit-backdrop-filter: blur(36px) saturate(190%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    box-shadow:
+      0 12px 40px -4px rgba(0, 0, 0, 0.6),
+      0 4px 16px -2px rgba(0, 0, 0, 0.4),
+      inset 0 1px 2px 0 rgba(255, 255, 255, 0.2) !important;
+  }
+
+  .liquid-glass-active {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(255, 255, 255, 0.95);
+    box-shadow:
+      0 6px 20px -2px rgba(0, 0, 0, 0.06),
+      inset 0 1px 2px 0 rgba(255, 255, 255, 1);
+  }
+
+  [data-theme="dark"] .liquid-glass-active {
+    background: rgba(30, 41, 59, 0.9) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: "Baskervville Fontiko", "PMingLiU", "MingLiU", "Noto Serif CJK TC", Georgia, "Times New Roman", serif;
+  font-weight: 200;
+  min-height: 100vh;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+body, body * {
+  font-family: "Baskervville Fontiko", "PMingLiU", "MingLiU", "Noto Serif CJK TC", Georgia, "Times New Roman", serif !important;
+  font-weight: 200 !important;
+}
+
+.font-cjk {
+  font-family: "PMingLiU", "MingLiU", "Noto Serif CJK TC", serif !important;
+  font-weight: 200 !important;
+}
+
+.font-ipa {
+  font-family: "Times New Roman", Georgia, "DejaVu Serif", serif !important;
+  font-weight: 400 !important;
+}
+
+/* Light Mode typography defaults */
+body .text-white,
+body [class~="text-white"] {
+  color: #ffffff !important;
+}
+
+body :where(p, span, label, li, td, th, button, a, input, textarea, select, option, h1, h2, h3, h4, h5, h6) {
+  color: #000000;
+  font-weight: 200;
+}
+
+/* Dark action buttons keep white text */
+body [class*="bg-black"],
+body [class*="bg-[#0a192f]"],
+body [class*="bg-[#0f2a59]"],
+body [class*="bg-slate-800"],
+body [class*="bg-slate-900"] {
+  color: #ffffff !important;
+}
+
+button[class*="bg-[#0a192f]"],
+a[class*="bg-[#0a192f]"],
+button[class*="bg-black"],
+a[class*="bg-black"],
+button[class*="bg-[#132c5b]"],
+a[class*="bg-[#132c5b]"],
+button[class*="bg-slate-800"],
+a[class*="bg-slate-800"],
+button[class*="bg-slate-900"],
+a[class*="bg-slate-900"] {
+  color: #ffffff !important;
+}
+
+button[class*="bg-[#0a192f]"] *,
+a[class*="bg-[#0a192f]"] *,
+button[class*="bg-black"] *,
+a[class*="bg-black"] *,
+button[class*="bg-[#132c5b]"] *,
+a[class*="bg-[#132c5b]"] *,
+button[class*="bg-slate-800"] *,
+a[class*="bg-slate-800"] *,
+button[class*="bg-slate-900"] *,
+a[class*="bg-slate-900"] * {
+  color: #ffffff !important;
+}
+
+body [class*="border-[#0a192f]"] {
+  border-color: rgba(0, 0, 0, 0.12) !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+body [class*="border-2"][class*="border-[#0a192f]"],
+body [class*="border-2"][class*="border-black"]:not([class*="bg-"]) {
+  border-width: 1px !important;
+}
+
+/* ========================================= */
+/* COMPLETE DARK MODE THEME STYLES           */
+/* ========================================= */
+[data-theme="dark"] body {
+  background: var(--background) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] body :where(p, span, label, li, td, th, button, a, h1, h2, h3, h4, h5, h6) {
+  color: #ffffff;
+}
+
+[data-theme="dark"] body input,
+[data-theme="dark"] body textarea,
+[data-theme="dark"] body select {
+  color: #ffffff !important;
+  background-color: rgba(15, 23, 42, 0.75) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+[data-theme="dark"] body input::placeholder,
+[data-theme="dark"] body textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+[data-theme="dark"] .nav-header {
+  background: rgba(15, 23, 42, 0.75) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme="dark"] .bg-white,
+[data-theme="dark"] .bg-slate-50 {
+  background-color: #0f172a !important;
+}
+
+[data-theme="dark"] body [class*="border-[#0a192f]"],
+[data-theme="dark"] body [class*="border-black"],
+[data-theme="dark"] body [class*="border-slate-200"],
+[data-theme="dark"] body [class*="border-slate-100"] {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme="dark"] body a[class*="border"]:hover,
+[data-theme="dark"] body div[class*="border"]:hover {
+  border-color: rgba(255, 255, 255, 0.35) !important;
+}
+
+[data-theme="dark"] [class*="text-[#0a192f]"],
+[data-theme="dark"] [class*="text-[#1e3a8a]"],
+[data-theme="dark"] .text-slate-900,
+[data-theme="dark"] .text-slate-800,
+[data-theme="dark"] .text-slate-700,
+[data-theme="dark"] .text-slate-600,
+[data-theme="dark"] .text-slate-500,
+[data-theme="dark"] .text-gray-900,
+[data-theme="dark"] .text-gray-800,
+[data-theme="dark"] .text-gray-700,
+[data-theme="dark"] .text-gray-600,
+[data-theme="dark"] .text-black {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .text-slate-400,
+[data-theme="dark"] .text-gray-400 {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+[data-theme="dark"] footer,
+[data-theme="dark"] footer p,
+[data-theme="dark"] footer span,
+[data-theme="dark"] footer a {
+  color: #ffffff !important;
+}
+
+/* 3D Flip Card Effect */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* Print Styles */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .print-page-break {
+    page-break-after: always;
+  }
+}
