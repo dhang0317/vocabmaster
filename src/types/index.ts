@@ -6,8 +6,6 @@ export interface RawWordInput {
   definition?: string;
   example?: string;
   exampleZh?: string;
-  /** Optional user-selected semantic tags for better cloze slot matching */
-  semanticTags?: string[];
 }
 
 export interface GeneratedWord {
@@ -20,7 +18,6 @@ export interface GeneratedWord {
   example: string;
   exampleZh: string;
   isMastered?: boolean;
-  semanticTags?: string[];
 }
 
 export interface ClozeBlank {
@@ -30,21 +27,12 @@ export interface ClozeBlank {
   options: string[];
 }
 
-/** Precomputed word/phrase translation for cloze highlight lookup (no API at read time). */
-export interface GlossaryEntry {
-  en: string;
-  zh: string;
-  sense?: string;
-}
-
 export interface GeneratedCloze {
   id?: string;
   title: string;
-  content: string;
+  content: string; // text with [blank_1], [blank_2] ...
   contentZh: string;
   blanks: ClozeBlank[];
-  /** Built at article generation time; used for instant highlight translation */
-  glossary?: GlossaryEntry[];
 }
 
 export interface GeneratedQuiz {
@@ -61,8 +49,6 @@ export interface DeckData {
   id: string;
   title: string;
   description?: string | null;
-  isPublic?: boolean;
-  publishedAt?: string | Date | null;
   createdAt: string | Date;
   updatedAt: string | Date;
   words: GeneratedWord[];

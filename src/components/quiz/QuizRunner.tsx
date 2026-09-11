@@ -1,17 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import {
-  CheckCircle2,
-  XCircle,
-  RotateCcw,
-  ArrowRight,
-  BookOpen,
-  Clock,
-  Languages,
-  X,
-  Loader2,
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import confetti from 'canvas-confetti';
+import { CheckCircle2, XCircle, Award, RotateCcw, ArrowRight, HelpCircle, BookOpen, Clock } from 'lucide-react';
 import { GeneratedQuiz, GeneratedWord } from '@/types';
 
 interface QuizRunnerProps {
@@ -20,95 +11,8 @@ interface QuizRunnerProps {
   deckId?: string;
 }
 
-interface TranslatePopup {
-  text: string;
-  translated: string | null;
-  loading: boolean;
-  error: string | null;
-  x: number;
-  y: number;
-  placeAbove: boolean;
-}
-
-function cleanOptionLabel(raw: string): string {
-  return raw.replace(/^\s*[A-Da-d][).:\-]\s*/, '').trim();
-}
-
-function rewriteMeaningQuestion(quiz: GeneratedQuiz): GeneratedQuiz {
-  const isMeaning =
-    /which word best matches this meaning|select the word that means|is best expressed by which word/i.test(
-      quiz.question
-    );
-  if (!isMeaning) return quiz;
-
-  const meaningMatch = quiz.question.match(/["「]([^"」]+)["」]/);
-  const meaning =
-    meaningMatch?.[1] ||
-    quiz.questionZh?.match(/「([^」]+)」/)?.[1] ||
-    quiz.targetWord;
-
-  return {
-    ...quiz,
-    question: `Choose the word that best fits this context: a plan or idea related to "${meaning}".`,
-    questionZh: quiz.questionZh?.includes('_____')
-      ? quiz.questionZh
-      : `請選出最符合「${meaning}」這個概念的單字。`,
-  };
-}
-
-function sanitizeQuizOptions(quiz: GeneratedQuiz): GeneratedQuiz {
-  const rewritten = rewriteMeaningQuestion(quiz);
-  const cleaned = rewritten.options.map(cleanOptionLabel).filter(Boolean);
-  const correctRaw = cleaned[rewritten.correctIdx] ?? cleanOptionLabel(rewritten.targetWord);
-  const correctKey = correctRaw.toLowerCase();
-
-  const unique: string[] = [];
-  for (const opt of cleaned) {
-    const key = opt.toLowerCase();
-    if (unique.some(u => u.toLowerCase() === key)) continue;
-    unique.push(opt);
-  }
-
-  if (!unique.some(u => u.toLowerCase() === correctKey)) {
-    unique.unshift(correctRaw);
-  }
-
-  while (unique.length < 4) {
-    unique.push(`option${unique.length + 1}`);
-  }
-
-  const options = unique.slice(0, 4);
-  const correctIdx = Math.max(
-    0,
-    options.findIndex(o => o.toLowerCase() === correctKey)
-  );
-
-  return { ...rewritten, options, correctIdx };
-}
-
-function LetterBadge({ letter }: { letter: string }) {
-  return (
-    <span
-      className="inline-flex w-7 h-7 rounded-xl items-center justify-center text-xs font-mono font-bold shrink-0"
-      style={{
-        backgroundColor: '#0a192f',
-        color: '#ffffff',
-        border: '1px solid #0a192f',
-        WebkitTextFillColor: '#ffffff',
-      }}
-    >
-      <span style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}>{letter}</span>
-    </span>
-  );
-}
-
 export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunnerProps) {
-  const sanitizedInitial = useMemo(
-    () => initialQuizzes.map(sanitizeQuizOptions),
-    [initialQuizzes]
-  );
-
-  const [quizzes, setQuizzes] = useState<GeneratedQuiz[]>(sanitizedInitial);
+  const [quizzes, setQuizzes] = useState<GeneratedQuiz[]>(initialQuizzes);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [showExplanation, setShowExplanation] = useState(false);
@@ -117,190 +21,84 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [optionTranslations, setOptionTranslations] = useState<Record<string, string>>({});
   const [isTranslatingOptions, setIsTranslatingOptions] = useState(false);
-  const [popup, setPopup] = useState<TranslatePopup | null>(null);
-
-  const questionRef = useRef<HTMLHeadingElement>(null);
-  const popupRef = useRef<HTMLDivElement>(null);
-  const translateAbortRef = useRef<AbortController | null>(null);
-
-  const wordMap = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const w of words) {
-      if (w.word && w.translation) m.set(w.word.trim().toLowerCase(), w.translation);
-    }
-    return m;
-  }, [words]);
 
   useEffect(() => {
-    setQuizzes(sanitizedInitial);
+    setQuizzes(initialQuizzes);
     setCurrentIndex(0);
     setSelectedAnswers({});
     setShowExplanation(false);
     setIsFinished(false);
     setSeconds(0);
-    setPopup(null);
-  }, [sanitizedInitial]);
+  }, [initialQuizzes]);
 
   useEffect(() => {
-    let cancelled = false;
-    const normalize = (value: string) => value.trim().toLowerCase();
-
-    const knownTranslations = new Set(
-      words.filter(word => word.translation?.trim()).map(word => normalize(word.word))
-    );
-
-    const currentOptions = Array.from(
-      new Set(
-        quizzes
-          .flatMap(quiz => quiz.options)
-          .map(option => option.trim())
-          .filter(Boolean)
-      )
-    );
-    const currentOptionKeys = new Set(currentOptions.map(normalize));
-
-    setOptionTranslations(prev =>
-      Object.fromEntries(Object.entries(prev).filter(([key]) => currentOptionKeys.has(key)))
-    );
-
-    const missing = currentOptions.filter(option => !knownTranslations.has(normalize(option)));
-    if (missing.length === 0) {
-      setIsTranslatingOptions(false);
-      return () => {
-        cancelled = true;
-      };
-    }
+    const known = new Set(words
+      .filter(word => word.translation?.trim())
+      .map(word => word.word.trim().toLowerCase()));
+    const missing = Array.from(new Set(
+      quizzes.flatMap(quiz => quiz.options).filter(option => !known.has(option.trim().toLowerCase())),
+    ));
+    if (missing.length === 0) return;
 
     const translateMissingOptions = async () => {
-      const apiKey = typeof window !== 'undefined' ? localStorage.getItem('gemini_api_key') || '' : '';
-      if (!apiKey.trim()) {
-        setIsTranslatingOptions(false);
-        return;
-      }
       setIsTranslatingOptions(true);
       try {
+        const apiKey = typeof window !== 'undefined' ? localStorage.getItem('gemini_api_key') || '' : '';
+        if (!apiKey) return;
         const response = await fetch('/api/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'translate',
-            words: missing.map(word => ({ word })),
-            apiKey,
-          }),
+          body: JSON.stringify({ action: 'translate', words: missing.map(word => ({ word })), apiKey }),
         });
         const result = await response.json();
-        if (!cancelled && response.ok && result.success) {
-          const normalizedTranslations = Object.fromEntries(
-            Object.entries(result.translations || {}).map(([word, translation]) => [
-              normalize(word),
-              String(translation),
-            ])
-          );
-          setOptionTranslations(prev => ({ ...prev, ...normalizedTranslations }));
+        if (response.ok && result.success) {
+          setOptionTranslations(result.translations || {});
+        } else {
+          console.warn('Translation API failed:', result.error || 'Unknown error');
         }
       } catch (error) {
-        if (!cancelled) console.warn('Failed to translate quiz options', error);
+        console.warn('Failed to translate quiz options', error);
       } finally {
-        if (!cancelled) setIsTranslatingOptions(false);
+        setIsTranslatingOptions(false);
       }
     };
-
     translateMissingOptions();
-    return () => {
-      cancelled = true;
-    };
   }, [quizzes, words]);
 
   useEffect(() => {
+    const known = new Set(words.map(word => word.word.trim().toLowerCase()));
+    const missing = Array.from(new Set(
+      quizzes.flatMap(quiz => quiz.options)
+        .filter(option => !known.has(option.trim().toLowerCase())),
+    ));
+    if (missing.length === 0) return;
+
+    const translateMissingOptions = async () => {
+      try {
+        const apiKey = typeof window !== 'undefined' ? localStorage.getItem('gemini_api_key') || '' : '';
+        if (!apiKey) return;
+        const response = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ words: missing, apiKey }),
+        });
+        const result = await response.json();
+        if (response.ok && result.success) setOptionTranslations(result.translations || {});
+      } catch (error) {
+        console.warn('Failed to translate quiz options', error);
+      }
+    };
+    translateMissingOptions();
+  }, [quizzes, words]);
+
+  // Timer
+  useEffect(() => {
     if (isFinished) return;
-    const interval = setInterval(() => setSeconds(prev => prev + 1), 1000);
+    const interval = setInterval(() => {
+      setSeconds(prev => prev + 1);
+    }, 1000);
     return () => clearInterval(interval);
   }, [isFinished]);
-
-  const closePopup = useCallback(() => {
-    if (translateAbortRef.current) {
-      translateAbortRef.current.abort();
-      translateAbortRef.current = null;
-    }
-    setPopup(null);
-  }, []);
-
-  useEffect(() => {
-    if (!popup) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closePopup();
-    };
-    const onMouseDown = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (popupRef.current?.contains(target)) return;
-      if (questionRef.current?.contains(target)) return;
-      closePopup();
-    };
-    document.addEventListener('keydown', onKeyDown);
-    document.addEventListener('mousedown', onMouseDown);
-    return () => {
-      document.removeEventListener('keydown', onKeyDown);
-      document.removeEventListener('mousedown', onMouseDown);
-    };
-  }, [popup, closePopup]);
-
-  const fetchTranslation = useCallback(async (text: string, x: number, y: number, placeAbove: boolean) => {
-    const local = wordMap.get(text.trim().toLowerCase());
-    if (local) {
-      setPopup({ text, translated: local, loading: false, error: null, x, y, placeAbove });
-      return;
-    }
-
-    if (translateAbortRef.current) translateAbortRef.current.abort();
-    const controller = new AbortController();
-    translateAbortRef.current = controller;
-
-    setPopup({ text, translated: null, loading: true, error: null, x, y, placeAbove });
-
-    try {
-      const res = await fetch('/api/translate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, target: 'zh-TW' }),
-        signal: controller.signal,
-      });
-      const data = await res.json();
-      if (controller.signal.aborted) return;
-      if (!res.ok || !data.success) {
-        setPopup(prev => (prev ? { ...prev, loading: false, error: data.error || '翻譯失敗' } : null));
-        return;
-      }
-      setPopup(prev => (prev ? { ...prev, loading: false, translated: data.translated, error: null } : null));
-    } catch (err: unknown) {
-      if (err instanceof DOMException && err.name === 'AbortError') return;
-      setPopup(prev =>
-        prev ? { ...prev, loading: false, error: err instanceof Error ? err.message : '翻譯失敗' } : null
-      );
-    } finally {
-      if (translateAbortRef.current === controller) translateAbortRef.current = null;
-    }
-  }, [wordMap]);
-
-  const handleQuestionMouseUp = useCallback(() => {
-    const selection = window.getSelection();
-    if (!selection || selection.isCollapsed || !questionRef.current) return;
-
-    const text = selection.toString().trim();
-    if (!text || text.length < 1 || text.length > 120) return;
-
-    const anchorNode = selection.anchorNode;
-    if (!anchorNode || !questionRef.current.contains(anchorNode)) return;
-
-    const range = selection.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
-    const x = rect.left + rect.width / 2;
-    const spaceAbove = rect.top;
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const placeAbove = spaceAbove >= 110 || spaceAbove >= spaceBelow;
-    const y = placeAbove ? rect.top - 6 : rect.bottom + 6;
-
-    fetchTranslation(text, x, y, placeAbove);
-  }, [fetchTranslation]);
 
   const currentQ = quizzes[currentIndex] || null;
   const currentSelected = currentQ ? selectedAnswers[currentIndex] : undefined;
@@ -314,7 +112,6 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
 
   const handleNext = () => {
     setShowExplanation(false);
-    setPopup(null);
     if (currentIndex < quizzes.length - 1) {
       setCurrentIndex(prev => prev + 1);
     } else {
@@ -339,6 +136,14 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
       };
     });
 
+    if (score / quizzes.length >= 0.8 && quizzes.length > 0) {
+      confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.6 },
+      });
+    }
+
     if (deckId) {
       try {
         await fetch('/api/quiz', {
@@ -358,13 +163,12 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
   };
 
   const resetQuiz = (nextQuizzes: GeneratedQuiz[] = quizzes) => {
-    setQuizzes(nextQuizzes.map(sanitizeQuizOptions));
+    setQuizzes(nextQuizzes);
     setSelectedAnswers({});
     setCurrentIndex(0);
     setShowExplanation(false);
     setIsFinished(false);
     setSeconds(0);
-    setPopup(null);
   };
 
   const handleOldQuizRestart = () => resetQuiz(quizzes);
@@ -408,15 +212,14 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getOtherOptionTranslations = (quiz: GeneratedQuiz) =>
-    quiz.options
-      .map((option, index) => {
-        if (index === quiz.correctIdx) return null;
-        const word = words.find(item => item.word.trim().toLowerCase() === option.trim().toLowerCase());
-        return `${option}：${word?.translation || optionTranslations[option.trim().toLowerCase()] || (isTranslatingOptions ? '翻譯中...' : '中文翻譯未提供')}`;
-      })
-      .filter(Boolean)
-      .join('；');
+  const getOtherOptionTranslations = (quiz: GeneratedQuiz) => quiz.options
+    .map((option, index) => {
+      if (index === quiz.correctIdx) return null;
+      const word = words.find(item => item.word.trim().toLowerCase() === option.trim().toLowerCase());
+      return `${option}：${word?.translation || optionTranslations[option.trim().toLowerCase()] || (isTranslatingOptions ? '翻譯中...' : '中文翻譯未提供')}`;
+    })
+    .filter(Boolean)
+    .join('；');
 
   if (!currentQ && !isFinished) {
     return (
@@ -433,67 +236,15 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
   });
   const scorePercent = Math.round((correctCount / quizzes.length) * 100);
 
-  const translatePopupNode = popup && (
-    <div
-      ref={popupRef}
-      className="fixed z-[100] pointer-events-auto"
-      style={{
-        left: Math.min(Math.max(popup.x, 160), (typeof window !== 'undefined' ? window.innerWidth : 320) - 160),
-        top: popup.y,
-        transform: popup.placeAbove ? 'translate(-50%, -100%)' : 'translate(-50%, 0)',
-      }}
-    >
-      <div className="flex flex-col items-center">
-        {!popup.placeAbove && (
-          <div
-            className="w-2.5 h-2.5 rotate-45 mb-[-5px] bg-white/50 border-l border-t border-white/50"
-            style={{ backdropFilter: 'blur(8px)' }}
-          />
-        )}
-        <div className="liquid-glass liquid-glass-menu rounded-2xl shadow-xl border border-white/50 min-w-[180px] max-w-[300px] px-3.5 py-3">
-          <div className="flex items-start justify-between gap-2 mb-1.5">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              <Languages className="w-3 h-3 shrink-0" />
-              <span>翻譯</span>
-            </div>
-            <button
-              type="button"
-              onClick={closePopup}
-              className="p-0.5 rounded-lg text-slate-400 hover:text-[#0a192f] hover:bg-white/40 transition shrink-0"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          <p className="text-xs font-bold text-[#0a192f] break-words leading-snug">{popup.text}</p>
-          {popup.loading && (
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 py-1.5">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              <span>查詢中…</span>
-            </div>
-          )}
-          {popup.error && <p className="text-xs text-red-600 font-medium py-0.5">{popup.error}</p>}
-          {popup.translated && !popup.loading && (
-            <div className="border-t border-black/10 pt-1.5 mt-1.5">
-              <p className="text-sm font-bold text-[#0a192f] font-cjk leading-relaxed break-words">
-                {popup.translated}
-              </p>
-            </div>
-          )}
-        </div>
-        {popup.placeAbove && (
-          <div
-            className="w-2.5 h-2.5 rotate-45 mt-[-5px] bg-white/50 border-r border-b border-white/50"
-            style={{ backdropFilter: 'blur(8px)' }}
-          />
-        )}
-      </div>
-    </div>
-  );
-
   if (isFinished) {
     return (
       <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in duration-300">
-        <div className="liquid-glass liquid-glass-hover rounded-3xl p-8 text-center space-y-4">
+        {/* Score Card */}
+        <div className="p-8 rounded-3xl bg-white border-2 border-[#0a192f] text-center shadow-sm space-y-4">
+          <div className="w-20 h-20 mx-auto rounded-3xl bg-slate-100 border-2 border-[#0a192f] flex items-center justify-center text-[#0a192f] shadow-sm">
+            <Award className="w-10 h-10" />
+          </div>
+
           <div>
             <h3 className="text-3xl font-black text-[#0a192f]">Quiz complete!</h3>
             <p className="text-sm text-slate-600 mt-1 font-medium">Time: {formatTime(seconds)}</p>
@@ -501,12 +252,10 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
 
           <div className="flex items-center justify-center gap-6 py-4">
             <div className="text-center">
-              <span className="text-4xl font-black text-[#0a192f]">
-                {correctCount} / {quizzes.length}
-              </span>
+              <span className="text-4xl font-black text-[#0a192f]">{correctCount} / {quizzes.length}</span>
               <p className="text-xs text-slate-600 mt-1 font-bold">Correct answers</p>
             </div>
-            <div className="h-10 w-0.5 bg-black/10" />
+            <div className="h-10 w-0.5 bg-slate-200" />
             <div className="text-center">
               <span className="text-4xl font-black text-[#1e3a8a]">{scorePercent}%</span>
               <p className="text-xs text-slate-600 mt-1 font-bold">Accuracy</p>
@@ -516,26 +265,27 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
           <div className="flex flex-wrap items-center justify-center gap-3">
             <button
               onClick={handleOldQuizRestart}
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] font-bold text-sm shadow-md transition transform hover:-translate-y-0.5"
-              style={{ color: '#ffffff' }}
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-[#0a192f] font-bold text-sm shadow-sm transition border-2 border-[#0a192f]"
             >
-              <RotateCcw className="w-4 h-4" style={{ color: '#ffffff' }} />
+              <RotateCcw className="w-4 h-4" />
               <span>Retake original quiz</span>
             </button>
             <button
               onClick={handleNewQuizRestart}
               disabled={isRegenerating}
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] disabled:opacity-60 font-bold text-sm shadow-md transition transform hover:-translate-y-0.5"
-              style={{ color: '#ffffff' }}
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] disabled:opacity-60 text-white font-bold text-sm shadow-md transition border-2 border-[#0a192f]"
             >
-              <RotateCcw className="w-4 h-4" style={{ color: '#ffffff' }} />
+              <RotateCcw className="w-4 h-4" />
               <span>{isRegenerating ? 'Generating new quiz...' : 'Retake shuffled quiz'}</span>
             </button>
           </div>
         </div>
 
+        {/* Detailed Question Review */}
         <div className="space-y-4">
-          <h4 className="text-lg font-black text-[#0a192f] px-6">Review & explanations</h4>
+          <h4 className="text-lg font-black text-[#0a192f]">
+            Review & explanations
+          </h4>
 
           {quizzes.map((q, idx) => {
             const userChosen = selectedAnswers[idx];
@@ -544,31 +294,34 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
             return (
               <div
                 key={idx}
-                className={`liquid-glass liquid-glass-hover rounded-3xl p-6 space-y-3 ${
-                  isCorrect ? '' : 'ring-2 ring-red-400/60'
-                }`}
+                className={`p-6 rounded-2xl border-2 ${
+                  isCorrect
+                    ? 'bg-white border-[#0a192f]'
+                    : 'bg-red-50/50 border-red-500'
+                } space-y-3 shadow-sm`}
               >
-                <div className="flex items-start justify-end gap-3">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-xs font-mono font-bold text-[#0a192f] bg-slate-100 px-2.5 py-1 rounded border border-[#0a192f]/30">
+                    Question {idx + 1} • Target word: {q.targetWord}
+                  </span>
                   {isCorrect ? (
-                    <span
-                      className="inline-flex items-center gap-1 text-xs font-bold bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-600"
-                      style={{ color: '#000000', WebkitTextFillColor: '#000000' }}
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" style={{ color: '#000000' }} /> Correct
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-600">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Correct
                     </span>
                   ) : (
-                    <span
-                      className="inline-flex items-center gap-1 text-xs font-bold bg-red-100 px-2.5 py-1 rounded-full border border-red-500"
-                      style={{ color: '#000000', WebkitTextFillColor: '#000000' }}
-                    >
-                      <XCircle className="w-3.5 h-3.5" style={{ color: '#000000' }} /> Incorrect
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-red-800 bg-red-100 px-2.5 py-1 rounded-full border border-red-500">
+                      <XCircle className="w-3.5 h-3.5" /> Incorrect
                     </span>
                   )}
                 </div>
 
-                <p className="text-base font-bold text-[#0a192f]">{q.question}</p>
+                <p className="text-base font-bold text-[#0a192f]">
+                  {q.question}
+                </p>
                 {q.questionZh && (
-                  <p className="text-xs text-slate-600 border-l-2 border-[#0a192f]/30 pl-2">{q.questionZh}</p>
+                  <p className="text-xs text-slate-600 border-l-2 border-[#0a192f]/30 pl-2">
+                    {q.questionZh}
+                  </p>
                 )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
@@ -576,59 +329,32 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
                     const isRightOption = optIdx === q.correctIdx;
                     const isUserChoice = optIdx === userChosen;
 
-                    const borderStyle = isRightOption
-                      ? '2px solid #059669'
-                      : isUserChoice
-                      ? '2px solid #ef4444'
-                      : '2px solid rgba(10,25,47,0.2)';
-
                     return (
                       <div
                         key={optIdx}
-                        className="px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-between gap-2"
-                        style={{
-                          backgroundColor: '#ffffff',
-                          color: '#000000',
-                          border: borderStyle,
-                        }}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold border-2 flex items-center justify-between ${
+                          isRightOption
+                            ? 'bg-emerald-100 border-emerald-600 text-emerald-900'
+                            : isUserChoice
+                            ? 'bg-red-100 border-red-500 text-red-900'
+                            : 'bg-white border-[#0a192f]/20 text-slate-600'
+                        }`}
                       >
-                        <span className="flex items-center gap-2 min-w-0">
-                          <LetterBadge letter={String.fromCharCode(65 + optIdx)} />
-                          <span style={{ color: '#000000' }}>{opt}</span>
+                        <span>
+                          {String.fromCharCode(65 + optIdx)}. {opt}
                         </span>
-                        {isRightOption && (
-                          <span className="text-[10px] font-black shrink-0" style={{ color: '#000000' }}>
-                            Correct
-                          </span>
-                        )}
-                        {isUserChoice && !isRightOption && (
-                          <span className="text-[10px] font-black shrink-0" style={{ color: '#000000' }}>
-                            Your choice
-                          </span>
-                        )}
+                        {isRightOption && <span className="text-[10px] font-black text-emerald-800">Correct answer</span>}
+                        {isUserChoice && !isRightOption && <span className="text-[10px] font-black text-red-800">Your choice</span>}
                       </div>
                     );
                   })}
                 </div>
 
                 {q.explanation && (
-                  <div
-                    className="mt-3 p-3.5 rounded-xl border border-[#0a192f]/15 text-xs leading-relaxed"
-                    style={{
-                      backgroundColor: '#ffffff',
-                      color: '#000000',
-                      WebkitTextFillColor: '#000000',
-                    }}
-                  >
-                    <strong style={{ color: '#000000', WebkitTextFillColor: '#000000' }}>
-                      Explanation:
-                    </strong>{' '}
-                    {q.explanation}
+                  <div className="mt-3 p-3.5 bg-slate-50 rounded-xl border border-[#0a192f]/20 text-xs text-[#0a192f] leading-relaxed">
+                    💡 <strong className="text-[#0a192f]">Explanation:</strong>{q.explanation}
                     <br />
-                    <strong style={{ color: '#000000', WebkitTextFillColor: '#000000' }}>
-                      選項翻譯：
-                    </strong>{' '}
-                    {getOtherOptionTranslations(q)}
+                    <strong className="text-[#0a192f]">選項翻譯：</strong> {getOtherOptionTranslations(q)}
                   </div>
                 )}
               </div>
@@ -641,49 +367,52 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      {/* Top Progress & Timer */}
       <div className="flex items-center justify-between text-sm">
-        <span className="font-black text-[#0a192f]">
-          Question {currentIndex + 1} / {quizzes.length}
-        </span>
-        <div className="flex items-center gap-1.5 text-xs text-[#0a192f] font-mono font-bold liquid-glass px-3 py-1.5 rounded-xl">
+        <div className="flex items-center gap-3">
+          <span className="font-black text-[#0a192f]">
+            Question {currentIndex + 1} / {quizzes.length}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5 text-xs text-[#0a192f] font-mono font-bold bg-white px-3 py-1.5 rounded-xl border-2 border-[#0a192f]">
           <Clock className="w-3.5 h-3.5" />
           <span>{formatTime(seconds)}</span>
         </div>
       </div>
 
-      <div className="w-full bg-black/10 h-2.5 rounded-full overflow-hidden">
+      {/* Progress Bar */}
+      <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden border border-[#0a192f]/20">
         <div
           className="bg-[#0a192f] h-full transition-all duration-300 rounded-full"
           style={{ width: `${Math.round(((currentIndex + 1) / quizzes.length) * 100)}%` }}
         />
       </div>
 
-      <div className="liquid-glass liquid-glass-hover p-6 sm:p-8 rounded-3xl space-y-6">
-        <h3
-          ref={questionRef}
-          onMouseUp={handleQuestionMouseUp}
-          className="text-lg sm:text-xl font-bold text-[#0a192f] leading-relaxed pt-2 select-text cursor-text"
-        >
-          {currentQ.question}
-        </h3>
+      {/* Question Box */}
+      <div className="p-6 sm:p-8 rounded-3xl bg-white border-2 border-[#0a192f] shadow-sm space-y-6">
+        <div className="space-y-2">
+          <h3 className="text-lg sm:text-xl font-bold text-[#0a192f] leading-relaxed pt-2">
+            {currentQ.question}
+          </h3>
+          {/* 中文翻譯在作答前隱藏，作答後才在下方詳解區呈現 */}
+        </div>
 
+        {/* Options */}
         <div className="space-y-3 pt-2">
           {currentQ.options.map((opt, optIdx) => {
             const isSelected = currentSelected === optIdx;
             const isCorrect = optIdx === currentQ.correctIdx;
 
-            let bg = '#ffffff';
-            let border = '2px solid #0a192f';
+            let optionStyle = 'bg-white border-[#0a192f] text-[#0a192f] hover:bg-slate-50';
+
             if (hasAnswered) {
               if (isCorrect) {
-                bg = '#d1fae5';
-                border = '2px solid #059669';
+                optionStyle = 'bg-emerald-100 border-emerald-600 text-emerald-900 ring-2 ring-emerald-600/30';
               } else if (isSelected) {
-                bg = '#fee2e2';
-                border = '2px solid #ef4444';
+                optionStyle = 'bg-red-100 border-red-500 text-red-900 ring-2 ring-red-500/30';
               } else {
-                bg = '#ffffff';
-                border = '2px solid rgba(10,25,47,0.35)';
+                optionStyle = 'bg-slate-100 border-slate-300 text-slate-400 opacity-60';
               }
             }
 
@@ -692,86 +421,61 @@ export function QuizRunner({ quizzes: initialQuizzes, words, deckId }: QuizRunne
                 key={optIdx}
                 onClick={() => handleSelectOption(optIdx)}
                 disabled={hasAnswered}
-                className="w-full p-4 rounded-2xl text-left font-bold text-sm sm:text-base flex items-center justify-between transition"
-                style={{ backgroundColor: bg, border, color: '#000000' }}
+                className={`w-full p-4 rounded-2xl border-2 text-left font-bold text-sm sm:text-base flex items-center justify-between transition ${optionStyle}`}
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <LetterBadge letter={String.fromCharCode(65 + optIdx)} />
-                  <span style={{ color: '#000000' }}>{opt}</span>
+                <div className="flex items-center gap-3">
+                  <span className="w-7 h-7 rounded-xl bg-slate-100 border border-[#0a192f]/30 flex items-center justify-center text-xs font-mono font-bold text-[#0a192f]">
+                    {String.fromCharCode(65 + optIdx)}
+                  </span>
+                  <span>{opt}</span>
                 </div>
 
-                {hasAnswered && isCorrect && <CheckCircle2 className="w-5 h-5 shrink-0" style={{ color: '#000000' }} />}
+                {hasAnswered && isCorrect && (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-700" />
+                )}
                 {hasAnswered && isSelected && !isCorrect && (
-                  <XCircle className="w-5 h-5 shrink-0" style={{ color: '#000000' }} />
+                  <XCircle className="w-5 h-5 text-red-700" />
                 )}
               </button>
             );
           })}
         </div>
 
+        {/* Explanation Card (包含題目中文翻譯與答案解析，作答後才顯示) */}
         {showExplanation && (
-          <div
-            className="p-5 rounded-2xl border border-[#0a192f]/20 space-y-3 animate-in fade-in duration-200"
-            style={{
-              backgroundColor: '#ffffff',
-              color: '#000000',
-              WebkitTextFillColor: '#000000',
-            }}
-          >
-            <div
-              className="text-xs font-black"
-              style={{ color: '#000000', WebkitTextFillColor: '#000000' }}
-            >
-              <span style={{ color: '#000000', WebkitTextFillColor: '#000000' }}>
-                Translation & explanation
-              </span>
+          <div className="p-5 rounded-2xl bg-slate-50 border-2 border-[#0a192f]/30 space-y-3 animate-in fade-in duration-200">
+            <div className="flex items-center gap-2 text-xs font-black text-[#0a192f]">
+              <HelpCircle className="w-4 h-4" />
+              <span>Translation & explanation</span>
             </div>
 
             {currentQ.questionZh && (
-              <div
-                className="p-3 rounded-xl border text-xs sm:text-sm font-medium leading-relaxed"
-                style={{
-                  backgroundColor: '#ffffff',
-                  borderColor: 'rgba(10,25,47,0.15)',
-                  color: '#000000',
-                  WebkitTextFillColor: '#000000',
-                }}
-              >
-                <span className="font-bold" style={{ color: '#000000', WebkitTextFillColor: '#000000' }}>
-                  Translation:
-                </span>{' '}
-                {currentQ.questionZh}
+              <div className="p-3 rounded-xl bg-white border border-[#0a192f]/20 text-xs sm:text-sm text-[#0a192f] font-medium leading-relaxed">
+                <span className="font-bold text-[#0a192f]">Translation:</span>{currentQ.questionZh}
               </div>
             )}
 
-            <p
-              className="text-xs sm:text-sm leading-relaxed font-medium"
-              style={{ color: '#000000', WebkitTextFillColor: '#000000' }}
-            >
-              <strong style={{ color: '#000000', WebkitTextFillColor: '#000000' }}>Explanation:</strong>{' '}
-              {currentQ.explanation}
+            <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
+              <strong className="text-[#0a192f]">Explanation:</strong>{currentQ.explanation}
               <br />
-              <strong style={{ color: '#000000', WebkitTextFillColor: '#000000' }}>選項翻譯：</strong>{' '}
-              {getOtherOptionTranslations(currentQ)}
+              <strong className="text-[#0a192f]">選項翻譯：</strong> {getOtherOptionTranslations(currentQ)}
             </p>
           </div>
         )}
       </div>
 
+      {/* Next Question Button */}
       {hasAnswered && (
         <div className="flex justify-end">
           <button
             onClick={handleNext}
-            className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] font-bold text-sm shadow-md transition transform hover:-translate-y-0.5"
-            style={{ color: '#ffffff' }}
+            className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[#0a192f] hover:bg-[#132c5b] text-white font-bold text-sm shadow-md transition transform hover:-translate-y-0.5 border border-[#0a192f]"
           >
             <span>{currentIndex === quizzes.length - 1 ? 'View results' : 'Next question'}</span>
-            <ArrowRight className="w-4 h-4" style={{ color: '#ffffff' }} />
+            <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       )}
-
-      {translatePopupNode}
     </div>
   );
 }

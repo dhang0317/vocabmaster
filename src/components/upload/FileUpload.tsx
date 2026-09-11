@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, Trash2, Plus, AlertCircle, RefreshCw } from 'lucide-react';
+import { Upload, FileText, Trash2, Plus, AlertCircle, FileSpreadsheet, RefreshCw } from 'lucide-react';
 import { RawWordInput } from '@/types';
 import { parseRawText, parseCSV, parseExcel } from '@/lib/parseWords';
 
@@ -17,10 +17,6 @@ const SAMPLE_WORDS: RawWordInput[] = [
   { word: 'pragmatic', translation: 'practical', pos: 'adj.', example: 'We need to adopt a pragmatic approach to solving this crisis.' },
   { word: 'eloquent', translation: 'fluent and persuasive', pos: 'adj.', example: 'She made an eloquent speech in defense of human rights.' },
 ];
-
-/** Dark field: navy surface, white text */
-const fieldClass =
-  'rounded-lg border border-white/20 bg-[#0f172a] px-3 py-1.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-white/45 focus:ring-1 focus:ring-white/20';
 
 export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps) {
   const [words, setWords] = useState<RawWordInput[]>(initialWords);
@@ -116,13 +112,16 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
 
   return (
     <div className="space-y-6">
+      {/* Upload Tabs */}
       <div className="flex items-center justify-between border-b-2 border-[#0a192f]/10 pb-3">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setActiveTab('file')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition border-2 ${
-              activeTab === 'file' ? 'upload-btn-dark' : 'upload-btn-light'
+              activeTab === 'file'
+                ? 'bg-[#0a192f] text-white border-[#0a192f]'
+                : 'bg-white text-[#0a192f] border-[#0a192f]/30 hover:border-[#0a192f]'
             }`}
           >
             <Upload className="w-4 h-4" />
@@ -132,7 +131,9 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
             type="button"
             onClick={() => setActiveTab('text')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition border-2 ${
-              activeTab === 'text' ? 'upload-btn-dark' : 'upload-btn-light'
+              activeTab === 'text'
+                ? 'bg-[#0a192f] text-white border-[#0a192f]'
+                : 'bg-white text-[#0a192f] border-[#0a192f]/30 hover:border-[#0a192f]'
             }`}
           >
             <FileText className="w-4 h-4" />
@@ -143,7 +144,7 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
         <button
           type="button"
           onClick={handleLoadSample}
-          className="upload-btn-light flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border-2 transition shadow-sm"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-white text-[#0a192f] border-2 border-[#0a192f] hover:bg-slate-100 transition shadow-sm"
         >
           Load sample words
         </button>
@@ -156,6 +157,7 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
         </div>
       )}
 
+      {/* File Dropzone */}
       {activeTab === 'file' && (
         <div
           onDragOver={(e) => {
@@ -165,8 +167,10 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`upload-surface border-2 border-dashed rounded-2xl px-6 py-8 text-center cursor-pointer transition-all duration-200 ${
-            isDragging ? 'scale-[0.99]' : ''
+          className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-200 ${
+            isDragging
+              ? 'border-[#0a192f] bg-slate-100 scale-[0.99]'
+              : 'border-[#0a192f] bg-white hover:bg-slate-50'
           }`}
         >
           <input
@@ -180,50 +184,59 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
               }
             }}
           />
-          {isProcessing ? (
-            <div className="flex items-center justify-center gap-2">
-              <RefreshCw className="w-5 h-5 animate-spin" />
-              <span className="text-sm font-bold">Processing…</span>
-            </div>
-          ) : (
-            <h4 className="text-base font-extrabold">
-              Click here or drag a word file to upload
-            </h4>
-          )}
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-100 border-2 border-[#0a192f] flex items-center justify-center text-[#0a192f] mb-4">
+            {isProcessing ? (
+              <RefreshCw className="w-6 h-6 animate-spin text-[#0a192f]" />
+            ) : (
+              <FileSpreadsheet className="w-6 h-6" />
+            )}
+          </div>
+          <h4 className="text-base font-extrabold text-[#0a192f] mb-1">
+            Click here or drag a word file to upload
+          </h4>
+          <p className="text-xs text-slate-600 max-w-sm mx-auto mb-3">
+            Supports CSV, Excel (.xlsx/.xls), and plain TXT files. Word, definition, and example columns are detected automatically.
+          </p>
+          <div className="inline-flex items-center gap-3 text-[11px] text-slate-500 font-medium">
+            <span>• Multi-column CSV</span>
+            <span>• Standard Excel sheets</span>
+            <span>• One word per line</span>
+          </div>
         </div>
       )}
 
+      {/* Direct Text Input */}
       {activeTab === 'text' && (
         <div className="space-y-3">
           <textarea
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder={`Enter one word per line, or separate fields with commas or tabs, for example:\nephemeral, short-lived, adj.\nresilient, able to recover quickly\nmeticulous\npragmatic - practical`}
+            placeholder={`Enter one word per line, or separate fields with commas or tabs, for example:
+ephemeral, short-lived, adj.
+resilient, able to recover quickly
+meticulous
+pragmatic - practical`}
             rows={5}
-            className="upload-surface w-full rounded-2xl border-2 px-4 py-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#0a192f]/20"
+            className="w-full px-4 py-3 rounded-2xl bg-white border-2 border-[#0a192f] text-[#0a192f] placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#0a192f]/20 font-mono"
           />
           <button
             type="button"
             onClick={handleTextSubmit}
             disabled={!inputText.trim()}
-            className="upload-btn-dark px-5 py-2.5 rounded-xl text-sm font-bold disabled:opacity-50 transition shadow-sm border"
+            className="px-5 py-2.5 rounded-xl text-sm font-bold bg-[#0a192f] hover:bg-[#132c5b] disabled:opacity-50 text-white transition shadow-sm border border-[#0a192f]"
           >
             Add to word list
           </button>
         </div>
       )}
 
+      {/* Vocabulary Table Preview */}
       {words.length > 0 && (
-        <div className="word-import-panel rounded-2xl border border-white/10 bg-[#0a192f] overflow-hidden shadow-md">
-          <div className="flex items-center justify-between px-5 py-3.5 bg-[#0f2744] border-b border-white/10">
+        <div className="rounded-2xl border-2 border-[#0a192f] bg-white overflow-hidden shadow-sm">
+          <div className="flex items-center justify-between px-5 py-3.5 bg-slate-100 border-b-2 border-[#0a192f]">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-black" style={{ color: '#ffffff' }}>
-                Imported words
-              </span>
-              <span
-                className="text-xs px-2.5 py-0.5 rounded-full bg-white/15 border border-white/20 font-bold"
-                style={{ color: '#ffffff' }}
-              >
+              <span className="text-sm font-black text-[#0a192f]">Imported words</span>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-white text-[#0a192f] border border-[#0a192f] font-bold">
                 {words.length} words
               </span>
             </div>
@@ -231,67 +244,59 @@ export function FileUpload({ onWordsLoaded, initialWords = [] }: FileUploadProps
               <button
                 type="button"
                 onClick={handleAddNewRow}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition border border-white"
-                style={{ backgroundColor: '#ffffff', color: '#0a192f' }}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-[#0a192f] border border-[#0a192f] hover:bg-slate-50 transition"
               >
-                <Plus className="w-3.5 h-3.5" style={{ color: '#0a192f' }} />
-                <span style={{ color: '#0a192f' }}>Add word row</span>
+                <Plus className="w-3.5 h-3.5" />
+                Add word row
               </button>
               <button
                 type="button"
                 onClick={handleClearAll}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition border"
-                style={{ backgroundColor: '#7f1d1d', color: '#ffffff', borderColor: '#f87171' }}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-red-600 hover:bg-red-50 transition border border-red-300"
               >
-                <Trash2 className="w-3.5 h-3.5" style={{ color: '#ffffff' }} />
-                <span style={{ color: '#ffffff' }}>Clear</span>
+                <Trash2 className="w-3.5 h-3.5" />
+                Clear
               </button>
             </div>
           </div>
 
-          <div className="max-h-80 overflow-y-auto divide-y divide-white/10 bg-[#0a192f]">
+          <div className="max-h-80 overflow-y-auto divide-y divide-[#0a192f]/10">
             {words.map((item, idx) => (
-              <div
-                key={idx}
-                className="flex items-center gap-3 px-5 py-2.5 bg-[#0a192f] hover:bg-[#0f2744] transition"
-              >
-                <span className="text-xs font-mono font-bold w-6" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  {idx + 1}
-                </span>
-
+              <div key={idx} className="flex items-center gap-3 px-5 py-2.5 hover:bg-slate-50 transition">
+                <span className="text-xs font-mono font-bold text-slate-500 w-6">{idx + 1}</span>
+                
+                {/* Word */}
                 <input
                   type="text"
                   value={item.word}
                   onChange={(e) => handleWordChange(idx, 'word', e.target.value)}
                   placeholder="Word"
-                  className={`${fieldClass} w-1/4 font-bold`}
-                  style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
+                  className="w-1/4 px-3 py-1.5 rounded-lg bg-white border border-[#0a192f]/40 text-sm font-bold text-[#0a192f] focus:outline-none focus:border-[#0a192f]"
                 />
 
+                {/* POS */}
                 <input
                   type="text"
                   value={item.pos || ''}
                   onChange={(e) => handleWordChange(idx, 'pos', e.target.value)}
-                  placeholder="POS"
-                  className={`${fieldClass} w-16 text-xs text-center px-2`}
-                  style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
+                  placeholder="Part of speech"
+                  className="w-16 px-2 py-1.5 rounded-lg bg-white border border-[#0a192f]/40 text-xs text-slate-700 focus:outline-none focus:border-[#0a192f] text-center"
                 />
 
+                {/* Translation */}
                 <input
                   type="text"
                   value={item.translation || ''}
                   onChange={(e) => handleWordChange(idx, 'translation', e.target.value)}
-                  placeholder="Definition (optional)"
-                  className={`${fieldClass} flex-1`}
-                  style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
+                  placeholder="Definition (optional; auto-completed)"
+                  className="flex-1 px-3 py-1.5 rounded-lg bg-white border border-[#0a192f]/40 text-sm text-[#0a192f] focus:outline-none focus:border-[#0a192f]"
                 />
 
                 <button
                   type="button"
                   onClick={() => handleRemoveWord(idx)}
-                  className="p-1.5 rounded-lg hover:bg-white/10 transition"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
                   title="Delete"
-                  style={{ color: 'rgba(255,255,255,0.45)' }}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

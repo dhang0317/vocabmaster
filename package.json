@@ -8,14 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
-    "prisma:push": "prisma db push",
-    "context:prepare": "prisma db push && node prisma/context-engine-context-seed.js && node prisma/context-engine-seed.js && node prisma/context-engine-expand.js && node prisma/context-engine-10k.js",
-    "context:seed": "prisma db push && node prisma/context-engine-seed.js && node prisma/context-engine-expand.js",
-    "context:seed:core": "node prisma/context-engine-seed.js",
-    "context:seed:expand": "node prisma/context-engine-expand.js",
-    "context:seed:10k": "node prisma/context-engine-10k.js",
-    "context:generate:1m": "node prisma/context-engine-million.js",
-    "context:quality": "node prisma/context-engine-production.js"
+    "prisma:push": "prisma db push"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
@@ -24,7 +17,6 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.453.0",
     "next": "^14.2.15",
-    "next-auth": "^4.24.7",
     "papaparse": "^5.4.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -39,7 +31,8 @@
     "@types/react-dom": "^18.3.1",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
+    "prisma": "^5.21.1",
     "tailwindcss": "^3.4.14",
-    "prisma": "^5.21.1"
+    "typescript": "^5.6.3"
   }
 }
