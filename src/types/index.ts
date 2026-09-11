@@ -77,4 +77,4 @@ export interface DeckData {
   }[];
 }
 
-export type GenerationLevel = 'elementary' | 'highschool' | 'toeic' | 'toefl_ielts' | 'advanced';
+export type GenerationLevel = 'elementary' | 'highschool' | 'toeic' | 'toefl_ielts' | 'advanced' | 'cet' | 'middle' | 'gept' | string;
