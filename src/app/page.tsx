@@ -22,6 +22,7 @@ export default function HomePage() {
   const [decks, setDecks] = useState<DeckSummary[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DeckSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [streakDays, setStreakDays] = useState(1);
@@ -30,12 +31,14 @@ export default function HomePage() {
     try {
       setIsLoading(true);
       const res = await fetch('/api/decks');
+      if (!res.ok) throw new Error('Unable to load vocabulary');
       const data = await res.json();
-      if (data.success) {
-        setDecks(data.decks || []);
-      }
+      if (!data.success) throw new Error(data.error || 'Unable to load vocabulary');
+      setDecks(data.decks || []);
+      setLoadError(false);
     } catch (err) {
       console.error('Failed to load decks', err);
+      setLoadError(true);
     } finally {
       setIsLoading(false);
     }
@@ -193,7 +196,8 @@ export default function HomePage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search deck titles or descriptions..."
-              className="liquid-glass w-full pl-10 pr-4 py-2.5 rounded-xl text-xs sm:text-sm text-[#0a192f] placeholder-slate-400 focus:outline-none font-medium"
+              aria-label="Search vocabulary decks"
+              className="liquid-glass w-full pl-10 pr-4 py-3 rounded-xl text-sm text-[#0a192f] placeholder-slate-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 font-medium"
             />
           </div>
         </div>
@@ -204,12 +208,20 @@ export default function HomePage() {
               <div key={i} className="h-48 rounded-3xl liquid-glass animate-pulse" />
             ))}
           </div>
+        ) : loadError ? (
+          <div role="alert" className="liquid-glass p-8 sm:p-12 text-center rounded-3xl space-y-4">
+            <h3 className="text-lg font-bold text-[#0a192f]">Couldn’t load your vocabulary</h3>
+            <p className="text-sm text-slate-600 max-w-md mx-auto">Check your connection and try again. Your decks haven’t been changed.</p>
+            <button type="button" onClick={fetchDecks} className="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-[#0a192f] text-white font-bold text-sm hover:bg-[#132c5b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+              Try again
+            </button>
+          </div>
         ) : filteredDecks.length === 0 ? (
           <div className="liquid-glass liquid-glass-hover p-12 text-center rounded-3xl space-y-4">
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-[#0a192f]">No Voc</h3>
-              <p className="text-xs text-slate-600 max-w-sm mx-auto">
-                Upload a word list below and generate your own flashcards and practice questions.
+              <h3 className="text-lg font-bold text-[#0a192f]">{searchQuery ? 'No matching decks' : 'Your vocabulary starts here'}</h3>
+              <p className="text-sm text-slate-600 max-w-sm mx-auto">
+                {searchQuery ? 'Try a different search term, or clear the search to see all your decks.' : 'Create a deck from your word list to build flashcards, contextual articles, and practice quizzes.'}
               </p>
             </div>
             <Link
@@ -238,7 +250,8 @@ export default function HomePage() {
                       type="button"
                       onClick={(e) => openDeleteModal(deck, e)}
                       title="Delete deck"
-                      className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-white/50 transition opacity-0 group-hover:opacity-100"
+                      aria-label={`Delete ${deck.title}`}
+                      className="text-slate-500 hover:text-red-700 p-2 rounded-lg hover:bg-white/70 transition opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
