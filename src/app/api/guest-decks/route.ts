@@ -3,6 +3,15 @@ import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
+function safeErrorDetail(error: unknown): string {
+  if (!(error instanceof Error)) return '未知伺服器錯誤';
+  return error.message
+    .replace(/postgres(?:ql)?:\/\/[^\s"'\x60]+/gi, '[資料庫連線資訊已隱藏]')
+    .replace(/\b(?:[a-z0-9-]+\.)+[a-z]{2,}:\d{2,5}\b/gi, '[資料庫主機已隱藏]')
+    .replace(/(password|passwd|pwd|secret|token)\s*[=:]\s*[^\s,;]+/gi, '$1=[已隱藏]')
+    .slice(0, 500);
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -47,8 +56,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: '伺服器無法完成儲存，請把下方錯誤代碼提供給我。',
+        error: '伺服器無法完成儲存。請查看錯誤詳情，勿貼上任何連線網址或密碼。',
         errorCode,
+        errorDetail: safeErrorDetail(error),
       },
       { status: 500 },
     );
