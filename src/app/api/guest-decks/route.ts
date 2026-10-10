@@ -3,15 +3,6 @@ import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-function safeErrorDetail(error: unknown): string {
-  if (!(error instanceof Error)) return '未知伺服器錯誤';
-  return error.message
-    .replace(/postgres(?:ql)?:\/\/[^\s"'\x60]+/gi, '[資料庫連線資訊已隱藏]')
-    .replace(/\b(?:[a-z0-9-]+\.)+[a-z]{2,}:\d{2,5}\b/gi, '[資料庫主機已隱藏]')
-    .replace(/(password|passwd|pwd|secret|token)\s*[=:]\s*[^\s,;]+/gi, '$1=[已隱藏]')
-    .slice(0, 500);
-}
-
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -40,25 +31,25 @@ export async function POST(req: NextRequest) {
       data: {
         title,
         description: description || '自訂單字本',
-        words: { create: words },
+        userId: null,
+        isPublic: false,
+        words: {
+          create: words,
+        },
       },
-      include: { words: true },
+      include: {
+        words: true,
+      },
     });
 
     return NextResponse.json({ success: true, deck }, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Guest vocabulary creation failed:', error);
-    let errorCode = 'UNKNOWN';
-    if (error instanceof Error) errorCode = error.name || 'Error';
-    if (error && typeof error === 'object' && 'code' in error && typeof error.code === 'string') {
-      errorCode = error.code;
-    }
     return NextResponse.json(
       {
         success: false,
-        error: '伺服器無法完成儲存。請查看錯誤詳情，勿貼上任何連線網址或密碼。',
-        errorCode,
-        errorDetail: safeErrorDetail(error),
+        error: '伺服器無法完成儲存，請確認資料庫狀態。',
+        errorCode: error?.code || error?.name || 'UNKNOWN',
       },
       { status: 500 },
     );
