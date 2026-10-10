@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateLearningMaterials, translateVocabulary } from '@/lib/gemini';
+import { generateLearningMaterials as generateWithGemini, translateVocabulary as translateWithGemini } from '@/lib/gemini';
+import { generateLearningMaterialsWithGemma, translateVocabularyWithGemma } from '@/lib/groq';
 import { RawWordInput, GenerationLevel } from '@/types';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { words, level, apiKey, action, forceOffline } = body as {
+    const { words, level, apiKey, action, provider = 'gemini' } = body as {
       words: RawWordInput[];
       level?: GenerationLevel;
       apiKey?: string;
       action?: string;
-      forceOffline?: boolean;
+      provider?: 'gemini' | 'gemma';
     };
 
     if (!words || !Array.isArray(words) || words.length === 0) {
@@ -18,16 +19,20 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'translate') {
-      const translations = await translateVocabulary(words.map(word => word.word), apiKey);
+      const translations = provider === 'gemma'
+        ? await translateVocabularyWithGemma(words.map(word => word.word), apiKey)
+        : await translateWithGemini(words.map(word => word.word), apiKey);
       return NextResponse.json({ success: true, translations });
     }
 
-    // forceOffline: skip Gemini entirely (no API key / no quota needed)
-    const key = forceOffline ? '' : apiKey;
-    const generated = await generateLearningMaterials(words, level || 'highschool', key);
+    const generated = provider === 'gemma'
+      ? await generateLearningMaterialsWithGemma(words, level || 'highschool', apiKey)
+      : await generateWithGemini(words, level || 'highschool', apiKey);
+
     return NextResponse.json({ success: true, data: generated });
   } catch (error: any) {
     console.error('Error generating materials:', error);
     return NextResponse.json({ error: error.message || '生成失敗，請稍後重試' }, { status: 500 });
   }
 }
+
