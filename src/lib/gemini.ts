@@ -54,10 +54,10 @@ async function generateJsonWithFallback(
               },
               body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                  responseMimeType: 'application/json',
-                  temperature,
-                },
+                // Gemma's hosted API does not document the same JSON-mode
+                // guarantees as Gemini, so rely on the strict JSON prompt and
+                // validate the parsed response in the existing caller.
+                generationConfig: { temperature },
               }),
               cache: 'no-store',
             }
