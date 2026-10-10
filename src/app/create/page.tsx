@@ -29,6 +29,7 @@ export default function CreatePage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [errorCode, setErrorCode] = useState('');
+  const [errorDetail, setErrorDetail] = useState('');
 
   const words = parseWords(rawWords);
 
@@ -36,6 +37,7 @@ export default function CreatePage() {
     event.preventDefault();
     setError('');
     setErrorCode('');
+    setErrorDetail('');
     if (!title.trim()) {
       setError('請先輸入單字本名稱。');
       return;
@@ -55,6 +57,7 @@ export default function CreatePage() {
       const data = await response.json();
       if (!response.ok || !data.success || !data.deck?.id) {
         if (typeof data.errorCode === 'string') setErrorCode(data.errorCode);
+        if (typeof data.errorDetail === 'string') setErrorDetail(data.errorDetail);
         throw new Error(data.error || '儲存失敗，請稍後再試。');
       }
       router.push('/decks/' + data.deck.id);
@@ -90,7 +93,7 @@ export default function CreatePage() {
           <p className="text-xs text-slate-500">目前辨識到 {words.length} 個單字</p>
         </div>
 
-        {error && <div role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700"><p>{error}</p>{errorCode ? <p className="mt-1 font-mono text-xs">錯誤代碼：{errorCode}</p> : null}</div>}
+        {error && <div role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700"><p>{error}</p>{errorCode ? <p className="mt-1 font-mono text-xs">錯誤代碼：{errorCode}</p> : null}{errorDetail ? <p className="mt-2 whitespace-pre-wrap break-words text-xs font-normal">診斷詳情：{errorDetail}</p> : null}</div>}
 
         <div className="flex flex-wrap gap-3">
           <button type="submit" disabled={busy}
