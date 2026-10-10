@@ -1,11 +1,10 @@
-import { withAuth } from 'next-auth/middleware';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-// Protect study pages — unauthenticated visitors are redirected to /login.
-// API auth routes (/api/auth/*) and the API deck routes (enforced in-route)
-// are intentionally not matched here.
-export default withAuth({
-  pages: { signIn: '/login' },
-});
+// Temporary guest mode: do not redirect visitors to login.
+export function middleware(_request: NextRequest) {
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: ['/create/:path*', '/decks/:path*'],

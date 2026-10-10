@@ -9,6 +9,7 @@ import { ClozeExercise } from '@/components/cloze/ClozeExercise';
 import { QuizRunner } from '@/components/quiz/QuizRunner';
 import { ConfirmModal } from '@/components/common/ConfirmModal';
 import { DeckData } from '@/types';
+import { getGuestDeck, deleteGuestDeck, updateGuestWord } from '@/lib/guest-storage';
 
 type StudyTab = 'flashcards' | 'cloze' | 'quiz' | 'wordlist';
 
@@ -28,6 +29,16 @@ export default function DeckStudyPage() {
   const fetchDeck = async () => {
     try {
       setIsLoading(true);
+      if (id?.startsWith('guest-')) {
+        const localDeck = getGuestDeck(id);
+        if (localDeck) {
+          setDeck(localDeck);
+          setError(null);
+        } else {
+          setError('找不到這個本機單字本。可能已清除瀏覽器資料，或你正在使用另一台裝置。');
+        }
+        return;
+      }
       const res = await fetch(`/api/decks/${id}`);
       const data = await res.json();
       if (data.success) {
@@ -47,6 +58,11 @@ export default function DeckStudyPage() {
   }, [id]);
 
   const handleToggleMastered = async (wordId: string, isMastered: boolean) => {
+    if (id?.startsWith('guest-')) {
+      const updated = updateGuestWord(id, wordId, isMastered);
+      if (updated) setDeck(updated);
+      return;
+    }
     try {
       await fetch(`/api/decks/${id}`, {
         method: 'PATCH',
@@ -77,6 +93,10 @@ export default function DeckStudyPage() {
 
   const handleTogglePublic = async () => {
     if (!deck) return;
+    if (id?.startsWith('guest-')) {
+      alert('本機單字本只儲存在這個瀏覽器，暫時不能分享至公開圖書館。');
+      return;
+    }
     const next = !deck.isPublic;
     setPublishing(true);
     try {
@@ -110,7 +130,11 @@ export default function DeckStudyPage() {
   const confirmDelete = useCallback(async () => {
     setDeleting(true);
     try {
-      await fetch(`/api/decks/${id}`, { method: 'DELETE' });
+      if (id?.startsWith('guest-')) {
+        deleteGuestDeck(id);
+      } else {
+        await fetch(`/api/decks/${id}`, { method: 'DELETE' });
+      }
       router.push('/');
     } catch (err) {
       console.error('Failed to delete deck', err);
