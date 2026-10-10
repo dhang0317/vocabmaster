@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Plus, BookOpen, Layers, CheckCircle2, Award, Trash2, ArrowRight, Search, Globe, Flame } from 'lucide-react';
 import { ConfirmModal } from '@/components/common/ConfirmModal';
+import { getGuestDecks, deleteGuestDeck } from '@/lib/guest-storage';
 
 interface DeckSummary {
   id: string;
@@ -34,7 +35,20 @@ export default function HomePage() {
       if (!res.ok) throw new Error('Unable to load vocabulary');
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Unable to load vocabulary');
-      setDecks(data.decks || []);
+      const localDecks: DeckSummary[] = getGuestDecks().map(deck => ({
+        id: deck.id,
+        title: deck.title,
+        description: deck.description || '儲存在此瀏覽器',
+        isPublic: false,
+        createdAt: String(deck.createdAt),
+        wordCount: deck.words.length,
+        masteredCount: deck.words.filter(word => word.isMastered).length,
+        articleCount: deck.articles.length,
+        quizCount: deck.quizzes.length,
+        resultCount: deck.results?.length || 0,
+      }));
+      const localIds = new Set(localDecks.map(deck => deck.id));
+      setDecks([...localDecks, ...(data.decks || []).filter((deck: DeckSummary) => !localIds.has(deck.id))]);
       setLoadError(false);
     } catch (err) {
       console.error('Failed to load decks', err);
@@ -78,10 +92,16 @@ export default function HomePage() {
     const id = deleteTarget.id;
     setDeleting(true);
     try {
-      const res = await fetch(`/api/decks/${id}`, { method: 'DELETE' });
-      if (res.ok) {
+      if (id.startsWith('guest-')) {
+        deleteGuestDeck(id);
         setDecks(prev => prev.filter(d => d.id !== id));
         setDeleteTarget(null);
+      } else {
+        const res = await fetch(`/api/decks/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          setDecks(prev => prev.filter(d => d.id !== id));
+          setDeleteTarget(null);
+        }
       }
     } catch (err) {
       console.error('Failed to delete deck', err);
