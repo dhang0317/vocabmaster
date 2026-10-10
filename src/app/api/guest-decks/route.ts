@@ -39,8 +39,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, deck }, { status: 201 });
   } catch (error) {
     console.error('Guest vocabulary creation failed:', error);
+    const errorCode =
+      error && typeof error === 'object' && 'code' in error && typeof error.code === 'string'
+        ? error.code
+        : 'UNKNOWN';
     return NextResponse.json(
-      { success: false, error: '儲存失敗，請稍後再試。若持續發生，可能是資料庫連線問題。' },
+      {
+        success: false,
+        error: '伺服器無法完成儲存，請把下方錯誤代碼提供給我。',
+        errorCode,
+      },
       { status: 500 },
     );
   }
