@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { saveGuestDeck } from '@/lib/guest-storage';
 
 type WordInput = { word: string; translation: string; pos: string; example: string };
 
@@ -49,18 +50,32 @@ export default function CreatePage() {
 
     setBusy(true);
     try {
-      const response = await fetch('/api/guest-decks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title.trim(), words }),
+      const now = new Date().toISOString();
+      const id = `guest-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      saveGuestDeck({
+        id,
+        title: title.trim(),
+        description: '自訂單字本（儲存在此瀏覽器）',
+        isPublic: false,
+        isGuest: true,
+        createdAt: now,
+        updatedAt: now,
+        words: words.map((word, index) => ({
+          id: `${id}-word-${index + 1}`,
+          word: word.word,
+          translation: word.translation || '尚未填寫',
+          pos: word.pos,
+          phonetic: '',
+          definition: '',
+          example: word.example,
+          exampleZh: '',
+          isMastered: false,
+        })),
+        articles: [],
+        quizzes: [],
+        results: [],
       });
-      const data = await response.json();
-      if (!response.ok || !data.success || !data.deck?.id) {
-        if (typeof data.errorCode === 'string') setErrorCode(data.errorCode);
-        if (typeof data.errorDetail === 'string') setErrorDetail(data.errorDetail);
-        throw new Error(data.error || '儲存失敗，請稍後再試。');
-      }
-      router.push('/decks/' + data.deck.id);
+      router.push('/decks/' + id);
     } catch (e) {
       setError(e instanceof Error ? e.message : '儲存失敗，請稍後再試。');
     } finally {
