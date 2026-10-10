@@ -126,9 +126,10 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-body, body * {
-  font-family: "Baskervville Fontiko", "PMingLiU", "MingLiU", "Noto Serif CJK TC", Georgia, "Times New Roman", serif !important;
-  font-weight: 200 !important;
+/* Keep typography defaults at the document level. Avoid forcing every child
+   into a light serif font: that overrides component weights and hurts readability. */
+body {
+  font-family: "Baskervville Fontiko", "PMingLiU", "MingLiU", "Noto Serif CJK TC", Georgia, "Times New Roman", serif;
 }
 
 .font-cjk {
@@ -149,8 +150,11 @@ body [class~="text-white"] {
 
 body :where(p, span, label, li, td, th, button, a, input, textarea, select, option, h1, h2, h3, h4, h5, h6) {
   color: #000000;
-  font-weight: 200;
 }
+/* Preserve component emphasis while providing readable defaults. */
+body :where(button, a, input, textarea, select) { font-weight: 500; }
+body :where(h1, h2, h3, h4, h5, h6) { font-weight: 700; }
+body :where(p, span, label, li, td, th) { font-weight: 400; }
 
 /* Dark action buttons keep white text */
 body [class*="bg-black"],
@@ -304,4 +308,21 @@ body [class*="border-2"][class*="border-black"]:not([class*="bg-"]) {
   .print-page-break {
     page-break-after: always;
   }
+}
+
+/* Accessibility and interaction polish */
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+@media (max-width: 640px) {
+  button, a { -webkit-tap-highlight-color: transparent; }
 }
