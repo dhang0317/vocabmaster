@@ -39,10 +39,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, deck }, { status: 201 });
   } catch (error) {
     console.error('Guest vocabulary creation failed:', error);
-    const errorCode =
-      error && typeof error === 'object' && 'code' in error && typeof error.code === 'string'
-        ? error.code
-        : 'UNKNOWN';
+    let errorCode = 'UNKNOWN';
+    if (error instanceof Error) errorCode = error.name || 'Error';
+    if (error && typeof error === 'object' && 'code' in error && typeof error.code === 'string') {
+      errorCode = error.code;
+    }
     return NextResponse.json(
       {
         success: false,
