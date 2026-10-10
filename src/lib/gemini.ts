@@ -19,7 +19,8 @@ interface GenerationResponse {
   fallbackReason?: string;
 }
 
-const GEMINI_MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-3.6-flash'];
+// Try hosted Gemma first; retain Gemini fallbacks for availability and compatibility.
+const GEMINI_MODELS = ['gemma-4-26b-a4b-it', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-3.6-flash'];
 
 function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -38,16 +39,51 @@ async function generateJsonWithFallback(
   let lastError: unknown;
 
   for (const modelName of GEMINI_MODELS) {
-    const model = new GoogleGenerativeAI(apiKey.trim()).getGenerativeModel({
-      model: modelName,
-      generationConfig: {
-        responseMimeType: 'application/json',
-        temperature,
-      },
-    });
-
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
+        if (modelName.startsWith('gemma-4-')) {
+          // Gemma 4 is available through the hosted Gemini API. Keep the key
+          // in a request header so it is not exposed in the URL.
+          const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-goog-api-key': apiKey.trim(),
+              },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                  responseMimeType: 'application/json',
+                  temperature,
+                },
+              }),
+              cache: 'no-store',
+            }
+          );
+          const payload = await response.json() as {
+            candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+            error?: { message?: string };
+          };
+          if (!response.ok) {
+            throw new Error(payload.error?.message || `Gemma API request failed (${response.status})`);
+          }
+          const generatedText = payload.candidates?.[0]?.content?.parts
+            ?.map(part => part.text || '')
+            .join('')
+            .trim();
+          if (!generatedText) throw new Error('Gemma returned an empty response.');
+          return generatedText;
+        }
+
+        const model = new GoogleGenerativeAI(apiKey.trim()).getGenerativeModel({
+          model: modelName,
+          generationConfig: {
+            responseMimeType: 'application/json',
+            temperature,
+          },
+        });
         const result = await model.generateContent(prompt);
         return result.response.text();
       } catch (err) {
